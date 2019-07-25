@@ -1,7 +1,11 @@
 import { getDefaultProvider } from 'ethers';
 import { FastifyInstance } from 'fastify';
 import createError from 'http-errors';
-import { getEvent, getEventByFancyId, getEvents, updateEvent, createEvent } from './db';
+import {
+  getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
+  getPoapSettingByName, getPoapSettings, updatePoapSettingByName
+} from './db';
+
 import {
   getAllTokens,
   getTokenInfo,
@@ -9,6 +13,7 @@ import {
   mintEventToManyUsers,
   verifyClaim,
   mintUserToManyEvents,
+  burnToken
 } from './poap-helper';
 import { Claim, PoapEvent } from './types';
 
@@ -100,6 +105,40 @@ export default async function routes(fastify: FastifyInstance) {
         return {
           valid: true,
           address: resolvedAddress,
+        };
+      }
+    }
+  );
+
+  fastify.get(
+    '/actions/ens_lookup/:address',
+    {
+      schema: {
+        params: {
+          address: {
+            type: 'string',
+          },
+        },
+      },
+    },
+    async (req, res) => {
+      const mainnetProvider = getDefaultProvider('homestead');
+      const address = req.params.address;
+
+      if (address == null || address == '') {
+        throw new createError.BadRequest('"address" query parameter is required');
+      }
+
+      const resolved = await mainnetProvider.lookupAddress(address);
+
+      if (resolved == null) {
+        return {
+          valid: false,
+        };
+      } else {
+        return {
+          valid: true,
+          ens: resolved,
         };
       }
     }
@@ -210,6 +249,75 @@ export default async function routes(fastify: FastifyInstance) {
       const tokenId = req.params.tokenId;
       const tokenInfo = await getTokenInfo(tokenId);
       return tokenInfo;
+    }
+  );
+
+  fastify.post(
+    '/burn/:tokenId',
+    {
+      preValidation: [fastify.authenticate],
+      schema: {
+        params: {
+          tokenId: { type: 'integer' },
+        },
+      },
+    },
+    async (req, res) => {
+      const isOk = await burnToken(req.params.tokenId);
+      if (!isOk) {
+        return new createError.NotFound('Invalid token or action');
+      }
+      res.status(204);
+      return;
+    }
+  );
+
+  fastify.get('/settings', () => getPoapSettings());
+
+  fastify.get(
+    '/settings/:name',
+    {
+      schema: {
+        params: {
+          name: { type: 'string' },
+        },
+      },
+    },
+    async (req, res) => {
+      const value = await getPoapSettingByName(req.params.name);
+      if (!value) {
+        return new createError.NotFound('poap setting variable not found');
+      }
+      return value;
+    }
+  );
+
+  // TODO Update this endpoint to use value as body parameter
+  fastify.put(
+    '/settings/:name/:value',
+    {
+      preValidation: [fastify.authenticate],
+      schema: {
+        params: {
+          name: { type: 'string' },
+          value: { type: 'string' }
+        },
+      },
+    },
+    async (req, res) => {
+      // Verify that setting variable exist
+      const setting_type = await getPoapSettingByName(req.params.name);
+      if (!setting_type) {
+        return new createError.BadRequest('unsuccessful operation');
+      }
+
+      const isOk = await updatePoapSettingByName(req.params.name, setting_type['type'], req.params.value);
+      if (!isOk) {
+        return new createError.BadRequest('unsuccessful operation');
+      }
+
+      res.status(204);
+      return;
     }
   );
 

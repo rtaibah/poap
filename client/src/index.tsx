@@ -25,21 +25,3 @@ main().catch(err => {
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
 
-/*
-    //Sticky header
-    var header = $("header");
-    var fix = $(".fix-element")
-
-    $(window).scroll(function() {
-        var scroll = $(window).scrollTop();
-
-        if (scroll >= 100) {
-            header.addClass("fixed");
-            fix.addClass("fixed");
-        }
-        if (scroll == 0) {
-            header.removeClass("fixed");
-            fix.removeClass("fixed");
-        }
-    });
-    */

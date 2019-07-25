@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getEvents, PoapEvent, getEvent, updateEvent, createEvent } from '../api';
-import { useAsync } from '../react-helpers';
 import { Link, Switch, Route, RouteComponentProps } from 'react-router-dom';
-import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
-import * as yup from 'yup';
 import classNames from 'classnames';
+import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
+
+/* Components */
 import { SubmitButton } from '../components/SubmitButton';
+/* Helpers */
+import { useAsync } from '../react-helpers';
+import { PoapEventSchema } from '../lib/schemas';
+import { getEvents, PoapEvent, getEvent, updateEvent, createEvent } from '../api';
 
 export const EventsPage: React.FC = () => {
   return (
@@ -16,41 +19,6 @@ export const EventsPage: React.FC = () => {
     </Switch>
   );
 };
-
-// const IP_REGEXP = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-const ADDRESS_REGEXP = /^0x[0-9a-fA-F]{40}$/;
-
-const PoapEventSchema = yup.object().shape({
-  year: yup
-    .number()
-    .required()
-    .min(1990)
-    .max(new Date().getFullYear() + 1),
-  start_date: yup
-    .string()
-    .matches(/[0-9]{4}-[0-9]{2}-[0-9]{2}/, 'Date must be expressed in YYYY-MM-DD Format'),
-  end_date: yup
-    .string()
-    .matches(/[0-9]{4}-[0-9]{2}-[0-9]{2}/, 'Date must be expressed in YYYY-MM-DD Format'),
-  image_url: yup
-    .string()
-    .label('Image Url')
-    .required()
-    .url(),
-  event_url: yup
-    .string()
-    .label('Website')
-    .url(),
-  signer_ip: yup
-    .string()
-    .label('Signer Url')
-    .url()
-    .nullable(),
-  signer: yup
-    .string()
-    .matches(ADDRESS_REGEXP, 'Must be a valid Ethereum Address')
-    .nullable(),
-});
 
 const CreateEventForm: React.FC = () => {
   return <EventForm create />;

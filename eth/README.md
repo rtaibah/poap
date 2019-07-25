@@ -1,7 +1,8 @@
 ## Setup
 
 Install dependencies:
-
+    
+    nvm use # Should install node 10.16.0
     npm install -g ganache-cli
     npm install
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+
 import { AuthProvider, AuthService } from './auth';
 import { Callback } from './auth/Callback';
 import { PrivateRoute } from './auth/PrivateRoute';
@@ -8,6 +9,7 @@ import { ClaimPage } from './ClaimPage';
 import { ScanPage } from './ScanPage';
 
 type AppProps = { auth: AuthService };
+
 const App: React.FC<AppProps> = ({ auth }) => (
   <AuthProvider value={auth}>
     <Router>

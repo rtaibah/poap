@@ -4,5 +4,12 @@
   "version": "0.1.0",
   "contracts": {
     "Poap": "Poap"
+  },
+  "dependencies": {},
+  "compiler": {
+    "manager": "truffle",
+    "compilerSettings": {
+      "optimizer": {}
+    }
   }
 }

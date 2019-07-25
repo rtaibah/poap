@@ -27,7 +27,7 @@ header {
 		@media (min-width: $bp-m) {
 			width: 60px;
 		}
-	} 
+	}
 
     &.fixed {
     	height: 200px;
@@ -50,13 +50,13 @@ header {
         @media (min-width: $bp-m) {
             background-image:url('../images/bg-header-t-fixed.png');
         }
-        
+
         @media (min-width: $bp-mw) {
             background-image:url('../images/bg-header-fixed.png');
         }
     }
 }
- 
+
 /* ================================================================
    Main
    ================================================================ */
@@ -64,10 +64,10 @@ main {
 	position: relative;
     top: -90px;
     z-index: 0;
-	
+
 	@media (min-width: $bp-l) {
 		top: -130px;
-	} 
+	}
 }
 
 /* ================================================================
@@ -83,7 +83,7 @@ footer {
 	}
 	@media (min-width: $bp-mw) {
 		margin: -20% 0 0;
-	    
+
 	}
 
 
@@ -101,10 +101,17 @@ footer {
 			@media (min-width: $bp-mw) {
 				max-width: 600px;
 				padding:36px 0 96px;
-			}
+            }
+
+            .eth-branding{
+                padding: 40px 0;
+                img{
+                    width: 150px;
+                }
+            }
 		}
-		
-		
+
+
 	}
 
 	h5 {
@@ -141,11 +148,11 @@ footer {
 						width: 60px;
 				    }
 				}
-				
+
 			}
 		}
-	}
-}	
+    }
+}
 
 /* ================================================================
    Mobile Menu
@@ -339,10 +346,10 @@ footer {
 
 @media (max-width: $bp-sw-max) {
 
-    body {        
+    body {
     	position:relative;
     	overflow-x: hidden;
-        &:before { 
+        &:before {
             content: '';
             left:-100%;
             background-color: #E9EDF5;
@@ -363,7 +370,7 @@ footer {
 
             &:before {
                left:0;
-                
+
             }
 
             .navigation {

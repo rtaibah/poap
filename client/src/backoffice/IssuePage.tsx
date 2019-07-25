@@ -1,8 +1,11 @@
-import { ErrorMessage, Field, Form, Formik, FormikActions, FieldProps } from 'formik';
 import React from 'react';
-import * as yup from 'yup';
-import { getEvents, mintEventToManyUsers, PoapEvent, mintUserToManyEvents } from '../api';
 import classNames from 'classnames';
+import { ErrorMessage, Field, Form, Formik, FormikActions, FieldProps } from 'formik';
+
+/* Helpers */
+import { getEvents, mintEventToManyUsers, PoapEvent, mintUserToManyEvents } from '../api';
+import { IssueForEventFormValueSchema, IssueForUserFormValueSchema } from '../lib/schemas';
+/* Components */
 import { SubmitButton } from '../components/SubmitButton';
 
 interface IssueForEventPageState {
@@ -14,17 +17,6 @@ interface IssueForEventFormValues {
   eventId: number;
   addressList: string;
 }
-
-const IssueForEventFormValueSchema = yup.object().shape({
-  eventId: yup
-    .number()
-    .required()
-    .min(1),
-  addressList: yup
-    .string()
-    .required()
-    .matches(/^0x[0-9a-fA-F]{40}(\n0x[0-9a-fA-F]{40})*\n*$/, 'Not a valid address or address list'),
-});
 
 export class IssueForEventPage extends React.Component<{}, IssueForEventPageState> {
   state: IssueForEventPageState = {
@@ -143,18 +135,6 @@ interface IssueForUserFormValues {
   eventIds: number[];
   address: string;
 }
-
-const IssueForUserFormValueSchema = yup.object().shape({
-  eventIds: yup
-    .array()
-    .of(yup.number().min(1))
-    .required()
-    .min(1),
-  address: yup
-    .string()
-    .required()
-    .matches(/^0x[0-9a-fA-F]{40}$/, 'Not a valid address'),
-});
 
 export class IssueForUserPage extends React.Component<{}, IssueForUserPageState> {
   state: IssueForUserPageState = {

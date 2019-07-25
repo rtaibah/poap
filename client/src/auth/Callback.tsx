@@ -11,7 +11,7 @@ type CallbackState = {
 class Callback_ extends React.Component<
   RouteComponentProps & { auth: AuthService },
   CallbackState
-> {
+  > {
   state: CallbackState = {
     loginFailed: false,
   };
@@ -40,14 +40,13 @@ class Callback_ extends React.Component<
             </div>
           </div>
         </header>
-        <div className="fix-element" />
         <main className="app-content">
           <div className="container">
             {this.state.loginFailed ? (
               <div className="bk-msg-error">Login Failed</div>
             ) : (
-              <Loading />
-            )}
+                <Loading />
+              )}
           </div>
         </main>
       </>

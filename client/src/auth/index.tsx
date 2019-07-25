@@ -1,6 +1,6 @@
 import createAuth0Client from '@auth0/auth0-spa-js';
 import React from 'react';
-import Auth0Client from '@auth0/auth0-spa-js/dist/typings/src/Auth0Client';
+import Auth0Client from '@auth0/auth0-spa-js/dist/typings/Auth0Client';
 
 const BASE_URI = `${window.location.protocol}//${window.location.host}`;
 

@@ -1,10 +1,16 @@
+/* eslint jsx-a11y/anchor-is-valid: 0 */
 import React, { useCallback, useContext, useState } from 'react';
-import { slide as Menu } from 'react-burger-menu';
 import { Link, Route, withRouter } from 'react-router-dom';
-import { AuthContext } from '../auth';
+import { slide as Menu } from 'react-burger-menu';
+
+/* Assets */
 import PoapLogo from '../images/POAP.svg';
-import { IssueForEventPage, IssueForUserPage } from './IssuePage';
+/* Components */
+import { AuthContext } from '../auth';
 import { EventsPage } from './EventsPage';
+import { BurnPage } from './BurnPage';
+import { IssueForEventPage, IssueForUserPage } from './IssuePage';
+import { GasPricePage } from './GasPricePage';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 
@@ -24,12 +30,19 @@ const NavigationMenu = withRouter(({ history }) => {
       </Link>
 
       <h2>Other Tasks</h2>
+      <Link to="/admin/gas-price" onClick={closeMenu}>
+        Change Gas Price
+      </Link>
       <Link to="/admin/events" onClick={closeMenu}>
         Manage Events
+      </Link>
+      <Link to="/admin/burn" onClick={closeMenu}>
+        Burn Tokens
       </Link>
       {/* <Link to="/admin/minters" onClick={closeMenu}>
         Manage Minters
       </Link> */}
+
       <a
         className="bm-item"
         href=""
@@ -60,7 +73,6 @@ export const BackOffice: React.FC = () => (
         </div>
       </div>
     </header>
-    <div className="fix-element" />
     <main className="app-content">
       <div className="container">
         <div className="bk-container">
@@ -68,6 +80,8 @@ export const BackOffice: React.FC = () => (
           <Route path="/admin/issue-for-user" component={IssueForUserPage} />
           <Route path="/admin/events" component={EventsPage} />
           <Route path="/admin/minters" component={MintersPage} />
+          <Route path="/admin/burn" component={BurnPage} />
+          <Route path="/admin/gas-price" component={GasPricePage} />
           <Route
             exact
             path="/admin/"

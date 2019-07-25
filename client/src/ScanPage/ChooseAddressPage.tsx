@@ -1,9 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { tryGetAccount, hasMetamask, isMetamaskLogged } from '../poap-eth';
-import { useToggleState, useAsync } from '../react-helpers';
-import { resolveENS } from '../api';
-import { getAddress } from 'ethers/utils';
 import classNames from 'classnames';
+
+/* Hooks */
+import { useToggleState, useAsync } from '../react-helpers';
+/* Helpers */
+import { tryGetAccount, hasMetamask, isMetamaskLogged } from '../poap-eth';
+import { resolveENS, getENSFromAddress } from '../api';
+import { isValidAddress } from '../lib/helpers';
+/* Components */
 // import { Loading } from '../components/Loading';
 
 enum AccountState {
@@ -38,10 +42,11 @@ export const CheckAccount: React.FC<{
 };
 
 type ChooseAddressPageProps = {
-  onAccountDetails: (account: string) => void;
+  onAccountDetails: (addressOrENS: string, address: string) => void;
 };
 export const ChooseAddressPage: React.FC<ChooseAddressPageProps> = ({ onAccountDetails }) => {
   const [enterByHand, toggleEnterByHand] = useToggleState(false);
+
   return (
     <main id="site-main" role="main" className="app-content">
       <div className="container">
@@ -83,18 +88,22 @@ export const ChooseAddressPage: React.FC<ChooseAddressPageProps> = ({ onAccountD
 };
 
 type LoginButtonProps = {
-  onAddress: (account: string) => void;
+  onAddress: (addressOrENS: string, address: string) => void;
 };
 
 const LoginButton: React.FC<LoginButtonProps> = ({ onAddress }) => {
   const [gotAccount, setGotAccount] = useState<boolean | null>(null);
+
   const doLogin = useCallback(async () => {
     const account = await tryGetAccount();
     setGotAccount(account != null);
+
     if (account) {
-      onAddress(account);
+      const ensResponse = await getENSFromAddress(account);
+      onAddress(ensResponse.valid ? ensResponse.ens : account, account);
     }
   }, [onAddress]);
+
   return (
     <button className="btn" onClick={doLogin} disabled={gotAccount === false}>
       {gotAccount === false ? (
@@ -112,35 +121,40 @@ const LoginButton: React.FC<LoginButtonProps> = ({ onAddress }) => {
 };
 
 type AddressInputProps = {
-  onAddress: (address: string) => void;
+  onAddress: (addressOrENS: string, address: string) => void;
 };
 
 const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
   const [address, setAddress] = useState('');
   const [ensError, setEnsError] = useState(false);
   const [working, setWorking] = useState(false);
-  const handleChange: React.ChangeEventHandler<HTMLInputElement> = e => {
-    setAddress(e.target.value);
-    if (ensError) {
-      setEnsError(false);
-    }
+
+  const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+    setAddress(event.target.value);
+    if (ensError) setEnsError(false);
   };
-  const onSubmit: React.FormEventHandler = async e => {
-    e.preventDefault();
+
+  const onSubmit: React.FormEventHandler = async event => {
+    event.preventDefault();
+    setWorking(true);
+
     if (isValidAddress(address)) {
-      onAddress(address);
+      const addressResponse = await getENSFromAddress(address);
+      onAddress(addressResponse.valid ? addressResponse.ens : address, address);
     } else {
       setEnsError(false);
-      setWorking(true);
       const ensResponse = await resolveENS(address);
-      setWorking(false);
+
       if (ensResponse.valid) {
-        onAddress(ensResponse.address);
+        onAddress(address, ensResponse.address);
       } else {
         setEnsError(true);
       }
     }
+
+    setWorking(false);
   };
+
   return (
     <form className="login-form" onSubmit={onSubmit}>
       <input
@@ -149,6 +163,7 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
         required
         placeholder="matoken.eth"
         onChange={handleChange}
+        autoComplete={'off'}
         className={classNames(ensError && 'error')}
       />
       {ensError && <p className="text-error">Invalid ENS name</p>}
@@ -163,13 +178,3 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
     </form>
   );
 };
-
-function isValidAddress(str: string) {
-  try {
-    getAddress(str);
-    return true;
-  } catch (e) {
-    // invalid Address. Try ENS
-    return false;
-  }
-}

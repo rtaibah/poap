@@ -24,9 +24,17 @@ export interface PoapEvent {
   end_date: string;
 }
 
+export interface PoapSetting {
+  id: number;
+  name: string;
+  type: string;
+  value: string;
+}
+
 export interface Claim extends ClaimProof {
   claimerSignature: string;
 }
+
 export interface ClaimProof {
   claimId: string;
   eventId: number;

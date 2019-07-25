@@ -144,7 +144,7 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
      * @param tokenId uint256 id of the ERC721 token to be burned.
      */
     function burn(uint256 tokenId) public {
-        require(_isApprovedOrOwner(msg.sender, tokenId));
+        require(_isApprovedOrOwner(msg.sender, tokenId) || isAdmin(msg.sender));
         _burn(tokenId);
     }    
 
@@ -190,6 +190,7 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
      * @return A boolean that indicates if the operation was successful.
      */
     function _mintToken(uint256 eventId, uint256 tokenId, address to) internal returns (bool) {
+        // TODO Verify that the token receiver ('to') do not have already a token for the event ('eventId')
         _mint(to, tokenId);
         _tokenEvent[tokenId] = eventId;
         emit EventToken(eventId, tokenId);

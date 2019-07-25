@@ -378,3 +378,18 @@ VALUES
     'https://ethnewyork.com/'
   );
 alter sequence events_id_seq restart with 29;
+
+INSERT INTO
+  poap_settings (
+    id,
+    name,
+    type,
+    value
+  )
+VALUES
+  (
+    1,
+    'gas-price',
+    'integer',
+    '5000000000'
+  );

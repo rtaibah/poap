@@ -5,6 +5,7 @@ export interface TokenInfo {
   tokenId: string;
   owner: string;
   event: PoapEvent;
+  ownerText?: string;
 }
 export interface PoapEvent {
   id: number;
@@ -31,8 +32,16 @@ export interface ClaimProof {
   claimer: Address;
   proof: string;
 }
+export interface PoapSetting {
+  id: number;
+  name: string;
+  type: string;
+  value: string;
+}
 
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
+
+export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
 
 const API_BASE =
   process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://api.poap.xyz';
@@ -65,6 +74,10 @@ export function resolveENS(name: string): Promise<ENSQueryResult> {
   return fetchJson(`${API_BASE}/actions/ens_resolve?name=${encodeURIComponent(name)}`);
 }
 
+export function getENSFromAddress(address: Address): Promise<AddressQueryResult> {
+  return fetchJson(`${API_BASE}/actions/ens_lookup/${address}`);
+}
+
 export function getTokensFor(address: string): Promise<TokenInfo[]> {
   return fetchJson(`${API_BASE}/actions/scan/${address}`);
 }
@@ -79,6 +92,23 @@ export async function getEvents(): Promise<PoapEvent[]> {
 
 export async function getEvent(fancyId: string): Promise<null | PoapEvent> {
   return fetchJson(`${API_BASE}/events/${fancyId}`);
+}
+
+export async function getSetting(settingName: string): Promise<null | PoapSetting> {
+  return fetchJson(`${API_BASE}/settings/${settingName}`);
+}
+
+export async function getTokenInfoWithENS(tokenId: string): Promise<TokenInfo> {
+  const token = await getTokenInfo(tokenId);
+
+  try {
+    const ens = await getENSFromAddress(token.owner);
+    const ownerText = ens.valid ? `${ens.ens} (${token.owner})` : `${token.owner}`;
+    const tokenParsed = { ...token, ens, ownerText };
+    return tokenParsed;
+  } catch (error) {
+    return token;
+  }
 }
 
 export async function claimToken(claim: Claim): Promise<void> {
@@ -116,9 +146,19 @@ export async function requestProof(
   return fetchJson(`${signerIp}/api/proof`, {
     method: 'POST',
     body: JSON.stringify({ eventId, claimer }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export function setSetting(settingName: string, settingValue: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/settings/${settingName}/${settingValue}`, {
+    method: 'PUT',
+  });
+}
+
+export function burnToken(tokenId: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/burn/${tokenId}`, {
+    method: 'POST',
   });
 }
 
@@ -129,9 +169,7 @@ export async function mintEventToManyUsers(eventId: number, addresses: string[])
       eventId,
       addresses,
     }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 export async function mintUserToManyEvents(eventIds: number[], address: string): Promise<any> {
@@ -141,9 +179,7 @@ export async function mintUserToManyEvents(eventIds: number[], address: string):
       eventIds,
       address,
     }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
@@ -151,9 +187,7 @@ export async function updateEvent(event: PoapEvent) {
   return secureFetchNoResponse(`${API_BASE}/events/${event.fancy_id}`, {
     method: 'PUT',
     body: JSON.stringify(event),
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
@@ -161,8 +195,6 @@ export async function createEvent(event: PoapEvent) {
   return secureFetchNoResponse(`${API_BASE}/events`, {
     method: 'POST',
     body: JSON.stringify(event),
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
   });
 }

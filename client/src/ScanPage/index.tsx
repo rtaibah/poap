@@ -9,27 +9,30 @@ import FooterShadow from '../images/footer-shadow.svg';
 import FooterShadowDesktop from '../images/footer-shadow-desktop.svg';
 import FooterPattern from '../images/footer-pattern.svg';
 import PoapLogo from '../images/POAP.svg';
+import BuiltOnEth from '../images/built-on-eth.png';
 import { useBodyClassName } from '../react-helpers';
 
 export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
   const showBadges = useCallback(
-    (address: string) => history.push(`${match.path}scan/${address}`),
+    (addressOrENS: string, address: string) => {
+      return history.push(`${match.path}scan/${addressOrENS}`, { address });
+    },
     [history, match]
   );
   useBodyClassName('poap-app');
 
   return (
-    <>
+    <div className="landing">
       <ScanHeader />
       <Route
         exact
         path={match.path}
         render={() => <ChooseAddressPage onAccountDetails={showBadges} />}
       />
-      <Route path={`${match.path}scan/:address`} component={AddressTokensPage} />
+      <Route path={`${match.path}scan/:account`} component={AddressTokensPage} />
       <Route path={`${match.path}token/:tokenId`} component={TokenDetailPage} />
       <ScanFooter />
-    </>
+    </div>
   );
 };
 
@@ -47,7 +50,6 @@ const ScanHeader: React.FC = React.memo(() => (
         </div>
       </div>
     </header>
-    <div className="fix-element" />
   </>
 ));
 
@@ -64,6 +66,9 @@ const ScanFooter: React.FC = React.memo(() => (
           Powered by <b>POAP</b>
         </p>
         <p>An EthDenver 2019 hack</p>
+        <div className="eth-branding">
+          <img src={BuiltOnEth} alt="Built on Ethereum" />
+        </div>
       </div>
     </div>
   </footer>

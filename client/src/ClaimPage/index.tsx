@@ -216,7 +216,7 @@ const ClaimFooter: React.FC = React.memo(() => (
 ));
 
 /**
- 
+
 1) Cargo... todavia no se si tengo web3 [ Detecting web3...]
 2) Espero a ver si tengo web3 (3 segundos)
 3) Si es Metmask => Pido enable() (en el claimer)

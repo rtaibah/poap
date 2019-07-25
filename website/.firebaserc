@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "poapsite"
+    "default": "poapsite",
+    "development": "poap-site-dev"
   }
 }
