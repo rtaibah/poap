@@ -121,13 +121,49 @@
       }
     }
 
-    .eth-branding{
+    .eth-branding {
       text-align: center;
       padding: 20px 0;
-      img{
+      img {
         width: 150px;
       }
     }
+
+    .made-by {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+
+
+       svg {
+        margin: 0 2px 2px 2px;
+        transform: scale(0.85);
+        transition: all 400ms ease-in-out;
+
+         rect {
+          fill: transparent;
+        }
+
+         path {
+          fill: white;
+        }
+      }
+
+       &:hover  svg  {
+        transform: scale(0.9);
+      }
+    }
+
+     .made-by-link {
+      color: white;
+      font-weight: 500;
+      margin-left: 3px;
+      text-decoration: none;
+      pointer-events: auto;
+
+
+     }
   }
 }
 
@@ -249,4 +285,32 @@
       }
     }
   }
+}
+
+/* ******************************************************
+   Effects
+   ****************************************************** */
+
+ .highlight-effect {
+  position: relative;
+  z-index: 1;
+}
+
+ .highlight-effect::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: -0.05em;
+  right: -0.05em;
+  background-color: #fe2d4d;
+  transform-origin: center right;
+  transform: scaleX(0);
+  transition: transform 0.2s ease-in-out;
+}
+
+ .highlight-effect:hover::before {
+  transform: scaleX(1);
+  transform-origin: center left;
 }
