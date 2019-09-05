@@ -6,8 +6,7 @@ const GasPriceSchema = yup.object().shape({
   gasPrice: yup
     .number()
     .required()
-    .positive()
-    .integer(),
+    .positive(),
 });
 
 const BurnFormSchema = yup.object().shape({

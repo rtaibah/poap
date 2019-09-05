@@ -10,7 +10,7 @@ function isValidAddress(str: string): boolean {
 }
 
 const convertToGWEI = (numberInWEI: string) => {
-  return Math.trunc(Number(formatUnits(numberInWEI, 'gwei'))).toString();
+  return Number(formatUnits(numberInWEI, 'gwei')).toString();
 };
 
 const convertFromGWEI = (numberInGWEI: string) => {
