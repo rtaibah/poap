@@ -6,10 +6,31 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
+    "redirects": [
       {
-        "source": "**",
-        "destination": "/index.html"
+        "source": "/join",
+        "destination": "https://testflight.apple.com/join/oZiOSCuK",
+        "type": 302
+      },
+      {
+        "source": "/onepager",
+        "destination": "https://res.cloudinary.com/dbiqkiypz/image/upload/v1565913513/poap_onepager_june19_vz54rg",
+        "type": 302
+      },
+      {
+        "source": "/video-pitch",
+        "destination": "https://www.youtube.com/watch?v=VZlmQjhz3ko&feature=youtu.be",
+        "type": 302
+      },
+      {
+        "source": "/ios",
+        "destination": "https://apps.apple.com/us/app/poap-wallet/id1473716619?ls=1",
+        "type": 302
+      },
+      {
+        "source": "/android",
+        "destination": "https://play.google.com/store/apps/details?id=xyz.explorer.poap",
+        "type": 302
       }
     ]
   }
