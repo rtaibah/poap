@@ -84,11 +84,14 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
                 <div className="bk-form-row">
                   <label htmlFor="eventId">Choose Event:</label>
                   <Field name="eventId" component="select">
-                    {this.state.events.map(event => (
-                      <option key={event.id} value={event.id}>
-                        {event.name}
-                      </option>
-                    ))}
+                    {this.state.events.map(event => {
+                      let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                      return (
+                        <option key={event.id} value={event.id}>
+                          {label}
+                        </option>
+                      )
+                    })}
                   </Field>
                   <ErrorMessage name="eventId" component="p" className="bk-error" />
                 </div>
@@ -190,14 +193,17 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
                 <div className="bk-form-row">
                   <label>Choose Events:</label>
                   <div>
-                    {this.state.events.map(event => (
-                      <Checkbox
-                        key={event.id}
-                        name="eventIds"
-                        value={event.id}
-                        label={event.name}
-                      />
-                    ))}
+                    {this.state.events.map(event => {
+                      let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                      return (
+                        <Checkbox
+                          key={event.id}
+                          name="eventIds"
+                          value={event.id}
+                          label={label}
+                        />)
+                      }
+                    )}
                   </div>
                   <ErrorMessage name="eventIds" component="p" className="bk-error" />
                 </div>

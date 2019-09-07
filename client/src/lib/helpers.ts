@@ -14,7 +14,11 @@ const convertToGWEI = (numberInWEI: string) => {
 };
 
 const convertFromGWEI = (numberInGWEI: string) => {
-  return String(Number(numberInGWEI) * 1000000000);
+  let numberGWEI: number = Number(numberInGWEI);
+  for (let i = 1; i < 10; i ++){
+    numberGWEI = Number(numberGWEI) * 10;
+  }
+  return String(numberGWEI);
 };
 
 export { isValidAddress, convertToGWEI, convertFromGWEI };
