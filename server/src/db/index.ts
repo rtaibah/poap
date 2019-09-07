@@ -76,3 +76,17 @@ export async function createEvent(event: Omit<PoapEvent, 'id'>): Promise<PoapEve
 }
 
 // export async function insertEvent
+
+export async function saveTransaction(hash: string, nonce: number, operation: string, params: string): Promise<boolean>{
+  let query = "INSERT INTO server_transactions(tx_hash, nonce, operation, arguments) VALUES (${hash}, ${nonce}, ${operation}, ${params})";
+  let values = {hash, nonce, operation, params: params.substr(0, 950)};
+  try{
+    const res = await db.result(query, values);
+    return res.rowCount === 1;
+  } catch (e) {
+    values.params = 'Error while saving transaction';
+    const res = await db.result(query, values);
+    return res.rowCount === 1;
+  }
+  return false;
+}

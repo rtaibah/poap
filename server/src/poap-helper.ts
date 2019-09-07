@@ -1,10 +1,9 @@
 import { Contract, ContractTransaction } from 'ethers';
-// import { verifyMessage } from 'ethers/utils';
 import { verifyMessage, toUtf8Bytes, keccak256 } from 'ethers/utils';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
-import { getEvent, getEvents, getPoapSettingByName } from './db';
+import { getEvent, getEvents, getPoapSettingByName, saveTransaction } from './db';
 import getEnv from './envs';
 import { Poap } from './poap-eth/Poap';
 import { VotePoap } from './poap-eth/VotePoap';
@@ -69,6 +68,10 @@ export async function mintToken(eventId: number, toAddr: Address) {
     gasPrice: await getCurrentGasPrice(),
   });
 
+  if(tx.hash){
+    await saveTransaction(tx.hash, tx.nonce, 'mintToken', JSON.stringify([eventId, toAddr]));
+  }
+
   console.log(`mintToken: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
@@ -84,6 +87,10 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[]) {
     gasLimit: estimateMintingGas(toAddr.length),
     gasPrice: await getCurrentGasPrice(),
   });
+
+  if(tx.hash){
+    await saveTransaction(tx.hash, tx.nonce, 'mintEventToManyUsers', JSON.stringify([eventId, toAddr]));
+  }
 
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
 
@@ -101,6 +108,10 @@ export async function mintUserToManyEvents(eventIds: number[], toAddr: Address) 
     gasPrice: await getCurrentGasPrice(),
   });
 
+  if(tx.hash){
+    await saveTransaction(tx.hash, tx.nonce, 'mintUserToManyEvents', JSON.stringify({eventIds, toAddr}));
+  }
+
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
@@ -116,6 +127,10 @@ export async function burnToken(tokenId: string | number): Promise<boolean> {
     gasLimit: estimateMintingGas(1),
     gasPrice: await getCurrentGasPrice(),
   });
+
+  if(tx.hash){
+    await saveTransaction(tx.hash, tx.nonce, 'burnToken', tokenId.toString());
+  }
 
   console.log(`burn: Transaction: ${tx.hash}`);
 
@@ -204,17 +219,19 @@ export async function relayedVoteCall(vote: Vote): Promise<boolean|ContractTrans
   const claimerMessage = vote.proposal.toString();
   let messageBytes = toUtf8Bytes(claimerMessage);
   const supposedClaimedAddress = verifyMessage(keccak256(messageBytes), vote.claimerSignature);
-  console.log('supposedClaimedAddress: ', supposedClaimedAddress);
   const isValid = supposedClaimedAddress === vote.claimer;
-  console.log('Is Valid? ', isValid );
 
   if(isValid){
     try {
       // @ts-ignore
-      const tx = await contract.functions.relayedVote(vote.claimer, vote.proposal, {
+      const { claimer, proposal } = vote;
+      const tx = await contract.functions.relayedVote(claimer, proposal, {
         gasLimit: 450000000
       });
-      console.log('Tx: ', tx);
+
+      if(tx.hash){
+        await saveTransaction(tx.hash, tx.nonce, 'relayedVote', JSON.stringify([claimer, proposal]));
+      }
       return tx;
     } catch (e) {
       console.log('Error: ', e);
