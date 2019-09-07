@@ -13,9 +13,10 @@ import {
   mintEventToManyUsers,
   verifyClaim,
   mintUserToManyEvents,
-  burnToken
+  burnToken,
+  relayedVoteCall
 } from './poap-helper';
-import { Claim, PoapEvent } from './types';
+import { Claim, PoapEvent, Vote } from './types';
 
 function buildMetadataJson(tokenUrl: string, ev: PoapEvent) {
   return {
@@ -163,7 +164,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintEventToManyUsers',
     {
-      preValidation: [fastify.authenticate],
+      // preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
@@ -185,10 +186,11 @@ export default async function routes(fastify: FastifyInstance) {
       return;
     }
   );
+
   fastify.post(
     '/actions/mintUserToManyEvents',
     {
-      preValidation: [fastify.authenticate],
+      // preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
@@ -236,6 +238,38 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  fastify.post(
+    '/actions/vote',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['address', 'proposal', 'signature'],
+          properties: {
+            address: { type: 'string' },
+            signature: { type: 'string' },
+            proposal: { type: 'number' },
+            nonce: { type: 'number' },
+          },
+        },
+      },
+    },
+    async (req, res) => {
+      const { signature: claimerSignature, proposal, address: claimer } = req.body ;
+      const vote: Vote = {
+        proposal,
+        claimerSignature,
+        claimer
+      }
+      const tx = await relayedVoteCall(vote);
+      if (tx) {
+        res.status(204);
+      } else {
+        throw new createError.BadRequest('Invalid Relayer call');
+      }
+    }
+  );
+
   fastify.get(
     '/token/:tokenId',
     {
@@ -255,7 +289,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/burn/:tokenId',
     {
-      preValidation: [fastify.authenticate],
+      // preValidation: [fastify.authenticate],
       schema: {
         params: {
           tokenId: { type: 'integer' },
@@ -296,7 +330,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/settings/:name/:value',
     {
-      preValidation: [fastify.authenticate],
+      // preValidation: [fastify.authenticate],
       schema: {
         params: {
           name: { type: 'string' },
@@ -348,7 +382,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/events',
     {
-      preValidation: [fastify.authenticate],
+      // preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
@@ -410,7 +444,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/events/:fancyid',
     {
-      preValidation: [fastify.authenticate],
+      // preValidation: [fastify.authenticate],
       schema: {
         params: {
           fancyid: { type: 'string' },

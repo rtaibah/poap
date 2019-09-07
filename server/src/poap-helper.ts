@@ -1,12 +1,14 @@
-import { Contract } from 'ethers';
-import { verifyMessage } from 'ethers/utils';
+import { Contract, ContractTransaction } from 'ethers';
+// import { verifyMessage } from 'ethers/utils';
+import { verifyMessage, toUtf8Bytes, keccak256 } from 'ethers/utils';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
 import { getEvent, getEvents, getPoapSettingByName } from './db';
 import getEnv from './envs';
 import { Poap } from './poap-eth/Poap';
-import { Address, Claim, TokenInfo } from './types';
+import { VotePoap } from './poap-eth/VotePoap';
+import { Address, Claim, TokenInfo, Vote } from './types';
 
 const Logger = pino();
 const ABI_DIR = join(__dirname, '../abi');
@@ -16,10 +18,16 @@ export function getABI(name: string) {
 }
 
 const ABI = getABI('Poap');
+const voteABI = getABI('VotePoap');
 
 export function getContract(): Poap {
   const env = getEnv();
   return new Contract(env.poapAddress, ABI, env.poapAdmin) as Poap;
+}
+
+export function getVoteContract(): VotePoap {
+  const env = getEnv();
+  return new Contract(env.poapVoteAddress, voteABI, env.poapAdmin) as VotePoap;
 }
 
 /**
@@ -158,7 +166,7 @@ export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo>
   };
 }
 
-export async function verifyClaim(claim: Claim): Promise<boolean> {
+export async function verifyClaim(claim: Claim): Promise<string|boolean> {
   const event = await getEvent(claim.eventId);
 
   if (!event) {
@@ -188,4 +196,29 @@ export async function verifyClaim(claim: Claim): Promise<boolean> {
   }
 
   return true;
+}
+
+export async function relayedVoteCall(vote: Vote): Promise<boolean|ContractTransaction> {
+  const contract = getVoteContract();
+  // const claimerMessage = JSON.stringify([vote.proposal,]);
+  const claimerMessage = vote.proposal.toString();
+  let messageBytes = toUtf8Bytes(claimerMessage);
+  const supposedClaimedAddress = verifyMessage(keccak256(messageBytes), vote.claimerSignature);
+  console.log('supposedClaimedAddress: ', supposedClaimedAddress);
+  const isValid = supposedClaimedAddress === vote.claimer;
+  console.log('Is Valid? ', isValid );
+
+  if(isValid){
+    try {
+      // @ts-ignore
+      const tx = await contract.functions.relayedVote(vote.claimer, vote.proposal, {
+        gasLimit: 450000000
+      });
+      console.log('Tx: ', tx);
+      return tx;
+    } catch (e) {
+      console.log('Error: ', e);
+    }
+  }
+  return false;
 }

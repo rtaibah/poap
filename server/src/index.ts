@@ -5,7 +5,7 @@ import fastifyCors from 'fastify-cors';
 // @ts-ignore
 import fastifyCompress from 'fastify-compress';
 
-import authPlugin from './auth';
+// import authPlugin from './auth';
 import routes from './routes';
 
 const fastify = fastifyFactory({
@@ -19,7 +19,7 @@ fastify.register(fastifyHelmet, {
 fastify.register(fastifyCors, {});
 fastify.register(fastifyCompress, {});
 
-fastify.register(authPlugin);
+// fastify.register(authPlugin);
 fastify.register(routes);
 
 const start = async () => {

@@ -6,16 +6,18 @@ export interface EnvVariables {
   provider: Provider;
   poapAdmin: Wallet;
   poapAddress: Address;
+  poapVoteAddress: Address;
 }
 
 function getDevelopmentVariables(): EnvVariables {
-  const provider: Provider = new JsonRpcProvider('http://localhost:9545');
+  const provider: Provider = new JsonRpcProvider('http://localhost:7545');
 
   return {
     provider,
-    poapAddress: '0xBe0B0f08A599F07699E98A9D001084e97b9a900A',
+    poapAddress: '0xd237716b056d5BF44181c471A7c633583b552D78',
+    poapVoteAddress: '0x9eeDe127d72fe7851CdB3182b0b21E883408EB46',
     poapAdmin: new Wallet(
-      '0xb0057716d5917badaf911b193b12b910811c1497b5bada8d7711f758981c3773',
+      'cdf2df30545e16094b4d62fa1624de9a44432547ce3f582de8f066c42abbc4ee',
       provider
     ),
   };
@@ -39,6 +41,7 @@ function getVariables(): EnvVariables {
   return {
     provider,
     poapAddress: ensureEnvVariable('POAP_CONTRACT_ADDR'),
+    poapVoteAddress: ensureEnvVariable('POAP_VOTE_CONTRACT_ADDR'),
     poapAdmin: new Wallet(ownerPK, provider),
   };
 }
