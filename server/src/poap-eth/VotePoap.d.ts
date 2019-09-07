@@ -12,5 +12,6 @@ export class VotePoap extends Contract {
       _proposal: number,
       overrides?: TransactionOverrides
     ): Promise<ContractTransaction>;
-
+  }
+  
 }

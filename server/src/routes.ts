@@ -164,7 +164,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintEventToManyUsers',
     {
-      // preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
@@ -382,7 +382,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/events',
     {
-      // preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
@@ -444,7 +444,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/events/:fancyid',
     {
-      // preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         params: {
           fancyid: { type: 'string' },
