@@ -41,3 +41,12 @@ export interface ClaimProof {
   claimer: Address;
   proof: string;
 }
+
+export interface Vote extends POAPVote {
+  claimerSignature: string;
+}
+
+export interface POAPVote {
+  claimer: Address;
+  proposal: number;
+}
