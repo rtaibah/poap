@@ -190,7 +190,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintUserToManyEvents',
     {
-      // preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
@@ -289,7 +289,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/burn/:tokenId',
     {
-      // preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         params: {
           tokenId: { type: 'integer' },
@@ -330,7 +330,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/settings/:name/:value',
     {
-      // preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         params: {
           name: { type: 'string' },
