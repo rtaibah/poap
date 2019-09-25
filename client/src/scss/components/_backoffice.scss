@@ -146,3 +146,36 @@
   cursor: not-allowed;
   color: $color-secondary;
 }
+
+.address-table{
+  .row {
+
+    padding: 10px 2px;
+
+    &.table-header {
+      font-weight: bold;
+      border-bottom: 1px solid #d2d2d2;
+    }
+
+    .center {
+      text-align: center;
+    }
+  }
+
+  .addresses-row{
+    .capitalize {
+      text-transform: capitalize;
+    }
+    .even {
+      background: white;
+      border: 1px solid #d2d2d2;
+    }
+
+    .edit-icon {
+      position: absolute;
+      right: 10px;
+      cursor: pointer;
+      width: 20px;
+    }
+  }
+}

@@ -73,7 +73,7 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
     }
 
     return (
-      <div>
+      <div className={"bk-container"}>
         <Formik
           initialValues={this.state.initialValues}
           onSubmit={this.onSubmit}
@@ -182,7 +182,7 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
 
     console.log(this.state.initialValues);
     return (
-      <div>
+      <div className={"bk-container"}>
         <Formik
           initialValues={this.state.initialValues}
           onSubmit={this.onSubmit}
