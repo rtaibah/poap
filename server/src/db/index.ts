@@ -24,10 +24,10 @@ export async function getTransactions(limit:number, offset:number): Promise<Poap
   return res;
 }
 
-export async function getTotalTransactions(): Promise<TransactionsCount> {
+export async function getTotalTransactions(): Promise<number> {
   let query = 'SELECT COUNT(*) FROM server_transactions'
   const res = await db.result(query);
-  return res.rows[0];
+  return res.rows[0].count;
 }
 
 export async function getPoapSettings(): Promise<PoapSetting[]> {

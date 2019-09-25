@@ -110,7 +110,3 @@ export interface POAPVote {
   claimer: Address;
   proposal: number;
 }
-
-export interface TransactionsCount {
-  count: number;
-}
