@@ -207,6 +207,13 @@ export async function createEvent(event: PoapEvent) {
 }
 
 export async function getSigners(): Promise<AdminAddress[]> {
-  return fetchJson('http://www.mocky.io/v2/5d8ba987350000e004d4718d');
-  // return fetchJson(`${API_BASE}/signers`);
+  // return fetchJson('http://www.mocky.io/v2/5d8ba987350000e004d4718d');
+  return fetchJson(`${API_BASE}/signers`);
+}
+
+export function setSigner(id: number, gasPrice: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/signers`, {
+    method: 'PUT',
+    body: JSON.stringify({id, gas_price: gasPrice})
+  });
 }
