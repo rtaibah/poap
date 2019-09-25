@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, PoapTransaction, TransactionsCount } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, PoapTransaction } from '../types';
 
 const db = pgPromise()({
   host: process.env.INSTANCE_CONNECTION_NAME ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}` : 'localhost',
@@ -30,10 +30,10 @@ export async function getTransactions(limit:number, offset:number): Promise<Poap
   return res;
 }
 
-export async function getTotalTransactions(): Promise<TransactionsCount> {
+export async function getTotalTransactions(): Promise<number> {
   let query = 'SELECT COUNT(*) FROM server_transactions'
   const res = await db.result(query);
-  return res.rows[0];
+  return res.rows[0].count;
 }
 
 export async function getPoapSettings(): Promise<PoapSetting[]> {
