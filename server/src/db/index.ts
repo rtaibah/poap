@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, PoapTransaction, TransactionsCount } from '../types';
 
 const db = pgPromise()({
   host: process.env.INSTANCE_CONNECTION_NAME ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}` : 'localhost',
@@ -13,6 +13,27 @@ function replaceDates(event: PoapEvent): PoapEvent {
   event.start_date = format(new Date(event.start_date), 'MM/DD/YYYY');
   event.end_date = format(new Date(event.end_date), 'MM/DD/YYYY');
   return event;
+}
+
+export async function getEvents(): Promise<PoapEvent[]> {
+  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events ORDER BY start_date DESC');
+
+  return res.map(replaceDates);
+}
+
+export async function getTransactions(limit:number, offset:number): Promise<PoapTransaction[]> {
+  let query = 'SELECT * FROM server_transactions ORDER BY created_date DESC'
+  if(limit > 0) {
+    query = query + ' LIMIT ' + limit + ' OFFSET ' + offset;
+  }
+  const res = await db.manyOrNone<PoapTransaction>(query);
+  return res;
+}
+
+export async function getTotalTransactions(): Promise<TransactionsCount> {
+  let query = 'SELECT COUNT(*) FROM server_transactions'
+  const res = await db.result(query);
+  return res.rows[0];
 }
 
 export async function getPoapSettings(): Promise<PoapSetting[]> {
@@ -52,12 +73,6 @@ export async function getAvailableHelperSigner(): Promise<null | Signer> {
 export async function getPendingTxs(): Promise<Transaction[]> {
   const res = await db.manyOrNone<Transaction>("SELECT * FROM server_transactions WHERE status = 'pending' ORDER BY id ASC");
   return res;
-}
-
-export async function getEvents(): Promise<PoapEvent[]> {
-  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events ORDER BY start_date DESC');
-
-  return res.map(replaceDates);
 }
 
 export async function getEvent(id: number): Promise<null | PoapEvent> {
