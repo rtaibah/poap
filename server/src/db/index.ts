@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, PoapTransaction } from '../types';
 
 const db = pgPromise()({
   host: process.env.INSTANCE_CONNECTION_NAME ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}` : 'localhost',
@@ -15,6 +15,12 @@ function replaceDates(event: PoapEvent): PoapEvent {
   return event;
 }
 
+export async function getTotalTransactions(): Promise<number> {
+  let query = 'SELECT COUNT(*) FROM server_transactions'
+  const res = await db.result(query);
+  return res.rows[0].count;
+}
+
 export async function getTransactions(limit:number, offset:number): Promise<PoapTransaction[]> {
   let query = 'SELECT * FROM server_transactions ORDER BY created_date DESC'
   if(limit > 0) {
@@ -22,12 +28,6 @@ export async function getTransactions(limit:number, offset:number): Promise<Poap
   }
   const res = await db.manyOrNone<PoapTransaction>(query);
   return res;
-}
-
-export async function getTotalTransactions(): Promise<number> {
-  let query = 'SELECT COUNT(*) FROM server_transactions'
-  const res = await db.result(query);
-  return res.rows[0].count;
 }
 
 export async function getPoapSettings(): Promise<PoapSetting[]> {
