@@ -3,7 +3,7 @@ import { FastifyInstance } from 'fastify';
 import createError from 'http-errors';
 import {
   getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
-  getPoapSettingByName, getPoapSettings, updatePoapSettingByName
+  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, getTransactions, getTotalTransactions
 } from './db';
 
 import {
@@ -515,4 +515,40 @@ export default async function routes(fastify: FastifyInstance) {
       return;
     }
   );
+
+  //********************************************************************
+  // TRANSACTIONS
+  //********************************************************************
+
+  fastify.get(
+    '/transactions',
+    {
+      // preValidation: [fastify.authenticate],
+      schema: {
+        querystring: {
+          limit: { type: 'number' },
+          offset: { type: 'number' },
+        },
+      }
+    },
+    async (req, res) => {
+      const limit = parseInt(req.query.limit) || 0
+      const offset = parseInt(req.query.offset) || 0
+
+      const transactions = await getTransactions(limit, offset);
+      const totalTransactions = await getTotalTransactions();
+
+      if (!transactions) {
+        return new createError.NotFound('Invalid Event');
+      }
+      return {
+        limit: limit,
+        offset: offset,
+        total: totalTransactions,
+        transactions: transactions
+      }
+    }
+  );
+
 }
+

@@ -15,6 +15,21 @@ function replaceDates(event: PoapEvent): PoapEvent {
   return event;
 }
 
+export async function getTransactions(limit:number, offset:number): Promise<PoapTransaction[]> {
+  let query = 'SELECT * FROM server_transactions ORDER BY created_date DESC'
+  if(limit > 0) {
+    query = query + ' LIMIT ' + limit + ' OFFSET ' + offset;
+  }
+  const res = await db.manyOrNone<PoapTransaction>(query);
+  return res;
+}
+
+export async function getTotalTransactions(): Promise<TransactionsCount> {
+  let query = 'SELECT COUNT(*) FROM server_transactions'
+  const res = await db.result(query);
+  return res.rows[0];
+}
+
 export async function getPoapSettings(): Promise<PoapSetting[]> {
   const res = await db.manyOrNone<PoapSetting>('SELECT * FROM poap_settings ORDER BY id DESC');
   return res;
