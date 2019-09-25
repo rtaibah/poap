@@ -26,6 +26,7 @@ export async function getTransactions(limit:number, offset:number): Promise<Tran
   if(limit > 0) {
     query = query + ' LIMIT ' + limit + ' OFFSET ' + offset;
   }
+
   const res = await db.manyOrNone<Transaction>(query);
   return res;
 }

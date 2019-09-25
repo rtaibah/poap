@@ -540,7 +540,7 @@ export default async function routes(fastify: FastifyInstance) {
       const totalTransactions = await getTotalTransactions();
 
       if (!transactions) {
-        return new createError.NotFound('Transactions not found');
+        return new createError.NotFound('Invalid Event');
       }
       return {
         limit: limit,
