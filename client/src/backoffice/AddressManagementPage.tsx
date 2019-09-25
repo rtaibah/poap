@@ -2,9 +2,11 @@ import React, { FC, useState, useEffect } from 'react';
 import { Formik, FormikActions, Form, Field, FieldProps, ErrorMessage } from 'formik';
 import classNames from 'classnames';
 
+/* Libraries */
+import ReactModal from 'react-modal';
 /* Helpers */
 import { GasPriceSchema } from '../lib/schemas';
-import { getSigners, AdminAddress } from '../api';
+import { getSigners, setSigner, AdminAddress } from '../api';
 import { convertToGWEI, convertFromGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
@@ -16,12 +18,21 @@ type GasPriceFormValues = {
   gasPrice: string;
 };
 
+ReactModal.setAppElement('#root');
+
 const AddressManagementPage: FC = () => {
   const [isFetchingAddresses, setIsFetchingAddresses] = useState<null | boolean>(null);
   const [addresses, setAddresses] = useState<null | AdminAddress[]>(null);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [selectedAddress, setSelectedAddress] = useState<null | AdminAddress>(null);
 
   useEffect(() => {
+    fetchSigners();
+  }, []);
+
+  const fetchSigners = () => {
     setIsFetchingAddresses(true);
+    setAddresses(null);
 
     getSigners()
       .then(addresses => {
@@ -30,8 +41,37 @@ const AddressManagementPage: FC = () => {
       })
       .catch(error => console.error(error))
       .finally(() => setIsFetchingAddresses(false));
-  }, []);
+  }
 
+  const handleFormSubmit = async (
+    values: GasPriceFormValues,
+    actions: FormikActions<GasPriceFormValues>
+  ) => {
+    if (!selectedAddress) return;
+    try {
+      actions.setStatus(null);
+      actions.setSubmitting(true);
+
+      const gasPriceInWEI = convertFromGWEI(values.gasPrice);
+      await setSigner(selectedAddress.id, gasPriceInWEI);
+      fetchSigners();
+      closeEditModal();
+    } catch (error) {
+      actions.setStatus({ ok: false, msg: `Gas price couldn't be changed` });
+    } finally {
+      actions.setSubmitting(false);
+    }
+  };
+
+  const openEditModal = (address: AdminAddress) => {
+    setModalOpen(true);
+    setSelectedAddress(address);
+  };
+
+  const closeEditModal = () => {
+    setModalOpen(false);
+    setSelectedAddress(null);
+  };
 
 
   return (
@@ -57,12 +97,61 @@ const AddressManagementPage: FC = () => {
               <div className={'col-xs-2 center'}>{address.balance}</div>
               <div className={'col-xs-2 center'}>
                 {convertToGWEI(address.gas_price)}
-                <img src={edit} alt={'Edit'} className={'edit-icon'} />
+                <img src={edit} alt={'Edit'} className={'edit-icon'} onClick={() => openEditModal(address)} />
               </div>
             </div>
           )
         })}
       </div>
+      <ReactModal
+        isOpen={modalOpen}
+        shouldFocusAfterRender={true}
+      >
+        <div>
+          <h3>Edit Gas Price</h3>
+          {selectedAddress &&
+            <Formik
+              enableReinitialize
+              onSubmit={handleFormSubmit}
+              initialValues={{ gasPrice: convertToGWEI(selectedAddress.gas_price) }}
+              validationSchema={GasPriceSchema}
+            >
+              {({ dirty, isValid, isSubmitting, status, touched }) => {
+                return (
+                  <Form className="price-gas-modal-form">
+                    <Field
+                      name="gasPrice"
+                      render={({ field, form }: FieldProps) => {
+                        return (
+                          <input
+                            type="text"
+                            autoComplete="off"
+                            className={classNames(!!form.errors[field.name] && 'error')}
+                            placeholder={'Gas price in GWEI'}
+                            {...field}
+                          />
+                        );
+                      }}
+                    />
+                    <ErrorMessage name="gasPrice" component="p" className="bk-error"/>
+                    {status && (
+                      <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>
+                    )}
+                    <SubmitButton
+                      text="Modify gas price"
+                      isSubmitting={isSubmitting}
+                      canSubmit={isValid && dirty}
+                    />
+                    <div onClick={closeEditModal} className={'close-modal'}>
+                      Cancel
+                    </div>
+                  </Form>
+                );
+              }}
+            </Formik>
+          }
+        </div>
+      </ReactModal>
     </div>
   );
 };

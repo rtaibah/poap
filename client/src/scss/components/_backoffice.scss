@@ -179,3 +179,27 @@
     }
   }
 }
+
+.price-gas-modal-form {
+  text-align: center;
+  input {
+    text-align: center;
+    border: 1px solid $color-primary;
+  }
+
+  .close-modal {
+    font-weight: bold;
+    padding: 10px;
+    display: inline-block;
+    cursor: pointer;
+  }
+}
+
+.ReactModal__Content--after-open {
+  position: relative !important;
+  margin: auto;
+  width: 50%;
+  top: 20vh !important;
+  max-width: 800px;
+  min-width: 350px;
+}
