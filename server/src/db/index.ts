@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, PoapTransaction, TransactionsCount } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, PoapTransaction } from '../types';
 
 const db = pgPromise()({
   host: process.env.INSTANCE_CONNECTION_NAME ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}` : 'localhost',
