@@ -15,6 +15,12 @@ function replaceDates(event: PoapEvent): PoapEvent {
   return event;
 }
 
+export async function getEvents(): Promise<PoapEvent[]> {
+  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events ORDER BY start_date DESC');
+
+  return res.map(replaceDates);
+}
+
 export async function getTransactions(limit:number, offset:number): Promise<Transaction[]> {
   let query = 'SELECT * FROM server_transactions ORDER BY created_date DESC'
   if(limit > 0) {
@@ -35,7 +41,6 @@ export async function getSigners(): Promise<Signer[]> {
   const res = await db.manyOrNone<Signer>('SELECT * FROM signers ORDER BY created_date DESC');
   return res;
 }
-
 
 export async function getPoapSettings(): Promise<PoapSetting[]> {
   const res = await db.manyOrNone<PoapSetting>('SELECT * FROM poap_settings ORDER BY id DESC');
@@ -79,12 +84,6 @@ export async function getTransaction(tx_hash: string): Promise<null | Transactio
 export async function getPendingTxs(): Promise<Transaction[]> {
   const res = await db.manyOrNone<Transaction>("SELECT * FROM server_transactions WHERE status = 'pending' ORDER BY id ASC");
   return res;
-}
-
-export async function getEvents(): Promise<PoapEvent[]> {
-  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events ORDER BY start_date DESC');
-
-  return res.map(replaceDates);
 }
 
 export async function getEvent(id: number): Promise<null | PoapEvent> {
