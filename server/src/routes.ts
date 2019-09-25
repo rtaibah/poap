@@ -239,6 +239,24 @@ export default async function routes(fastify: FastifyInstance) {
   );
 
   fastify.post(
+    '/actions/qr',
+    {
+    },
+    async (req, res) => {
+      // TODO - validate QR, claimer, event, etc.
+      const isValid = true
+      const claimer = '0xeEF6cc9bEA0ee9A508127Af5269209Aeb45769DE'
+      const eventId = 3
+      if (isValid) {
+        await mintToken(eventId, claimer);
+        res.status(204);
+      } else {
+        throw new createError.BadRequest('Invalid QR');
+      }
+    }
+  );
+
+  fastify.post(
     '/actions/vote',
     {
       schema: {
