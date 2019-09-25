@@ -43,6 +43,15 @@ export interface PoapEvent {
   end_date: string;
 }
 
+export interface PoapTransaction {
+  id: number;
+  tx_hash: string;
+  nonce: number;
+  operation: string;
+  arguments: string;
+  created_date: string;
+}
+
 export interface PoapSetting {
   id: number;
   name: string;
