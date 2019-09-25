@@ -38,6 +38,14 @@ export interface PoapSetting {
   type: string;
   value: string;
 }
+export interface AdminAddress {
+  id: number;
+  signer: Address;
+  role: string;
+  gas_price: string;
+  balance: string;
+  created_date: string;
+}
 
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
 
@@ -196,4 +204,9 @@ export async function createEvent(event: PoapEvent) {
     body: JSON.stringify(event),
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+export async function getSigners(): Promise<AdminAddress[]> {
+  return fetchJson('http://www.mocky.io/v2/5d8ba987350000e004d4718d');
+  // return fetchJson(`${API_BASE}/signers`);
 }

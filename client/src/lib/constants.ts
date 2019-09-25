@@ -1,3 +1,20 @@
 const ADDRESS_REGEXP = /^0x[0-9a-fA-F]{40}$/;
 
-export { ADDRESS_REGEXP };
+const ROUTES = {
+  home: '/',
+  scan: '/scan/:account',
+  token: '/token/:account',
+  callback: '/callback',
+  claimPage: '/claim/:event',
+  admin: '/admin',
+  issueForEvent: '/admin/issue-for-event',
+  issueForUser: '/admin/issue-for-user',
+  events: '/admin/events',
+  eventsNew: '/admin/events/new',
+  event: '/admin/events/:eventId',
+  minters: '/admin/minters',
+  burn: '/admin/burn',
+  addressManagement: '/admin/address-management'
+};
+
+export { ADDRESS_REGEXP, ROUTES };

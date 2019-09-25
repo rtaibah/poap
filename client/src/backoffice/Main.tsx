@@ -5,12 +5,14 @@ import { slide as Menu } from 'react-burger-menu';
 
 /* Assets */
 import PoapLogo from '../images/POAP.svg';
+/* Constants */
+import { ROUTES } from '../lib/constants';
 /* Components */
 import { AuthContext } from '../auth';
 import { EventsPage } from './EventsPage';
 import { BurnPage } from './BurnPage';
 import { IssueForEventPage, IssueForUserPage } from './IssuePage';
-import { GasPricePage } from './GasPricePage';
+import { AddressManagementPage } from './AddressManagementPage';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 
@@ -22,24 +24,24 @@ const NavigationMenu = withRouter(({ history }) => {
   return (
     <Menu isOpen={isOpen} onStateChange={state => setIsOpen(state.isOpen)} right disableAutoFocus>
       <h2>Issue Badges:</h2>
-      <Link to="/admin/issue-for-event" onClick={closeMenu}>
+      <Link to={ROUTES.issueForEvent} onClick={closeMenu}>
         Many Users
       </Link>
-      <Link to="/admin/issue-for-user" onClick={closeMenu}>
+      <Link to={ROUTES.issueForUser} onClick={closeMenu}>
         Many Events
       </Link>
 
       <h2>Other Tasks</h2>
-      <Link to="/admin/gas-price" onClick={closeMenu}>
-        Change Gas Price
+      <Link to={ROUTES.addressManagement} onClick={closeMenu}>
+        Manage Addresses
       </Link>
-      <Link to="/admin/events" onClick={closeMenu}>
+      <Link to={ROUTES.events} onClick={closeMenu}>
         Manage Events
       </Link>
-      <Link to="/admin/burn" onClick={closeMenu}>
+      <Link to={ROUTES.burn} onClick={closeMenu}>
         Burn Tokens
       </Link>
-      {/* <Link to="/admin/minters" onClick={closeMenu}>
+      {/* <Link to={ROUTES.minters} onClick={closeMenu}>
         Manage Minters
       </Link> */}
 
@@ -75,19 +77,17 @@ export const BackOffice: React.FC = () => (
     </header>
     <main className="app-content">
       <div className="container">
-        <div className="bk-container">
-          <Route path="/admin/issue-for-event" component={IssueForEventPage} />
-          <Route path="/admin/issue-for-user" component={IssueForUserPage} />
-          <Route path="/admin/events" component={EventsPage} />
-          <Route path="/admin/minters" component={MintersPage} />
-          <Route path="/admin/burn" component={BurnPage} />
-          <Route path="/admin/gas-price" component={GasPricePage} />
-          <Route
-            exact
-            path="/admin/"
-            render={() => <div>Choose an option from the right side menu</div>}
-          />
-        </div>
+        <Route path={ROUTES.issueForEvent} component={IssueForEventPage} />
+        <Route path={ROUTES.issueForUser} component={IssueForUserPage} />
+        <Route path={ROUTES.events} component={EventsPage} />
+        <Route path={ROUTES.minters} component={MintersPage} />
+        <Route path={ROUTES.burn} component={BurnPage} />
+        <Route path={ROUTES.addressManagement} component={AddressManagementPage} />
+        <Route
+          exact
+          path={ROUTES.admin}
+          render={() => <div>Choose an option from the right side menu</div>}
+        />
       </div>
     </main>
   </>

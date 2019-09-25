@@ -21,4 +21,9 @@ const convertFromGWEI = (numberInGWEI: string) => {
   return String(numberGWEI);
 };
 
-export { isValidAddress, convertToGWEI, convertFromGWEI };
+const reduceAddress = (address: string) => {
+  if (address.length < 10) return address
+  return address.slice(0, 6) + '\u2026' + address.slice(-4)
+};
+
+export { isValidAddress, convertToGWEI, convertFromGWEI, reduceAddress };
