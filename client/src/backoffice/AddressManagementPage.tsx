@@ -75,7 +75,7 @@ const AddressManagementPage: FC = () => {
 
 
   return (
-    <div className={'address-table'}>
+    <div className={'admin-table'}>
       <h2>Admin addresses management</h2>
       <div className={'row table-header'}>
         <div className={'col-xs-1 center'}>#</div>
@@ -84,7 +84,7 @@ const AddressManagementPage: FC = () => {
         <div className={'col-xs-2 center'}>Balance (ETH)</div>
         <div className={'col-xs-2 center'}>Gas Price (GWei)</div>
       </div>
-      <div className={'addresses-row'}>
+      <div className={'admin-table-row'}>
         {isFetchingAddresses && <Loading />}
         {addresses && addresses.map((address, i) => {
           return (

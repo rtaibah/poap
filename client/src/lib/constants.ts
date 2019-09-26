@@ -14,7 +14,14 @@ const ROUTES = {
   event: '/admin/events/:eventId',
   minters: '/admin/minters',
   burn: '/admin/burn',
-  addressManagement: '/admin/address-management'
+  addressManagement: '/admin/address-management',
+  transactions: '/admin/transactions'
 };
 
-export { ADDRESS_REGEXP, ROUTES };
+const TX_STATUS = {
+  failed: 'failed',
+  passed: 'passed',
+  pending: 'pending'
+}
+
+export { ADDRESS_REGEXP, ROUTES, TX_STATUS };
