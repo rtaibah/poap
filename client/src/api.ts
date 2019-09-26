@@ -22,7 +22,6 @@ export interface PoapEvent {
   start_date: string;
   end_date: string;
 }
-
 export interface Claim extends ClaimProof {
   claimerSignature: string;
 }
@@ -45,6 +44,23 @@ export interface AdminAddress {
   gas_price: string;
   balance: string;
   created_date: string;
+}
+export interface Transaction {
+  id: number;
+  tx_hash: string;
+  nonce: number;
+  operation: string;
+  arguments: string;
+  created_date: string;
+  gas_price: string;
+  signer: string;
+  status: string;
+}
+export interface PaginatedTransactions {
+  limit: number;
+  offset: number;
+  total: number;
+  transactions: Transaction[]
 }
 
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
@@ -216,4 +232,9 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
     method: 'PUT',
     body: JSON.stringify({id, gas_price: gasPrice})
   });
+}
+
+export function getTransactions(limit: number, offset: number): Promise<PaginatedTransactions> {
+  // return fetchJson(`http://www.mocky.io/v2/5d8d03582e00005100abde66?limit=${limit}&offset=${offset}`);
+  return fetchJson(`${API_BASE}/transactions?limit=${limit}&offset=${offset}`);
 }

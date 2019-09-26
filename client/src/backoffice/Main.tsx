@@ -13,6 +13,7 @@ import { EventsPage } from './EventsPage';
 import { BurnPage } from './BurnPage';
 import { IssueForEventPage, IssueForUserPage } from './IssuePage';
 import { AddressManagementPage } from './AddressManagementPage';
+import { TransactionsPage } from './TransactionsPage';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 
@@ -40,6 +41,9 @@ const NavigationMenu = withRouter(({ history }) => {
       </Link>
       <Link to={ROUTES.burn} onClick={closeMenu}>
         Burn Tokens
+      </Link>
+      <Link to={ROUTES.transactions} onClick={closeMenu}>
+        Transactions
       </Link>
       {/* <Link to={ROUTES.minters} onClick={closeMenu}>
         Manage Minters
@@ -83,6 +87,7 @@ export const BackOffice: React.FC = () => (
         <Route path={ROUTES.minters} component={MintersPage} />
         <Route path={ROUTES.burn} component={BurnPage} />
         <Route path={ROUTES.addressManagement} component={AddressManagementPage} />
+        <Route path={ROUTES.transactions} component={TransactionsPage} />
         <Route
           exact
           path={ROUTES.admin}
