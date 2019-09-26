@@ -3,7 +3,7 @@ import { FastifyInstance } from 'fastify';
 import createError from 'http-errors';
 import {
   getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
-  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, getTransactions, getTotalTransactions
+  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, getTransactions, getTotalTransactions, getSigners, updateSignerGasPrice
 } from './db';
 
 import {
@@ -14,7 +14,8 @@ import {
   verifyClaim,
   mintUserToManyEvents,
   burnToken,
-  relayedVoteCall
+  relayedVoteCall,
+  getAddressBalance
 } from './poap-helper';
 import { Claim, PoapEvent, Vote } from './types';
 
@@ -348,7 +349,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/settings/:name/:value',
     {
-      preValidation: [fastify.authenticate],
+      //preValidation: [fastify.authenticate],
       schema: {
         params: {
           name: { type: 'string' },
@@ -528,5 +529,40 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
-}
+  fastify.get('/signers', {},
+    async (req, res) => {
+      const signers = await getSigners();
 
+      if (!signers) {
+        return new createError.NotFound('Signers not found');
+      }
+
+      return await Promise.all(signers.map(signer => getAddressBalance(signer)))
+    }
+  );
+
+  fastify.put(
+    '/signers/:id',
+    {
+      preValidation: [fastify.authenticate],
+      schema: {
+        params: {
+          id: { type: 'string' },
+        },
+        body: {
+          type: 'object',
+          required: ['gas_price', ],
+        },
+      },
+    },
+    async (req, res) => {
+      const isOk = await updateSignerGasPrice(req.params.id, req.body.gas_price);
+      if (!isOk) {
+        return new createError.NotFound('Invalid signer');
+      }
+      res.status(204);
+      return;
+    }
+  );
+
+}

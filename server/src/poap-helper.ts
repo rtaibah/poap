@@ -1,6 +1,6 @@
-import { Contract, ContractTransaction, Wallet } from 'ethers';
-import { verifyMessage, toUtf8Bytes, keccak256 } from 'ethers/utils';
-import { readFileSync } from 'fs';
+import { Contract, ContractTransaction, Wallet, getDefaultProvider } from 'ethers';
+import { verifyMessage, toUtf8Bytes, keccak256, } from 'ethers/utils';
+import { readFileSync, } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
 import { getEvent, getEvents, getPoapSettingByName, saveTransaction, getSigner, getAvailableHelperSigner } from './db';
@@ -277,4 +277,13 @@ export async function relayedVoteCall(vote: Vote): Promise<boolean|ContractTrans
     }
   }
   return false;
+}
+
+export async function getAddressBalance(signer: Signer): Promise<Signer> {
+  let provider = getDefaultProvider();
+  let balance = await provider.getBalance(signer.signer);
+
+  signer.balance = balance.toString();
+
+  return signer
 }
