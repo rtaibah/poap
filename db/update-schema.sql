@@ -13,7 +13,7 @@ ALTER TABLE server_transactions
     ADD COLUMN status VARCHAR (100) NOT NULL default 'pending',
     ADD COLUMN gas_price VARCHAR (1000) NOT NULL;
 
-
+/* CREATE TABLE signers */
 CREATE TABLE signers (
   "id" SERIAL PRIMARY KEY,
   "signer" varchar(256) UNIQUE not null,
