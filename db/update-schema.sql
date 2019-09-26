@@ -21,3 +21,16 @@ CREATE TABLE signers (
   "gas_price" varchar(1000) not null,
   "created_date" timestamp with time zone not null default now()
 );
+
+/* CREATE TABLE qr_claims */
+CREATE TABLE qr_claims (
+  "id" SERIAL PRIMARY KEY,
+  "qr_hash" varchar(256) UNIQUE not null,
+  "tx_hash" varchar(256) UNIQUE,
+  "event_id" integer not null,
+  "beneficiary" varchar(256),
+  "signer" varchar(256),
+  "claimed" boolean default false,
+  "claimed_date" timestamp with time zone,
+  "created_date" timestamp with time zone not null default now()
+);
