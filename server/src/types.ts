@@ -52,7 +52,7 @@ export interface PoapSetting {
 
 export interface Signer {
   id: number;
-  signer: string;
+  signer: Address;
   role: SignerRole;
   gas_price: string;
   created_date: Date;
@@ -63,11 +63,23 @@ export interface Transaction {
   id: number;
   tx_hash: string;
   nonce: number;
-  signer: string;
+  signer: Address;
   operation: OperationType;
   arguments: string;
   status: TransactionStatus;
   gas_price: string;
+  created_date: Date;
+}
+
+export interface ClaimQR {
+  id: number;
+  qr_hash: string;
+  tx_hash: null | string;
+  event_id: number;
+  beneficiary: null | Address;
+  signer: null | Address;
+  claimed: boolean;
+  claimed_date: Date;
   created_date: Date;
 }
 
