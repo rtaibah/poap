@@ -147,7 +147,7 @@
   color: $color-secondary;
 }
 
-.address-table{
+.admin-table{
   .row {
 
     padding: 10px 2px;
@@ -162,7 +162,7 @@
     }
   }
 
-  .addresses-row{
+  .admin-table-row{
     .capitalize {
       text-transform: capitalize;
     }
@@ -177,7 +177,37 @@
       cursor: pointer;
       width: 20px;
     }
+    .status-icon {
+      width: 20px;
+    }
   }
+
+  .pagination {
+    text-align: center;
+    margin-top: 20px;
+    ul {
+      display: inline-block;
+      padding-left: 15px;
+      padding-right: 15px;
+
+      li {
+        display: inline-block;
+        margin: 0 5px;
+        padding: 10px 15px;
+        border-radius: 30px;
+
+        a {
+          cursor: pointer;
+        }
+
+        &.active{
+          background: white;
+        }
+      }
+    }
+  }
+
+
 }
 
 .price-gas-modal-form {
