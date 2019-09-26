@@ -1,17 +1,13 @@
 import React, { FC, useState, useEffect } from 'react';
-import { Formik, FormikActions, Form, Field, FieldProps, ErrorMessage } from 'formik';
-import classNames from 'classnames';
 
 /* Libraries */
 import ReactPaginate from 'react-paginate';
 
 /* Helpers */
 import { TX_STATUS } from '../lib/constants';
-import { GasPriceSchema } from '../lib/schemas';
 import { Transaction, getTransactions } from '../api';
-import { convertToGWEI, convertFromGWEI, reduceAddress } from '../lib/helpers';
+import { convertToGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
-import { SubmitButton } from '../components/SubmitButton';
 import { Loading } from '../components/Loading';
 /* Assets */
 import gas from '../images/gas-station.svg';
