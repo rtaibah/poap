@@ -43,15 +43,6 @@ export interface PoapEvent {
   end_date: string;
 }
 
-export interface PoapTransaction {
-  id: number;
-  tx_hash: string;
-  nonce: number;
-  operation: string;
-  arguments: string;
-  created_date: string;
-}
-
 export interface PoapSetting {
   id: number;
   name: string;
@@ -65,6 +56,7 @@ export interface Signer {
   role: SignerRole;
   gas_price: string;
   created_date: Date;
+  balance: string;
 }
 
 export interface Transaction {
