@@ -1,16 +1,19 @@
 import React, { FC, useState, useEffect } from 'react';
-import { Formik, FormikActions, Form, Field, FieldProps, ErrorMessage } from 'formik';
 import classNames from 'classnames';
 
 /* Libraries */
 import ReactModal from 'react-modal';
+import { Formik, FormikActions, Form, Field, FieldProps, ErrorMessage } from 'formik';
+
 /* Helpers */
 import { GasPriceSchema } from '../lib/schemas';
 import { getSigners, setSigner, AdminAddress } from '../api';
 import { convertToGWEI, convertFromGWEI, reduceAddress } from '../lib/helpers';
+
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
 import { Loading } from '../components/Loading';
+
 /* Assets */
 import edit from '../images/edit.svg';
 

@@ -228,13 +228,20 @@ export async function getSigners(): Promise<AdminAddress[]> {
 }
 
 export function setSigner(id: number, gasPrice: string): Promise<any> {
-  return secureFetchNoResponse(`${API_BASE}/signers`, {
+  return secureFetchNoResponse(`${API_BASE}/signers/${id}`, {
     method: 'PUT',
-    body: JSON.stringify({id, gas_price: gasPrice})
+    body: JSON.stringify({gas_price: gasPrice})
   });
 }
 
 export function getTransactions(limit: number, offset: number): Promise<PaginatedTransactions> {
   // return fetchJson(`http://www.mocky.io/v2/5d8d03582e00005100abde66?limit=${limit}&offset=${offset}`);
   return fetchJson(`${API_BASE}/transactions?limit=${limit}&offset=${offset}`);
+}
+
+export function pumpTransaction(tx_hash: string, gasPrice: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/transactions`, {
+    method: 'POST',
+    body: JSON.stringify({tx_hash, gas_price: gasPrice})
+  });
 }

@@ -1,14 +1,19 @@
 import React, { FC, useState, useEffect } from 'react';
+import classNames from 'classnames';
 
 /* Libraries */
+import ReactModal from 'react-modal';
 import ReactPaginate from 'react-paginate';
+import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'formik';
 
 /* Helpers */
 import { TX_STATUS } from '../lib/constants';
-import { Transaction, getTransactions } from '../api';
-import { convertToGWEI, reduceAddress } from '../lib/helpers';
+import { GasPriceSchema } from '../lib/schemas';
+import { Transaction, getTransactions, pumpTransaction } from '../api';
+import { convertFromGWEI, convertToGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
 import { Loading } from '../components/Loading';
+import { SubmitButton } from '../components/SubmitButton';
 /* Assets */
 import gas from '../images/gas-station.svg';
 import checked from '../images/checked.svg';
@@ -21,9 +26,15 @@ type PaginateAction = {
   selected: number;
 }
 
+type GasPriceFormValues = {
+  gasPrice: string;
+};
+
 const TransactionsPage: FC = () => {
-  const [page, setPage] = useState<number>(0)
-  const [total, setTotal] = useState<number>(0)
+  const [page, setPage] = useState<number>(0);
+  const [total, setTotal] = useState<number>(0);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [selectedTx, setSelectedTx] = useState<null | Transaction>(null);
   const [isFetchingTx, setIsFetchingTx] = useState<null | boolean>(null);
   const [transactions, setTransactions] = useState<null | Transaction[]>(null);
 
@@ -49,11 +60,42 @@ const TransactionsPage: FC = () => {
       })
       .catch(error => console.error(error))
       .finally(() => setIsFetchingTx(false));
-  }
+  };
 
   const handlePageChange = (obj: PaginateAction) => {
     setPage(obj.selected);
-  }
+  };
+
+  const handleFormSubmit = async (
+    values: GasPriceFormValues,
+    actions: FormikActions<GasPriceFormValues>
+  ) => {
+    if (!selectedTx) return;
+    try {
+      actions.setStatus(null);
+      actions.setSubmitting(true);
+
+      const gasPriceInWEI = convertFromGWEI(values.gasPrice);
+      await pumpTransaction(selectedTx.tx_hash, gasPriceInWEI);
+      fetchTransactions();
+      closeEditModal();
+    } catch (error) {
+      actions.setStatus({ ok: false, msg: `Gas price couldn't be changed` });
+    } finally {
+      actions.setSubmitting(false);
+    }
+  };
+
+  const openEditModal = (transaction: Transaction) => {
+    setModalOpen(true);
+    setSelectedTx(transaction);
+  };
+
+  const closeEditModal = () => {
+    setModalOpen(false);
+    setSelectedTx(null);
+  };
+
 
   return (
     <div className={'admin-table'}>
@@ -84,7 +126,9 @@ const TransactionsPage: FC = () => {
               </div>
               <div className={'col-xs-2 center'}>
                 {convertToGWEI(tx.gas_price)}
-                {tx.status === TX_STATUS.pending && <img src={gas} alt={'Edit'} className={'edit-icon'} />}
+                {tx.status === TX_STATUS.pending &&
+                <img src={gas} alt={'Edit'} className={'edit-icon'} onClick={() => openEditModal(tx)} />
+                }
               </div>
             </div>
           )
@@ -93,7 +137,7 @@ const TransactionsPage: FC = () => {
       {total > 0 &&
         <div className={'pagination'}>
           <ReactPaginate
-            pageCount={Math.ceil(total/PAGE_SIZE) + 5}
+            pageCount={Math.ceil(total/PAGE_SIZE)}
             marginPagesDisplayed={2}
             pageRangeDisplayed={5}
             activeClassName={'active'}
@@ -101,6 +145,61 @@ const TransactionsPage: FC = () => {
           />
         </div>
       }
+      <ReactModal
+        isOpen={modalOpen}
+        shouldFocusAfterRender={true}
+      >
+        <div>
+          <h3>Edit Gas Price</h3>
+          {selectedTx &&
+            <>
+              <div className={'description'}>
+                Modify gas price for tx <a href={`https://etherscan.io/tx/${selectedTx.tx_hash}`} target={"_blank"}>{selectedTx.tx_hash}</a>.
+                Operation: {selectedTx.operation}
+              </div>
+            <Formik
+              enableReinitialize
+              onSubmit={handleFormSubmit}
+              initialValues={{ gasPrice: convertToGWEI(selectedTx.gas_price) }}
+              validationSchema={GasPriceSchema}
+            >
+              {({ dirty, isValid, isSubmitting, status, touched }) => {
+                return (
+                  <Form className="price-gas-modal-form">
+                    <Field
+                      name="gasPrice"
+                      render={({ field, form }: FieldProps) => {
+                        return (
+                          <input
+                            type="text"
+                            autoComplete="off"
+                            className={classNames(!!form.errors[field.name] && 'error')}
+                            placeholder={'Gas price in GWEI'}
+                            {...field}
+                          />
+                        );
+                      }}
+                    />
+                    <ErrorMessage name="gasPrice" component="p" className="bk-error"/>
+                    {status && (
+                      <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>
+                    )}
+                    <SubmitButton
+                      text="Modify gas price"
+                      isSubmitting={isSubmitting}
+                      canSubmit={isValid && dirty}
+                    />
+                    <div onClick={closeEditModal} className={'close-modal'}>
+                      Cancel
+                    </div>
+                  </Form>
+                );
+              }}
+            </Formik>
+          </>
+          }
+        </div>
+      </ReactModal>
     </div>
   );
 };
