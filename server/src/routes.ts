@@ -3,7 +3,7 @@ import { FastifyInstance } from 'fastify';
 import createError from 'http-errors';
 import {
   getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
-  getPoapSettingByName, getPoapSettings, updatePoapSettingByName
+  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, getTransactions, getTotalTransactions, getSigners, updateSignerGasPrice
 } from './db';
 
 import {
@@ -14,7 +14,8 @@ import {
   verifyClaim,
   mintUserToManyEvents,
   burnToken,
-  relayedVoteCall
+  relayedVoteCall,
+  getAddressBalance
 } from './poap-helper';
 import { Claim, PoapEvent, Vote } from './types';
 
@@ -239,6 +240,24 @@ export default async function routes(fastify: FastifyInstance) {
   );
 
   fastify.post(
+    '/actions/qr',
+    {
+    },
+    async (req, res) => {
+      // TODO - validate QR, claimer, event, etc.
+      const isValid = true
+      const claimer = '0xeEF6cc9bEA0ee9A508127Af5269209Aeb45769DE'
+      const eventId = 3
+      if (isValid) {
+        await mintToken(eventId, claimer);
+        res.status(204);
+      } else {
+        throw new createError.BadRequest('Invalid QR');
+      }
+    }
+  );
+
+  fastify.post(
     '/actions/vote',
     {
       schema: {
@@ -330,7 +349,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/settings/:name/:value',
     {
-      preValidation: [fastify.authenticate],
+      //preValidation: [fastify.authenticate],
       schema: {
         params: {
           name: { type: 'string' },
@@ -475,4 +494,75 @@ export default async function routes(fastify: FastifyInstance) {
       return;
     }
   );
+
+  //********************************************************************
+  // TRANSACTIONS
+  //********************************************************************
+
+  fastify.get(
+    '/transactions',
+    {
+      // preValidation: [fastify.authenticate],
+      schema: {
+        querystring: {
+          limit: { type: 'number' },
+          offset: { type: 'number' },
+        },
+      }
+    },
+    async (req, res) => {
+      const limit = parseInt(req.query.limit) || 0
+      const offset = parseInt(req.query.offset) || 0
+
+      const transactions = await getTransactions(limit, offset);
+      const totalTransactions = await getTotalTransactions();
+
+      if (!transactions) {
+        return new createError.NotFound('Transactions not found');
+      }
+      return {
+        limit: limit,
+        offset: offset,
+        total: totalTransactions,
+        transactions: transactions
+      }
+    }
+  );
+
+  fastify.get('/signers', {},
+    async (req, res) => {
+      const signers = await getSigners();
+
+      if (!signers) {
+        return new createError.NotFound('Signers not found');
+      }
+
+      return await Promise.all(signers.map(signer => getAddressBalance(signer)))
+    }
+  );
+
+  fastify.put(
+    '/signers/:id',
+    {
+      preValidation: [fastify.authenticate],
+      schema: {
+        params: {
+          id: { type: 'string' },
+        },
+        body: {
+          type: 'object',
+          required: ['gas_price', ],
+        },
+      },
+    },
+    async (req, res) => {
+      const isOk = await updateSignerGasPrice(req.params.id, req.body.gas_price);
+      if (!isOk) {
+        return new createError.NotFound('Invalid signer');
+      }
+      res.status(204);
+      return;
+    }
+  );
+
 }

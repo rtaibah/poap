@@ -7,6 +7,23 @@ export interface EnvVariables {
   poapAdmin: Wallet;
   poapAddress: Address;
   poapVoteAddress: Address;
+  poapHelpers: PoapHelpers
+}
+
+export interface PoapHelpers {
+  [address: string]: Wallet
+}
+
+function getHelperWallets(provider: Provider) {
+  let helpers: any = {}
+  const helpersPK = ensureEnvVariable('POAP_HELPERS_PK')
+
+  var jsonObj = JSON.parse(helpersPK)
+  for (let item of jsonObj) {
+    let wallet = new Wallet(item, provider);
+    helpers[wallet.address.toLowerCase()] = new Wallet(item, provider);
+  }
+  return helpers
 }
 
 function getDevelopmentVariables(): EnvVariables {
@@ -20,6 +37,12 @@ function getDevelopmentVariables(): EnvVariables {
       'cdf2df30545e16094b4d62fa1624de9a44432547ce3f582de8f066c42abbc4ee',
       provider
     ),
+    poapHelpers: {
+      '0xAa82FdE1a5266971b27f135d16d282fA20b84C94': new Wallet(
+        'cdf2df30545e16094b4d62fa1624de9a44432547ce3f582de8f066c42abbc4ee',
+        provider
+      )
+    }
   };
 }
 
@@ -43,6 +66,7 @@ function getVariables(): EnvVariables {
     poapAddress: ensureEnvVariable('POAP_CONTRACT_ADDR'),
     poapVoteAddress: ensureEnvVariable('POAP_VOTE_CONTRACT_ADDR'),
     poapAdmin: new Wallet(ownerPK, provider),
+    poapHelpers: getHelperWallets(provider)
   };
 }
 

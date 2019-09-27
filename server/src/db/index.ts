@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction } from '../types';
 
 const db = pgPromise()({
   host: process.env.INSTANCE_CONNECTION_NAME ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}` : 'localhost',
@@ -21,6 +21,26 @@ export async function getEvents(): Promise<PoapEvent[]> {
   return res.map(replaceDates);
 }
 
+export async function getTransactions(limit:number, offset:number): Promise<Transaction[]> {
+  let query = 'SELECT * FROM server_transactions ORDER BY created_date DESC'
+  if(limit > 0) {
+    query = query + ' LIMIT ' + limit + ' OFFSET ' + offset;
+  }
+  const res = await db.manyOrNone<Transaction>(query);
+  return res;
+}
+
+export async function getTotalTransactions(): Promise<number> {
+  let query = 'SELECT COUNT(*) FROM server_transactions'
+  const res = await db.result(query);
+  return res.rows[0].count;
+}
+
+export async function getSigners(): Promise<Signer[]> {
+  const res = await db.manyOrNone<Signer>('SELECT * FROM signers ORDER BY created_date DESC');
+  return res;
+}
+
 export async function getPoapSettings(): Promise<PoapSetting[]> {
   const res = await db.manyOrNone<PoapSetting>('SELECT * FROM poap_settings ORDER BY id DESC');
   return res;
@@ -37,6 +57,23 @@ export async function updatePoapSettingByName(name:string, type:string, value:st
   const res = await db.result(query, values);
   return res.rowCount === 1;
 }
+
+export async function getSigner(address: string): Promise<null | Signer> {
+  const res = await db.oneOrNone<Signer>('SELECT * FROM signers WHERE signer ILIKE $1', [address]);
+  return res;
+}
+
+export async function getAvailableHelperSigner(): Promise<null | Signer> {
+  const res = await db.oneOrNone  (`
+    SELECT s.id, s.signer, SUM(case when st.status = 'pending' then 1 else 0 end) as pending_txs
+    FROM signers s LEFT JOIN server_transactions st on s.signer = st.signer
+    WHERE s.role != 'administrator'
+    GROUP BY s.id, s.signer, status
+    ORDER BY pending_txs, s.id ASC
+    LIMIT 1
+  `)
+  return res;
+} 
 
 export async function getEvent(id: number): Promise<null | PoapEvent> {
   const res = await db.oneOrNone<PoapEvent>('SELECT * FROM events WHERE id = $1', [id]);
@@ -62,6 +99,20 @@ export async function updateEvent(
   return res.rowCount === 1;
 }
 
+export async function updateSignerGasPrice(
+  Id: string,
+  GasPrice: string
+): Promise<boolean> {
+  const res = await db.result(
+    'update signers set gas_price=${gas_price} where id = ${id}',
+    {
+      gas_price: GasPrice,
+      id: Id
+    }
+  );
+  return res.rowCount === 1;
+}
+
 export async function createEvent(event: Omit<PoapEvent, 'id'>): Promise<PoapEvent> {
   const data = await db.one(
     'INSERT INTO events(${this:name}) VALUES(${this:csv}) RETURNING id',
@@ -77,9 +128,9 @@ export async function createEvent(event: Omit<PoapEvent, 'id'>): Promise<PoapEve
 
 // export async function insertEvent
 
-export async function saveTransaction(hash: string, nonce: number, operation: string, params: string): Promise<boolean>{
-  let query = "INSERT INTO server_transactions(tx_hash, nonce, operation, arguments) VALUES (${hash}, ${nonce}, ${operation}, ${params})";
-  let values = {hash, nonce, operation, params: params.substr(0, 950)};
+export async function saveTransaction(hash: string, nonce: number, operation: string, params: string, signer: Address, status: string, gas_price: string ): Promise<boolean>{
+  let query = "INSERT INTO server_transactions(tx_hash, nonce, operation, arguments, signer, status, gas_price) VALUES (${hash}, ${nonce}, ${operation}, ${params}, ${signer}, ${status}, ${gas_price})";
+  let values = {hash, nonce, operation, params: params.substr(0, 950), signer, status, gas_price};
   try{
     const res = await db.result(query, values);
     return res.rowCount === 1;

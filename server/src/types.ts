@@ -2,6 +2,25 @@ export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export type Address = string;
 
+export enum OperationType {
+  mintToken = "mintToken",
+  mintEventToManyUsers = "mintEventToManyUsers",
+  mintUserToManyEvents = "mintUserToManyEvents",
+  burnToken = "burnToken",
+  vote = "vote"
+}
+
+export enum TransactionStatus {
+  pending = "pending",
+  passed = "passed",
+  failed = "failed"
+}
+
+export enum SignerRole {
+  administrator = "administrator",
+  standard = "standard",
+}
+
 export interface TokenInfo {
   tokenId: string;
   owner: Address;
@@ -29,6 +48,27 @@ export interface PoapSetting {
   name: string;
   type: string;
   value: string;
+}
+
+export interface Signer {
+  id: number;
+  signer: string;
+  role: SignerRole;
+  gas_price: string;
+  created_date: Date;
+  balance: string;
+}
+
+export interface Transaction {
+  id: number;
+  tx_hash: string;
+  nonce: number;
+  signer: string;
+  operation: OperationType;
+  arguments: string;
+  status: TransactionStatus;
+  gas_price: string;
+  created_date: Date;
 }
 
 export interface Claim extends ClaimProof {
