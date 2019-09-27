@@ -7,7 +7,8 @@ import fastifyCompress from 'fastify-compress';
 
 import authPlugin from './auth';
 import routes from './routes';
-import transactionsMonitorCron  from './plugins/tx-monitor';
+// TODO uncomment this
+//import transactionsMonitorCron  from './plugins/tx-monitor';
 
 const fastify = fastifyFactory({
   logger: true,
@@ -22,7 +23,8 @@ fastify.register(fastifyCompress, {});
 
 fastify.register(authPlugin);
 fastify.register(routes);
-fastify.register(transactionsMonitorCron);
+// TODO uncomment this
+//fastify.register(transactionsMonitorCron);
 
 const start = async () => {
   try {

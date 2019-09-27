@@ -27,19 +27,19 @@ function getHelperWallets(provider: Provider) {
 }
 
 function getDevelopmentVariables(): EnvVariables {
-  const provider: Provider = new JsonRpcProvider('http://localhost:7545');
+  const provider: Provider = new JsonRpcProvider('http://localhost:9545');
 
   return {
     provider,
-    poapAddress: '0xd237716b056d5BF44181c471A7c633583b552D78',
+    poapAddress: '0xCfEB869F69431e42cdB54A4F4f105C19C080A601',
     poapVoteAddress: '0x9eeDe127d72fe7851CdB3182b0b21E883408EB46',
     poapAdmin: new Wallet(
-      'cdf2df30545e16094b4d62fa1624de9a44432547ce3f582de8f066c42abbc4ee',
+      '4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d',
       provider
     ),
     poapHelpers: {
       '0xAa82FdE1a5266971b27f135d16d282fA20b84C94': new Wallet(
-        'cdf2df30545e16094b4d62fa1624de9a44432547ce3f582de8f066c42abbc4ee',
+        '4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d',
         provider
       )
     }

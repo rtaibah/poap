@@ -149,7 +149,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   
 }
 
-export async function mintToken(eventId: number, toAddr: Address, extraParams?: any) {
+export async function mintToken(eventId: number, toAddr: Address, awaitTx: boolean = true, extraParams?: any): Promise<string | undefined> {
   const txObj = await getTxObj(false, extraParams);
 
   const tx = await txObj.contract.functions.mintToken(eventId, toAddr, txObj.transactionParams);
@@ -169,8 +169,13 @@ export async function mintToken(eventId: number, toAddr: Address, extraParams?: 
   console.log(`mintToken: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
-  await tx.wait();
+  if(awaitTx){
+    await tx.wait();
+  }
+
   console.log(`mintToken: Finished: ${tx.hash}`);
+
+  return tx.hash
 }
 
 export async function bumpTransaction(hash: string, gasPrice: string) {

@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR } from '../types';
 
 const db = pgPromise()({
   host: process.env.INSTANCE_CONNECTION_NAME ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}` : 'localhost',
@@ -159,5 +159,29 @@ export async function updateTransactionStatus(hash: string, status: TransactionS
       hash,
     }
   );
+  return res.rowCount === 1;
+}
+
+export async function getQrClaim(qr_hash: string): Promise<null | ClaimQR> {
+  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash = $1', [qr_hash]);
+  return res;
+}
+
+export async function getTransaction(hash: string): Promise<null | Transaction> {
+  const res = await db.oneOrNone<Transaction>('SELECT * FROM server_transactions WHERE tx_hash = $1', [hash]);
+  return res;
+}
+
+export async function claimQrClaim(qr_hash: string) {
+  const res = await db.result('update qr_claims set claimed=true where qr_hash = $1', [qr_hash]);
+  return res.rowCount === 1;
+}
+
+export async function setQrClaimHash(qr_hash: string, tx_hash: string) {
+  const res = await db.result('update qr_claims set tx_hash=${tx_hash} where qr_hash = ${qr_hash}',
+  {
+    tx_hash,
+    qr_hash,
+  });
   return res.rowCount === 1;
 }

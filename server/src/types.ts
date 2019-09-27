@@ -79,6 +79,7 @@ export interface ClaimQR {
   beneficiary: null | Address;
   signer: null | Address;
   claimed: boolean;
+  tx_status: null | TransactionStatus;
   claimed_date: Date;
   created_date: Date;
 }
