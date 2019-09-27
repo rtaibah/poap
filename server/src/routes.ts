@@ -379,7 +379,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/settings/:name/:value',
     {
-      //preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         params: {
           name: { type: 'string' },
@@ -532,7 +532,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/transactions',
     {
-      // preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         querystring: {
           limit: { type: 'number' },

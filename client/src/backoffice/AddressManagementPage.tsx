@@ -8,7 +8,7 @@ import { Formik, FormikActions, Form, Field, FieldProps, ErrorMessage } from 'fo
 /* Helpers */
 import { GasPriceSchema } from '../lib/schemas';
 import { getSigners, setSigner, AdminAddress } from '../api';
-import { convertToGWEI, convertFromGWEI, reduceAddress } from '../lib/helpers';
+import { convertToGWEI, convertFromGWEI, convertToETH, reduceAddress } from '../lib/helpers';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
@@ -97,7 +97,9 @@ const AddressManagementPage: FC = () => {
                 <a href={`https://etherscan.io/address/${address.signer}`} target={"_blank"}>{reduceAddress(address.signer)}</a>
               </div>
               <div className={'col-xs-2 capitalize'}>{address.role}</div>
-              <div className={'col-xs-2 center'}>{address.balance}</div>
+              <div className={'col-xs-2 center'}>
+                {Math.round(convertToETH(address.balance) * 1000) / 1000}
+              </div>
               <div className={'col-xs-2 center'}>
                 {convertToGWEI(address.gas_price)}
                 <img src={edit} alt={'Edit'} className={'edit-icon'} onClick={() => openEditModal(address)} />
