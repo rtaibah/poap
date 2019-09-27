@@ -60,6 +60,8 @@ export default fp(function transactionsMonitorCron(
 
 async function getTxStatus<A>(hash: string): Promise<A> {
   const url = `${EXPLORER_API_BASE}/eth/main/txs/${encodeURIComponent(hash)}`;
+  console.log(url);
+
   const res = await fetch(url);
   if (res.ok) {
     return await res.json();

@@ -80,7 +80,7 @@ export async function getCurrentGasPrice(address: string) {
   return gasPrice;
 }
 
-export async function mintToken(eventId: number, toAddr: Address) {
+export async function mintToken(eventId: number, toAddr: Address, awaitTx: boolean = true): Promise<string | undefined>  {
   const env = getEnv();
   const helperWallet = await getHelperSigner();
   const signerWallet = (helperWallet) ? helperWallet : env.poapAdmin;
@@ -100,8 +100,13 @@ export async function mintToken(eventId: number, toAddr: Address) {
   console.log(`mintToken: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
-  await tx.wait();
+  if(awaitTx){
+    await tx.wait();
+  }
+
   console.log(`mintToken: Finished: ${tx.hash}`);
+
+  return tx.hash
 }
 
 export async function mintEventToManyUsers(eventId: number, toAddr: Address[]) {

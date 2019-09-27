@@ -3,7 +3,7 @@ import { FastifyInstance } from 'fastify';
 import createError from 'http-errors';
 import {
   getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
-  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, getTransactions, getTotalTransactions, getSigners, updateSignerGasPrice
+  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, getTransactions, getTotalTransactions, getSigners, updateSignerGasPrice, getQrClaim, getTransaction, claimQrClaim, setQrClaimHash
 } from './db';
 
 import {
@@ -529,7 +529,8 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
-  fastify.get('/signers', {},
+  fastify.get(
+    '/signers', {},
     async (req, res) => {
       const signers = await getSigners();
 
@@ -564,5 +565,83 @@ export default async function routes(fastify: FastifyInstance) {
       return;
     }
   );
+
+  fastify.get(
+    '/claim-qr',
+    {
+      schema: {
+        querystring: {
+          qr_hash: { type: 'string' },
+        },
+      }
+    },
+    async (req, res) => {
+      const qr_hash = req.query.qr_hash || ''
+
+      if (!qr_hash) {
+        return new createError.NotFound('Please send qr_hash as querystring parameter');
+      }
+
+      const qr_claim = await getQrClaim(qr_hash);
+
+      if (!qr_claim) {
+        return new createError.NotFound('Qr Claim not found');
+      }
+
+      qr_claim.tx_status = null
+      if (qr_claim.tx_hash) {
+        const transaction_status = await getTransaction(qr_claim.tx_hash);
+        if(transaction_status) {
+          qr_claim.tx_status = transaction_status.status
+        }
+        
+      }
+
+      return qr_claim
+    }
+  );
+
+  fastify.post(
+    '/claim-qr',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['address', 'qr_hash'],
+        },
+      },
+    },
+    async (req, res) => {
+      const qr_claim = await getQrClaim(req.body.qr_hash);
+
+      if (!qr_claim) {
+        return new createError.NotFound('Qr Claim not found');
+      }
+
+      if (qr_claim.claimed) {
+        return new createError.BadRequest('Qr is already Claimed');
+      }
+
+      let claim_qr_claim = await claimQrClaim(req.body.qr_hash);
+      if (!claim_qr_claim) {
+        return new createError.InternalServerError('There was a problem updating claim boolean');
+      }
+      qr_claim.claimed = true
+
+      const tx_hash = await mintToken(qr_claim.event_id, req.body.address, false);
+      if (!tx_hash) {
+        return new createError.InternalServerError('There was a problem in token mint');
+      }
+
+      let set_qr_claim_hash = await setQrClaimHash(req.body.qr_hash, tx_hash);
+      if (!set_qr_claim_hash) {
+        return new createError.InternalServerError('There was a problem saving tx_hash');
+      }
+      qr_claim.tx_hash = tx_hash
+
+      return qr_claim
+    }
+  );
+
 
 }
