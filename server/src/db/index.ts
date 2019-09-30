@@ -49,6 +49,11 @@ export async function getAvailableHelperSigner(): Promise<null | Signer> {
   return res;
 }
 
+export async function getTransaction(tx_hash: string): Promise<null | Transaction> {
+  const res = await db.oneOrNone<Transaction>('SELECT * FROM server_transactions WHERE tx_hash ILIKE $1', [tx_hash]);
+  return res
+}
+
 export async function getPendingTxs(): Promise<Transaction[]> {
   const res = await db.manyOrNone<Transaction>("SELECT * FROM server_transactions WHERE status = 'pending' ORDER BY id ASC");
   return res;

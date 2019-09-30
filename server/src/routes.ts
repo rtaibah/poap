@@ -14,7 +14,8 @@ import {
   verifyClaim,
   mintUserToManyEvents,
   burnToken,
-  relayedVoteCall
+  relayedVoteCall,
+  bumpTransaction
 } from './poap-helper';
 import { Claim, PoapEvent, Vote } from './types';
 
@@ -253,6 +254,27 @@ export default async function routes(fastify: FastifyInstance) {
       } else {
         throw new createError.BadRequest('Invalid QR');
       }
+    }
+  );
+
+  fastify.post(
+    '/actions/bump',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['txHash', 'gasPrice'],
+          properties: {
+            txHash: { type: 'string' },
+            gasPrice: { type: 'string'},
+          },
+        },
+      },
+    },
+    async (req, res) => {
+      await bumpTransaction(req.body.txHash, req.body.gasPrice);
+      res.status(204);
+      return;
     }
   );
 

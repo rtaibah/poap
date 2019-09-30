@@ -3,11 +3,27 @@ import { verifyMessage, toUtf8Bytes, keccak256 } from 'ethers/utils';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
-import { getEvent, getEvents, getPoapSettingByName, saveTransaction, getSigner, getAvailableHelperSigner } from './db';
+import {
+  getEvent,
+  getEvents,
+  getPoapSettingByName,
+  saveTransaction,
+  getSigner,
+  getAvailableHelperSigner,
+  getTransaction,
+} from './db';
 import getEnv from './envs';
 import { Poap } from './poap-eth/Poap';
 import { VotePoap } from './poap-eth/VotePoap';
-import { Address, Claim, TokenInfo, Vote, Signer, TransactionStatus, OperationType} from './types';
+import {
+  Address,
+  Claim,
+  TokenInfo,
+  Vote,
+  Signer,
+  TransactionStatus,
+  OperationType,
+} from './types';
 
 const Logger = pino();
 const ABI_DIR = join(__dirname, '../abi');
@@ -31,10 +47,23 @@ export async function getHelperSigner(): Promise<null | Wallet> {
   const env = getEnv();
   const signer: null | Signer = await getAvailableHelperSigner();
   if (signer) {
-    const wallet = env.poapHelpers[signer.signer.toLowerCase()]
-    return wallet
+    const wallet = env.poapHelpers[signer.signer.toLowerCase()];
+    return wallet;
   }
-  return null
+  return null;
+}
+
+/**
+ * Get an available helper signer in order to sign a new requested transaction
+ */
+export async function getSignerWallet(address: Address): Promise<Wallet> {
+  const env = getEnv();
+  const signer: null | Signer = await getSigner(address);
+  if (signer) {
+    const wallet = env.poapHelpers[signer.signer.toLowerCase()];
+    return wallet;
+  }
+  throw new Error('Signer was not found');
 }
 
 export function getVoteContract(wallet: Wallet): VotePoap {
@@ -64,10 +93,10 @@ export async function getCurrentGasPrice(address: string) {
   let gasPrice = 5e9;
 
   // Get defined gasPrice for selected signer
-  let signer: Signer | null = await getSigner(address)
+  let signer: Signer | null = await getSigner(address);
   if (signer) {
     if (signer.gas_price) {
-      return parseInt(signer.gas_price)
+      return parseInt(signer.gas_price);
     }
   }
 
@@ -80,21 +109,61 @@ export async function getCurrentGasPrice(address: string) {
   return gasPrice;
 }
 
-export async function mintToken(eventId: number, toAddr: Address) {
+export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   const env = getEnv();
-  const helperWallet = await getHelperSigner();
-  const signerWallet = (helperWallet) ? helperWallet : env.poapAdmin;
+  let signerWallet: Wallet;
+  // Use extraParams signer if it's specified in extraParams 
+  if (extraParams && extraParams.signer) {
+    signerWallet = await getSignerWallet(extraParams.signer);
+  } else if (onlyAdminSigner) {
+    signerWallet = env.poapAdmin;
+  } else {
+    const helperWallet = await getHelperSigner();
+    signerWallet = helperWallet ? helperWallet : env.poapAdmin;
+  }
+
   const contract = getContract(signerWallet);
-  const gasPrice = await getCurrentGasPrice(signerWallet.address);
 
-  // Set a new Value, which returns the transaction
-  const tx = await contract.functions.mintToken(eventId, toAddr, {
+  let gasPrice;
+  if (extraParams && extraParams.gas_price) {
+    gasPrice = extraParams.gas_price
+  } else {
+    gasPrice = await getCurrentGasPrice(signerWallet.address);
+  }
+    
+
+  const transactionParams: any = {
     gasLimit: estimateMintingGas(1),
-    gasPrice: gasPrice,
-  });
+    gasPrice: Number(gasPrice),
+  };
 
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, OperationType.mintToken, JSON.stringify([eventId, toAddr]), signerWallet.address, TransactionStatus.pending, gasPrice.toString());
+  if (extraParams && extraParams.nonce) {
+    transactionParams.nonce = extraParams.nonce;
+  }
+
+  return {
+    signerWallet: signerWallet,
+    contract: contract,
+    transactionParams: transactionParams,
+  };
+  
+}
+
+export async function mintToken(eventId: number, toAddr: Address, extraParams?: any) {
+  const txObj = await getTxObj(false, extraParams);
+
+  const tx = await txObj.contract.functions.mintToken(eventId, toAddr, txObj.transactionParams);
+
+  if (tx.hash) {
+    await saveTransaction(
+      tx.hash,
+      tx.nonce,
+      OperationType.mintToken,
+      JSON.stringify([eventId, toAddr]),
+      txObj.signerWallet.address,
+      TransactionStatus.pending,
+      txObj.transactionParams.gasPrice.toString()
+    );
   }
 
   console.log(`mintToken: Transaction: ${tx.hash}`);
@@ -104,19 +173,71 @@ export async function mintToken(eventId: number, toAddr: Address) {
   console.log(`mintToken: Finished: ${tx.hash}`);
 }
 
-export async function mintEventToManyUsers(eventId: number, toAddr: Address[]) {
-  const env = getEnv();
-  const contract = getContract(env.poapAdmin);
-  const gasPrice = await getCurrentGasPrice(contract.address);
+export async function bumpTransaction(hash: string, gasPrice: string) {
+  const transaction = await getTransaction(hash);
+  if (!transaction) {
+    throw new Error('Transaction was not found');
+  }
+  // Parse available arguments saved in the database
+  const txJSON = JSON.parse(transaction.arguments)
 
-  // Set a new Value, which returns the transaction
-  const tx = await contract.functions.mintEventToManyUsers(eventId, toAddr, {
-    gasLimit: estimateMintingGas(toAddr.length),
-    gasPrice: gasPrice,
-  });
+  switch (transaction.operation) {
+    case OperationType.burnToken: {
+      const [tokenId] = txJSON
+      await burnToken(tokenId, {
+        signer: transaction.signer,
+        gas_price: gasPrice,
+        nonce: transaction.nonce
+      })
+    }
+    case OperationType.mintEventToManyUsers: {
+      const [eventId, toAddresses] = txJSON
+      await mintEventToManyUsers(eventId, toAddresses, {
+        signer: transaction.signer,
+        gas_price: gasPrice,
+        nonce: transaction.nonce
+      })
+      break;
+    }
+    case OperationType.mintToken: {
+      const [eventId, toAddr] = txJSON
+      await mintToken(eventId, toAddr, {
+        signer: transaction.signer,
+        gas_price: gasPrice,
+        nonce: transaction.nonce
+      })
+      break;
+    }
+    case OperationType.mintUserToManyEvents: {
+      const [eventIds, toAddr] = txJSON
+      await mintUserToManyEvents(eventIds, toAddr, {
+        signer: transaction.signer,
+        gas_price: gasPrice,
+        nonce: transaction.nonce
+      })
+      break;
+    }
+    default: {
+      throw new Error('Operation not supported');
+    }
+  }
+}
 
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, OperationType.mintEventToManyUsers, JSON.stringify([eventId, toAddr]), env.poapAdmin.address, TransactionStatus.pending, gasPrice.toString());
+export async function mintEventToManyUsers(eventId: number, toAddr: Address[], extraParams?: any) {
+  const txObj = await getTxObj(true, extraParams);
+
+  const tx = await txObj.contract.functions.mintEventToManyUsers(eventId, toAddr, txObj.transactionParams);
+
+  if (tx.hash) {
+    await saveTransaction(
+      tx.hash,
+      tx.nonce,
+      OperationType.mintEventToManyUsers,
+      JSON.stringify([eventId, toAddr]),
+      txObj.signerWallet.address,
+      TransactionStatus.pending,
+      txObj.transactionParams.gasPrice.toString()
+    );
   }
 
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
@@ -126,19 +247,21 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[]) {
   console.log(`mintTokenBatch: Finished ${tx.hash}`);
 }
 
-export async function mintUserToManyEvents(eventIds: number[], toAddr: Address) {
-  const env = getEnv();
-  const contract = getContract(env.poapAdmin);
-  const gasPrice = await getCurrentGasPrice(contract.address);
+export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, extraParams?: any) {
+  const txObj = await getTxObj(true, extraParams);
 
-  // Set a new Value, which returns the transaction
-  const tx = await contract.functions.mintUserToManyEvents(eventIds, toAddr, {
-    gasLimit: estimateMintingGas(eventIds.length),
-    gasPrice: gasPrice,
-  });
+  const tx = await txObj.contract.functions.mintUserToManyEvents(eventIds, toAddr, txObj.transactionParams);
 
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, OperationType.mintUserToManyEvents, JSON.stringify({eventIds, toAddr}), env.poapAdmin.address, TransactionStatus.pending, gasPrice.toString());
+  if (tx.hash) {
+    await saveTransaction(
+      tx.hash,
+      tx.nonce,
+      OperationType.mintUserToManyEvents,
+      JSON.stringify({ eventIds, toAddr }),
+      txObj.signerWallet.address,
+      TransactionStatus.pending,
+      txObj.transactionParams.gasPrice.toString()
+    );
   }
 
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
@@ -148,19 +271,22 @@ export async function mintUserToManyEvents(eventIds: number[], toAddr: Address) 
   console.log(`mintTokenBatch: Finished ${tx.hash}`);
 }
 
-export async function burnToken(tokenId: string | number): Promise<boolean> {
-  const env = getEnv();
-  const contract = getContract(env.poapAdmin);
-  const gasPrice = await getCurrentGasPrice(contract.address);
+export async function burnToken(tokenId: string | number, extraParams?: any): Promise<boolean> {
+  const txObj = await getTxObj(true, extraParams);
 
   // Set a new Value, which returns the transaction
-  const tx = await contract.functions.burn(tokenId, {
-    gasLimit: estimateMintingGas(1),
-    gasPrice: gasPrice,
-  });
+  const tx = await txObj.contract.functions.burn(tokenId, txObj.transactionParams);
 
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, OperationType.burnToken, tokenId.toString(), env.poapAdmin.address, TransactionStatus.pending, gasPrice.toString());
+  if (tx.hash) {
+    await saveTransaction(
+      tx.hash,
+      tx.nonce,
+      OperationType.burnToken,
+      tokenId.toString(),
+      txObj.signerWallet.address,
+      TransactionStatus.pending,
+      txObj.transactionParams.gasPrice.toString()
+    );
   }
 
   console.log(`burn: Transaction: ${tx.hash}`);
@@ -168,7 +294,7 @@ export async function burnToken(tokenId: string | number): Promise<boolean> {
   // The operation is NOT complete yet; we must wait until it is mined
   await tx.wait();
   console.log(`burn: Finished ${tx.hash}`);
-  return true
+  return true;
 }
 
 export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
@@ -181,7 +307,7 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     }
     return ev;
   };
-  
+
   const env = getEnv();
   const contract = getContract(env.poapAdmin);
   const tokensAmount = (await contract.functions.balanceOf(address)).toNumber();
@@ -214,7 +340,7 @@ export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo>
   };
 }
 
-export async function verifyClaim(claim: Claim): Promise<string|boolean> {
+export async function verifyClaim(claim: Claim): Promise<string | boolean> {
   const event = await getEvent(claim.eventId);
 
   if (!event) {
@@ -246,10 +372,10 @@ export async function verifyClaim(claim: Claim): Promise<string|boolean> {
   return true;
 }
 
-export async function relayedVoteCall(vote: Vote): Promise<boolean|ContractTransaction> {
+export async function relayedVoteCall(vote: Vote): Promise<boolean | ContractTransaction> {
   const env = getEnv();
   const helperWallet: null | Wallet = await getHelperSigner();
-  const signerWallet = (helperWallet) ? helperWallet : env.poapAdmin;
+  const signerWallet = helperWallet ? helperWallet : env.poapAdmin;
   const contract = getVoteContract(signerWallet);
   const gasPrice = await getCurrentGasPrice(contract.address);
 
@@ -259,17 +385,25 @@ export async function relayedVoteCall(vote: Vote): Promise<boolean|ContractTrans
   const supposedClaimedAddress = verifyMessage(keccak256(messageBytes), vote.claimerSignature);
   const isValid = supposedClaimedAddress === vote.claimer;
 
-  if(isValid){
+  if (isValid) {
     try {
       // @ts-ignore
       const { claimer, proposal } = vote;
       const tx = await contract.functions.relayedVote(claimer, proposal, {
         gasLimit: 450000000,
-        gasPrice: gasPrice
+        gasPrice: gasPrice,
       });
 
-      if(tx.hash){
-        await saveTransaction(tx.hash, tx.nonce, OperationType.vote, JSON.stringify([claimer, proposal]), env.poapAdmin.address, TransactionStatus.pending, gasPrice.toString());
+      if (tx.hash) {
+        await saveTransaction(
+          tx.hash,
+          tx.nonce,
+          OperationType.vote,
+          JSON.stringify([claimer, proposal]),
+          env.poapAdmin.address,
+          TransactionStatus.pending,
+          gasPrice.toString()
+        );
       }
       return tx;
     } catch (e) {
