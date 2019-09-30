@@ -76,6 +76,7 @@ export interface ClaimQR {
   qr_hash: string;
   tx_hash: null | string;
   event_id: number;
+  event: PoapEvent;
   beneficiary: null | Address;
   signer: null | Address;
   claimed: boolean;
