@@ -22,6 +22,14 @@ import {
   checkAddress
 } from './poap-helper';
 import { Claim, PoapEvent, Vote } from './types';
+import crypto from 'crypto';
+import getEnv from './envs';
+
+function sleep(ms: number){
+  return new Promise(resolve=>{
+      setTimeout(resolve,ms)
+  })
+}
 
 function buildMetadataJson(tokenUrl: string, ev: PoapEvent) {
   return {
@@ -584,6 +592,7 @@ export default async function routes(fastify: FastifyInstance) {
 
       const qr_claim = await getQrClaim(qr_hash);
       if (!qr_claim) {
+        await sleep(5000)
         return new createError.NotFound('Qr Claim not found');
       }
 
@@ -592,6 +601,9 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.InternalServerError('Qr Claim does not have any event');
       }
       qr_claim.event = event
+
+      const env = getEnv();
+      qr_claim.secret = crypto.createHmac('sha256', env.secretKey).update(qr_hash).digest('hex');
 
       qr_claim.tx_status = null
       if (qr_claim.tx_hash) {
@@ -612,13 +624,22 @@ export default async function routes(fastify: FastifyInstance) {
       schema: {
         body: {
           type: 'object',
-          required: ['address', 'qr_hash'],
+          required: ['address', 'qr_hash', 'secret'],
         },
       },
     },
     async (req, res) => {
+      const env = getEnv();
+      const secret = crypto.createHmac('sha256', env.secretKey).update(req.body.qr_hash).digest('hex');
+
+      if(req.body.secret != secret) {
+        await sleep(5000)
+        return new createError.NotFound('Invalid secret');
+      }
+
       const qr_claim = await getQrClaim(req.body.qr_hash);
       if (!qr_claim) {
+        await sleep(5000)
         return new createError.NotFound('Qr Claim not found');
       }
 
@@ -661,10 +682,18 @@ export default async function routes(fastify: FastifyInstance) {
       qr_claim.tx_hash = tx_mint.hash
       qr_claim.beneficiary = req.body.address
       qr_claim.signer = tx_mint.from
+      qr_claim.tx_status = null
+
+      if (qr_claim.tx_hash) {
+        const transaction_status = await getTransaction(qr_claim.tx_hash);
+        if(transaction_status) {
+          qr_claim.tx_status = transaction_status.status
+        }
+        
+      }
 
       return qr_claim
     }
   );
-
 
 }
