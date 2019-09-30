@@ -74,6 +74,7 @@ export interface Transaction {
 export interface ClaimQR {
   id: number;
   qr_hash: string;
+  secret: null | string;
   tx_hash: null | string;
   event_id: number;
   event: PoapEvent;

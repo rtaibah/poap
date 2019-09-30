@@ -28,6 +28,7 @@
     "typescript": "^3.4.5"
   },
   "dependencies": {
+    "fastify-rate-limit": "^2.3.0",
     "http-errors": "^1.7.2",
     "truffle-hdwallet-provider": "^1.0.17"
   }
