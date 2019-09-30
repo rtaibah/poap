@@ -206,7 +206,7 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
     }
     case OperationType.mintToken: {
       const [eventId, toAddr] = txJSON
-      await mintToken(eventId, toAddr, {
+      await mintToken(eventId, toAddr, true, {
         signer: transaction.signer,
         gas_price: gasPrice,
         nonce: transaction.nonce
