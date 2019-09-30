@@ -1,9 +1,10 @@
-import { getDefaultProvider } from 'ethers';
 import { FastifyInstance } from 'fastify';
 import createError from 'http-errors';
 import {
   getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
-  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, getTransactions, getTotalTransactions, getSigners, updateSignerGasPrice, getQrClaim, getTransaction, claimQrClaim, setQrClaimHash
+  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, 
+  getTransactions, getTotalTransactions, getSigners, updateSignerGasPrice, 
+  getQrClaim, getTransaction, claimQrClaim, updateQrClaim, checkDualQrClaim
 } from './db';
 
 import {
@@ -15,7 +16,10 @@ import {
   mintUserToManyEvents,
   burnToken,
   relayedVoteCall,
-  getAddressBalance
+  getAddressBalance,
+  resolveName,
+  lookupAddress,
+  checkAddress
 } from './poap-helper';
 import { Claim, PoapEvent, Vote } from './types';
 
@@ -91,13 +95,10 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const mainnetProvider = getDefaultProvider('homestead');
-
       if (req.query['name'] == null || req.query['name'] == '') {
         throw new createError.BadRequest('"name" query parameter is required');
       }
-
-      const resolvedAddress = await mainnetProvider.resolveName(req.query['name']);
+      const resolvedAddress = await resolveName(req.query['name']);
 
       if (resolvedAddress == null) {
         return {
@@ -124,14 +125,13 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const mainnetProvider = getDefaultProvider('homestead');
       const address = req.params.address;
 
       if (address == null || address == '') {
         throw new createError.BadRequest('"address" query parameter is required');
       }
 
-      const resolved = await mainnetProvider.lookupAddress(address);
+      const resolved = await lookupAddress(address);
 
       if (resolved == null) {
         return {
@@ -622,22 +622,35 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Qr is already Claimed');
       }
 
+      const is_valid_address = await checkAddress(req.body.address);
+      if (!is_valid_address) {
+        return new createError.BadRequest('Address is not valid');
+      }
+
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event_id, req.body.address);
+      if (!dual_qr_claim) {
+        return new createError.BadRequest('Address already has this claim');
+      }
+
       let claim_qr_claim = await claimQrClaim(req.body.qr_hash);
       if (!claim_qr_claim) {
         return new createError.InternalServerError('There was a problem updating claim boolean');
       }
       qr_claim.claimed = true
 
-      const tx_hash = await mintToken(qr_claim.event_id, req.body.address, false);
-      if (!tx_hash) {
+      const tx_mint = await mintToken(qr_claim.event_id, req.body.address, false);
+      if (!tx_mint || !tx_mint.hash) {
         return new createError.InternalServerError('There was a problem in token mint');
       }
 
-      let set_qr_claim_hash = await setQrClaimHash(req.body.qr_hash, tx_hash);
+      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, req.body.address, tx_mint);
       if (!set_qr_claim_hash) {
         return new createError.InternalServerError('There was a problem saving tx_hash');
       }
-      qr_claim.tx_hash = tx_hash
+
+      qr_claim.tx_hash = tx_mint.hash
+      qr_claim.beneficiary = req.body.address
+      qr_claim.signer = tx_mint.from
 
       return qr_claim
     }

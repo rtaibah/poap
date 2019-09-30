@@ -1,4 +1,4 @@
-import { Contract, ContractTransaction, Wallet, getDefaultProvider } from 'ethers';
+import { Contract, ContractTransaction, Wallet, getDefaultProvider, utils } from 'ethers';
 import { verifyMessage, toUtf8Bytes, keccak256, } from 'ethers/utils';
 import { readFileSync, } from 'fs';
 import { join } from 'path';
@@ -80,7 +80,7 @@ export async function getCurrentGasPrice(address: string) {
   return gasPrice;
 }
 
-export async function mintToken(eventId: number, toAddr: Address, awaitTx: boolean = true): Promise<string | undefined>  {
+export async function mintToken(eventId: number, toAddr: Address, awaitTx: boolean = true): Promise<ContractTransaction>  {
   const env = getEnv();
   const helperWallet = await getHelperSigner();
   const signerWallet = (helperWallet) ? helperWallet : env.poapAdmin;
@@ -106,7 +106,7 @@ export async function mintToken(eventId: number, toAddr: Address, awaitTx: boole
 
   console.log(`mintToken: Finished: ${tx.hash}`);
 
-  return tx.hash
+  return tx
 }
 
 export async function mintEventToManyUsers(eventId: number, toAddr: Address[]) {
@@ -291,4 +291,26 @@ export async function getAddressBalance(signer: Signer): Promise<Signer> {
   signer.balance = balance.toString();
 
   return signer
+}
+
+export async function resolveName(name: string): Promise<string> {
+  const mainnetProvider = getDefaultProvider('homestead');
+  const resolvedAddress = await mainnetProvider.resolveName(name);
+  return resolvedAddress
+}
+
+export async function lookupAddress(address: string): Promise<string> {
+  const mainnetProvider = getDefaultProvider('homestead');
+  const resolved = await mainnetProvider.lookupAddress(address);
+  return resolved
+}
+
+export async function checkAddress(address: string): Promise<boolean> {
+  try {
+    await utils.getAddress(address);
+  }
+  catch(error) {
+    return false;
+  }
+  return true;
 }
