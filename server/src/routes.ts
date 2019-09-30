@@ -605,10 +605,15 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       const qr_claim = await getQrClaim(qr_hash);
-
       if (!qr_claim) {
         return new createError.NotFound('Qr Claim not found');
       }
+
+      const event = await getEvent(qr_claim.event_id);
+      if (!event) {
+        return new createError.InternalServerError('Qr Claim does not have any event');
+      }
+      qr_claim.event = event
 
       qr_claim.tx_status = null
       if (qr_claim.tx_hash) {
@@ -635,10 +640,15 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const qr_claim = await getQrClaim(req.body.qr_hash);
-
       if (!qr_claim) {
         return new createError.NotFound('Qr Claim not found');
       }
+
+      const event = await getEvent(qr_claim.event_id);
+      if (!event) {
+        return new createError.InternalServerError('Qr Claim does not have any event');
+      }
+      qr_claim.event = event
 
       if (qr_claim.claimed) {
         return new createError.BadRequest('Qr is already Claimed');
@@ -649,7 +659,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      const dual_qr_claim = await checkDualQrClaim(qr_claim.event_id, req.body.address);
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, req.body.address);
       if (!dual_qr_claim) {
         return new createError.BadRequest('Address already has this claim');
       }
@@ -660,7 +670,7 @@ export default async function routes(fastify: FastifyInstance) {
       }
       qr_claim.claimed = true
 
-      const tx_mint = await mintToken(qr_claim.event_id, req.body.address, false);
+      const tx_mint = await mintToken(qr_claim.event.id, req.body.address, false);
       if (!tx_mint || !tx_mint.hash) {
         return new createError.InternalServerError('There was a problem in token mint');
       }
