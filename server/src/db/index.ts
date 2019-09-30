@@ -181,11 +181,6 @@ export async function adQrClaim(qr_hash: string): Promise<null | ClaimQR> {
   return res;
 }
 
-export async function getTransaction(hash: string): Promise<null | Transaction> {
-  const res = await db.oneOrNone<Transaction>('SELECT * FROM server_transactions WHERE tx_hash = $1', [hash]);
-  return res;
-}
-
 export async function claimQrClaim(qr_hash: string) {
   const res = await db.result('update qr_claims set claimed=true where qr_hash = $1', [qr_hash]);
   return res.rowCount === 1;
