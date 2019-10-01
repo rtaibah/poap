@@ -50,6 +50,20 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
       .trim()
       .split('\n')
       .map(adr => adr.trim());
+
+    let error = false;
+    addresses.forEach(address => {
+      if (address.indexOf('.eth') === -1 && !(address.match(/^0x[0-9a-fA-F]{40}$/))) error = true;
+    });
+    if (error) {
+      actions.setStatus({
+        ok: false,
+        msg: `Not a valid address or ENS list`,
+      });
+      actions.setSubmitting(false);
+      return;
+    }
+
     try {
       actions.setStatus(null);
       await mintEventToManyUsers(values.eventId, addresses);
@@ -111,6 +125,7 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
                   />
                   {}
                   <ErrorMessage name="addressList" component="p" className="bk-error" />
+                  <br />
                 </div>
                 {status && (
                   <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>

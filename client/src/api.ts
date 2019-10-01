@@ -262,8 +262,8 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
   });
 }
 
-export function getTransactions(limit: number, offset: number): Promise<any> {
-  return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}`);
+export function getTransactions(limit: number, offset: number, status: string): Promise<any> {
+  return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}&status=${status}`);
 }
 
 export function pumpTransaction(tx_hash: string, gasPrice: string): Promise<any> {
@@ -274,11 +274,11 @@ export function pumpTransaction(tx_hash: string, gasPrice: string): Promise<any>
 }
 
 export async function checkClaimHash(hash: string): Promise<HashClaim> {
-  return fetchJson(`${API_BASE}/claim-qr?qr_hash=${hash}`);
+  return fetchJson(`${API_BASE}/actions/claim-qr?qr_hash=${hash}`);
 }
 
 export async function postClaimHash(hash: string, address: string, secret: string): Promise<HashClaim> {
-  return fetchJson(`${API_BASE}/claim-qr`, {
+  return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
     body: JSON.stringify({ hash, address, secret }),
     headers: { 'Content-Type': 'application/json' },

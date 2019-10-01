@@ -1,11 +1,11 @@
-import React, { FC, useCallback, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 import { RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames';
 
 import { Formik, FormikActions, Form, Field, FieldProps, ErrorMessage } from 'formik';
 
-import { HashClaim, getEvent, PoapEvent, checkSigner } from '../api';
+import { HashClaim, checkClaimHash } from '../api';
 import { AddressSchema } from '../lib/schemas';
 import { tryGetAccount, tryObtainBadge, hasMetamask, isMetamaskLogged } from '../poap-eth';
 import { useAsync, useBodyClassName } from '../react-helpers';
@@ -96,8 +96,25 @@ const FinishedClaim: React.FC = () => {
 
 export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({ match }) => {
   const [claim, setClaim] = useState<null | HashClaim>(null);
+  const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
   let { hash } = match.params;
   let title = 'POAP Claim';
+
+  useEffect(() => {
+    fetchClaim();
+  }, [hash]);
+
+  const fetchClaim = () => {
+    if (!match.params.hash && !claim) return;
+    setIsClaimLoading(true);
+    checkClaimHash(hash)
+      .then(claim => {
+        console.log(claim);
+        setClaim(claim)
+      })
+      .catch(error => console.error(error))
+      .finally(() => setIsClaimLoading(false));
+  };
 
   let body = hash ? <ClaimForm /> : <ClaimHashForm />;
   if (claim && claim.tx_status) {

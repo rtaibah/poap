@@ -61,7 +61,6 @@ const IssueForEventFormValueSchema = yup.object().shape({
   addressList: yup
     .string()
     .required()
-    .matches(/^0x[0-9a-fA-F]{40}(\n0x[0-9a-fA-F]{40})*\n*$/, 'Not a valid address or address list'),
 });
 
 const IssueForUserFormValueSchema = yup.object().shape({

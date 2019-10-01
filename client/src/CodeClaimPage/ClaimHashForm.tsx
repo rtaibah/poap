@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Redirect } from 'react-router-dom';
 import classNames from 'classnames';
 
-import { Formik, FormikActions, Form, Field, FieldProps, ErrorMessage } from 'formik';
+import { Formik, Form, Field, FieldProps, ErrorMessage } from 'formik';
 
 /* Schemas */
 import { ClaimHashSchema } from '../lib/schemas';

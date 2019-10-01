@@ -182,6 +182,19 @@
     }
   }
 
+  .filters {
+    display: flex;
+    flex-direction: row;
+    .filter {
+      display: flex;
+      margin: 10px 20px 10px 0;
+      label {
+        text-transform: capitalize;
+        cursor: pointer;
+      }
+    }
+  }
+
   .pagination {
     text-align: center;
     margin-top: 20px;
@@ -207,7 +220,42 @@
     }
   }
 
+  &.transactions,
+  &.addresses{
+    .admin-table-row{
+      .center {
+        @media (max-width: $bp-mw) {
+          text-align: left;
+        }
+      }
+    }
 
+    .visible-md {
+      @media (max-width: $bp-mw) {
+        display: none;
+      }
+    }
+    .visible-sm{
+      display: none;
+      @media (max-width: $bp-mw) {
+        display: inline;
+      }
+    }
+    .status-icon{
+      @media (max-width: $bp-mw) {
+        position: absolute;
+        top: -70px;
+        right: 10px;
+      }
+    }
+    span.visible-sm{
+      font-weight: bold;
+    }
+  }
+
+  &.addresses {
+
+  }
 }
 
 .price-gas-modal-form {
@@ -232,6 +280,8 @@
   top: 20vh !important;
   max-width: 800px;
   min-width: 350px;
+  right: auto !important;
+  left: auto !important;
 
   .description{
     padding: 20px 0;

@@ -22,19 +22,16 @@ export async function getEvents(): Promise<PoapEvent[]> {
   return res.map(replaceDates);
 }
 
-export async function getTransactions(limit:number, offset:number): Promise<Transaction[]> {
-  let query = 'SELECT * FROM server_transactions ORDER BY created_date DESC'
-  if(limit > 0) {
-    query = query + ' LIMIT ' + limit + ' OFFSET ' + offset;
-  }
-
-  const res = await db.manyOrNone<Transaction>(query);
-  return res;
+export async function getTransactions(limit: number, offset: number, statusList: string[]): Promise<Transaction[]> {
+  let query = "SELECT * FROM server_transactions WHERE status IN (${statusList:csv}) ORDER BY created_date DESC" +
+    " LIMIT ${limit} OFFSET ${offset}";
+  const res = await db.result(query, {statusList, limit, offset});
+  return res.rows
 }
 
-export async function getTotalTransactions(): Promise<number> {
-  let query = 'SELECT COUNT(*) FROM server_transactions'
-  const res = await db.result(query);
+export async function getTotalTransactions(statusList: string[]): Promise<number> {
+  let query = 'SELECT COUNT(*) FROM server_transactions WHERE status IN (${statusList:csv})'
+  const res = await db.result(query, {statusList});
   return res.rows[0].count;
 }
 
