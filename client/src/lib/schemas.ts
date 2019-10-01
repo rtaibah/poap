@@ -2,6 +2,10 @@ import * as yup from 'yup';
 
 import { ADDRESS_REGEXP } from './constants';
 
+const AddressSchema = yup.object().shape({
+  address: yup.string().required()
+});
+
 const GasPriceSchema = yup.object().shape({
   gasPrice: yup
     .number()
@@ -72,10 +76,19 @@ const IssueForUserFormValueSchema = yup.object().shape({
     .matches(/^0x[0-9a-fA-F]{40}$/, 'Not a valid address'),
 });
 
+const ClaimHashSchema = yup.object().shape({
+  hash: yup
+    .string()
+    .required()
+    .length(6),
+});
+
 export {
+  AddressSchema,
   GasPriceSchema,
   BurnFormSchema,
   PoapEventSchema,
+  ClaimHashSchema,
   IssueForEventFormValueSchema,
   IssueForUserFormValueSchema,
 };

@@ -31,6 +31,19 @@ export interface ClaimProof {
   claimer: Address;
   proof: string;
 }
+export interface HashClaim {
+  id: number;
+  qr_hash: string;
+  tx_hash: string;
+  tx: Transaction;
+  event_id: number;
+  beneficiary: Address;
+  signer: Address;
+  claimed: boolean;
+  claimed_date: string;
+  created_date: string;
+  tx_status: string
+}
 export interface PoapSetting {
   id: number;
   name: string;
@@ -257,5 +270,17 @@ export function pumpTransaction(tx_hash: string, gasPrice: string): Promise<any>
   return secureFetchNoResponse(`${API_BASE}/transactions`, {
     method: 'POST',
     body: JSON.stringify({tx_hash, gas_price: gasPrice})
+  });
+}
+
+export async function checkClaimHash(hash: string): Promise<HashClaim> {
+  return fetchJson(`${API_BASE}/claim-qr?qr_hash=${hash}`);
+}
+
+export async function postClaimHash(hash: string, address: string, secret: string): Promise<HashClaim> {
+  return fetchJson(`${API_BASE}/claim-qr`, {
+    method: 'POST',
+    body: JSON.stringify({ hash, address, secret }),
+    headers: { 'Content-Type': 'application/json' },
   });
 }

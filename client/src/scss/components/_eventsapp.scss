@@ -98,15 +98,15 @@
 
     .decoration {
       width: 100%;
-      max-width: 330px;
-      margin: -120px auto 10px;
+      max-width: 100px;
+      margin: -80px auto 10px;
       display: block;
 
       @media (min-width: $bp-m) {
-        margin: -100px auto 10px;
+        margin: -60px auto 10px;
       }
       @media (min-width: $bp-l) {
-        margin: -105px auto 10px;
+        margin: -60px auto 10px;
       }
     }
 
@@ -155,7 +155,7 @@
       }
     }
 
-     .made-by-link {
+    .made-by-link {
       color: white;
       font-weight: 500;
       margin-left: 3px;
@@ -164,6 +164,19 @@
 
 
      }
+
+    .social-icons{
+      text-align: center;
+      padding: 30px 0;
+      a {
+        margin: 0 10px;
+        img {
+          width: 30px
+        }
+      }
+
+    }
+
   }
 }
 
@@ -314,3 +327,91 @@
   transform: scaleX(1);
   transform-origin: center left;
 }
+
+
+/* ******************************************************
+  Code Claim Page
+  ****************************************************** */
+ .code-claim-page {
+   background: $color-invert;
+   min-height: 100vh;
+   .claim-header {
+     position: relative;
+     background: $bg-color;
+
+     .title {
+       text-align: center;
+       font-size: 38px;
+       color: $color-primary;
+       font-weight: bold;
+       padding: 80px 0 20px;
+       font-family: $font-family-narrow;
+     }
+
+     .logo-event {
+       position: relative;
+       z-index: 1;
+       width: 120px;
+       height: 120px;
+       border-radius: 50%;
+       background-color: $color-primary;
+       margin: 0 auto;
+       -webkit-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+       -moz-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+       box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+
+       @media (min-width: $bp-mw) {
+         width: 200px;
+         height: 200px;
+       }
+
+     }
+
+     .wave-holder {
+       //position: absolute;
+       width: 100%;
+       margin-top: -60px;
+       //bottom: 0;
+
+       @media (min-width: $bp-mw) {
+         margin-top: -100px;
+       }
+
+       img {
+         width: 100%;
+       }
+     }
+
+   }
+
+   .claim-body {
+     padding-top: 50px;
+
+     .claim-form {
+       text-align: center;
+
+       input {
+         font-size: 16px;
+         text-align: center;
+         border: 1px solid $color-primary;
+       }
+
+       .web3-browser{
+         font-size: 16px;
+         padding: 25px 0;
+         font-family: $font-family-narrow;
+         color: $color-medium-violet;
+         span {
+           text-decoration: underline;
+           cursor: pointer;
+         }
+       }
+     }
+
+   }
+
+   footer {
+     background: #FFF;
+   }
+
+ }
