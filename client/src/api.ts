@@ -37,12 +37,14 @@ export interface HashClaim {
   tx_hash: string;
   tx: Transaction;
   event_id: number;
+  event: PoapEvent;
   beneficiary: Address;
   signer: Address;
   claimed: boolean;
   claimed_date: string;
   created_date: string;
   tx_status: string
+  secret: string;
 }
 export interface PoapSetting {
   id: number;
@@ -273,14 +275,14 @@ export function pumpTransaction(tx_hash: string, gasPrice: string): Promise<any>
   });
 }
 
-export async function checkClaimHash(hash: string): Promise<HashClaim> {
+export async function getClaimHash(hash: string): Promise<HashClaim> {
   return fetchJson(`${API_BASE}/actions/claim-qr?qr_hash=${hash}`);
 }
 
-export async function postClaimHash(hash: string, address: string, secret: string): Promise<HashClaim> {
+export async function postClaimHash(qr_hash: string, address: string, secret: string): Promise<HashClaim> {
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
-    body: JSON.stringify({ hash, address, secret }),
+    body: JSON.stringify({ qr_hash, address, secret }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

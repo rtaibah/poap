@@ -262,7 +262,7 @@ export default async function routes(fastify: FastifyInstance) {
       }
     },
     async (req, res) => {
-      const qr_hash = req.query.qr_hash || ''
+      const qr_hash = req.query.qr_hash || '';
 
       if (!qr_hash) {
         return new createError.NotFound('Please send qr_hash as querystring parameter');
@@ -270,7 +270,7 @@ export default async function routes(fastify: FastifyInstance) {
 
       const qr_claim = await getQrClaim(qr_hash);
       if (!qr_claim) {
-        await sleep(5000)
+        await sleep(1000);
         return new createError.NotFound('Qr Claim not found');
       }
 
@@ -278,18 +278,17 @@ export default async function routes(fastify: FastifyInstance) {
       if (!event) {
         return new createError.InternalServerError('Qr Claim does not have any event');
       }
-      qr_claim.event = event
+      qr_claim.event = event;
 
       const env = getEnv();
       qr_claim.secret = crypto.createHmac('sha256', env.secretKey).update(qr_hash).digest('hex');
 
-      qr_claim.tx_status = null
+      qr_claim.tx_status = null;
       if (qr_claim.tx_hash) {
         const transaction_status = await getTransaction(qr_claim.tx_hash);
         if(transaction_status) {
-          qr_claim.tx_status = transaction_status.status
+          qr_claim.tx_status = transaction_status.status;
         }
-
       }
 
       return qr_claim

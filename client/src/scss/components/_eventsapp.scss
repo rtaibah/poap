@@ -354,7 +354,7 @@
        width: 120px;
        height: 120px;
        border-radius: 50%;
-       background-color: $color-primary;
+       background-color: white;
        margin: 0 auto;
        -webkit-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
        -moz-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
@@ -363,6 +363,36 @@
        @media (min-width: $bp-mw) {
          width: 200px;
          height: 200px;
+       }
+
+       .claimed-badge {
+         background: $color-fourth;
+         -webkit-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+         -moz-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+         box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+         width: 30px;
+         height: 30px;
+         border-radius: 50%;
+         position: absolute;
+         text-align: center;
+         top: 90px;
+         right: 10px;
+
+         @media (min-width: $bp-mw) {
+           top: 160px;
+           right: 20px;
+           width: 50px;
+           height: 50px;
+         }
+
+         img{
+           padding-top: 4px;
+           width: 20px;
+           @media (min-width: $bp-mw) {
+             width: 40px;
+             right: 30px;
+           }
+         }
        }
 
      }
@@ -405,6 +435,57 @@
            text-decoration: underline;
            cursor: pointer;
          }
+       }
+     }
+
+     .claim-info {
+       padding: 20px;
+       max-width: 600px;
+       text-align: center;
+       margin: auto;
+
+       .info-title {
+         font-family: $font-family-narrow;
+         font-weight: bold;
+         color: $color-primary;
+         font-size: 26px;
+         line-height: 30px;
+         max-width: 300px;
+         margin: 30px auto;
+       }
+
+       .info-pending {
+         background: $color-light-grey;
+         color: $color-medium-violet;
+         display: inline;
+         border-radius: 4px;
+         padding: 10px 10px 10px 35px;
+         font-size: 16px;
+         line-height: 20px;
+         position: relative;
+
+         img {
+           width: 25px;
+           position: absolute;
+           left: 5px;
+           top: 15px;
+         }
+
+       }
+
+       .text-info {
+         color: $color-medium-violet;
+         font-size: 16px;
+         line-height: 20px;
+         max-width: 300px;
+         margin: 40px auto;
+       }
+
+       a.link-btn{
+         margin-top: 50px;
+         background: $color-fourth;
+         width: 300px;
+         min-width: 300px;
        }
      }
 

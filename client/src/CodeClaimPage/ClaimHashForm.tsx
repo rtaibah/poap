@@ -10,21 +10,19 @@ import { ClaimHashSchema } from '../lib/schemas';
 import { ROUTES } from '../lib/constants';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
+import { HashClaim } from '../api';
 
 type HashFormValues = {
   hash: string;
 };
 
-const ClaimHashForm: React.FC = () => {
-  const [hash, setHash] = useState<null | string>(null);
+const ClaimHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash: string) => void}> = ({error, loading, checkClaim}) => {
 
   const handleForm = (
     values: HashFormValues
   ) => {
-    setHash(values.hash)
+    checkClaim(values.hash)
   };
-
-  if (hash) return <Redirect to={ROUTES.codeClaimPageHash.replace(':hash', hash)} />
 
   return (
     <div className={'container'}>
@@ -35,7 +33,7 @@ const ClaimHashForm: React.FC = () => {
           initialValues={{ hash: '' }}
           validationSchema={ClaimHashSchema}
         >
-          {({ dirty, isValid, isSubmitting, status, touched }) => {
+          {({ dirty, isValid }) => {
             return (
               <Form className="claim-form">
                 <div className={'web3-browser'}>
@@ -55,13 +53,12 @@ const ClaimHashForm: React.FC = () => {
                     );
                   }}
                 />
-                <ErrorMessage name="gasPrice" component="p" className="bk-error"/>
-                {status && (
-                  <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>
+                {error && (
+                  <p className={'bk-msg-error'}>Badge not found</p>
                 )}
                 <SubmitButton
                   text="Claim my badge"
-                  isSubmitting={isSubmitting}
+                  isSubmitting={loading}
                   canSubmit={isValid && dirty}
                 />
               </Form>

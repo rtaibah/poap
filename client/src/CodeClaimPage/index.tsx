@@ -5,13 +5,14 @@ import classNames from 'classnames';
 
 import { Formik, FormikActions, Form, Field, FieldProps, ErrorMessage } from 'formik';
 
-import { HashClaim, checkClaimHash } from '../api';
+import { HashClaim, getClaimHash, postClaimHash } from '../api';
 import { AddressSchema } from '../lib/schemas';
 import { tryGetAccount, tryObtainBadge, hasMetamask, isMetamaskLogged } from '../poap-eth';
 import { useAsync, useBodyClassName } from '../react-helpers';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
+import { LinkButton } from '../components/LinkButton';
 import { ClaimFooter } from '../components/ClaimFooter';
 import { Loading } from '../components/Loading';
 import ClaimHashForm from './ClaimHashForm';
@@ -22,14 +23,25 @@ import { TX_STATUS } from '../lib/constants';
 
 /* Assets */
 import HeaderShadow from '../images/header-shadow-desktop-white.svg';
+import EmptyBadge from '../images/empty-badge.svg';
+import Star from '../images/white-star.svg';
+import Spinner from '../images/etherscan-spinner.svg';
 
+type QRFormValues = {
+  address: string;
+};
 
-const ClaimHeader: React.FC<{title: string, image?: string}> = ({title, image}) => {
+const ClaimHeader: React.FC<{title: string, image?: string, claimed?: boolean}> = ({title, image, claimed=true}) => {
   return (
     <div className={'claim-header'}>
       <div className={'title'}>{title}</div>
       <div className={'logo-event'}>
         {image && <img src={image} alt="Event" />}
+        {claimed &&
+          <div className={'claimed-badge'}>
+            <img src={Star} alt={"Badge claimed"} />
+          </div>
+        }
       </div>
       <div className={'wave-holder'}>
         <img src={HeaderShadow} />
@@ -38,13 +50,29 @@ const ClaimHeader: React.FC<{title: string, image?: string}> = ({title, image}) 
   )
 };
 
-const ClaimForm: React.FC = () => {
+const ClaimForm: React.FC<{claim: HashClaim, checkClaim: (hash: string) => void}> = ({claim, checkClaim}) => {
+
+  const handleFormSubmit = async (
+    values: QRFormValues,
+    actions: FormikActions<QRFormValues>
+  ) => {
+    try {
+      actions.setSubmitting(true);
+      await postClaimHash(claim.qr_hash, values.address, claim.secret);
+      checkClaim(claim.qr_hash);
+    } catch (error) {
+      actions.setStatus({ ok: false, msg: `Badge couldn't be minted` });
+    } finally {
+      actions.setSubmitting(false);
+    }
+  };
+
   return (
     <div className={'container'}>
       <div>
         <Formik
           enableReinitialize
-          onSubmit={() => {}}
+          onSubmit={handleFormSubmit}
           initialValues={{ address: '' }}
           validationSchema={AddressSchema}
         >
@@ -86,49 +114,92 @@ const ClaimForm: React.FC = () => {
   )
 };
 
-const PendingClaim: React.FC = () => {
-  return (<h1>Pending</h1>)
+const PendingClaim: React.FC<{claim: HashClaim}> = ({claim}) => {
+  const etherscanLink = `https://etherscan.io/tx/${claim.tx_hash}`;
+  return (
+    <div className={'claim-info'}>
+      <div className={'info-title'}>
+        Your badge is on it's way to your wallet
+      </div>
+      <div className={'info-pending'}>
+        <img src={Spinner} alt={'Mining'} />
+        Pending
+      </div>
+      <div className={'text-info'}>
+        Come back im a few minutes to check the status, or follow the transaction on Etherscan
+      </div>
+      <LinkButton
+        text={'View on Etherscan'}
+        link={etherscanLink}
+        extraClass={'link-btn'}
+        target={'_blank'} />
+    </div>
+  )
 };
 
-const FinishedClaim: React.FC = () => {
-  return (<h1>Finished</h1>)
+const FinishedClaim: React.FC<{claim: HashClaim}> = ({claim}) => {
+  const appLink = `/scan/${claim.beneficiary}`;
+  return (
+    <div className={'claim-info'}>
+      <div className={'info-title'}>
+        Congratulations! <br/>
+        {claim.event.name} badge is now in your wallet
+      </div>
+      <div className={'text-info'}>
+        Keep growing your POAP collection!
+      </div>
+      <LinkButton
+        text={'Check my badges'}
+        link={appLink}
+        extraClass={'link-btn'} />
+    </div>
+  )
 };
 
 export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({ match }) => {
   const [claim, setClaim] = useState<null | HashClaim>(null);
+  const [claimError, setClaimError] = useState<boolean>(false);
   const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
   let { hash } = match.params;
   let title = 'POAP Claim';
+  let image = EmptyBadge;
 
   useEffect(() => {
-    fetchClaim();
-  }, [hash]);
+    if (hash) fetchClaim(hash);
+  }, []);
 
-  const fetchClaim = () => {
-    if (!match.params.hash && !claim) return;
+  const fetchClaim = (hash: string) => {
     setIsClaimLoading(true);
-    checkClaimHash(hash)
+    getClaimHash(hash)
       .then(claim => {
-        console.log(claim);
-        setClaim(claim)
+        setClaim(claim);
+        setClaimError(false);
       })
-      .catch(error => console.error(error))
+      .catch(error => {
+        console.error(error);
+        setClaimError(true);
+      })
       .finally(() => setIsClaimLoading(false));
   };
 
-  let body = hash ? <ClaimForm /> : <ClaimHashForm />;
-  if (claim && claim.tx_status) {
-    if (claim.tx_status === TX_STATUS.pending) {
-      body = <PendingClaim />
-    }
-    if (claim.tx_status === TX_STATUS.passed) {
-      body = <FinishedClaim />
+  let body = <ClaimHashForm loading={isClaimLoading} checkClaim={fetchClaim} error={claimError} />;
+  if (claim) {
+    body = <ClaimForm claim={claim} checkClaim={fetchClaim} />;
+    title = claim.event.name;
+    image = claim.event.image_url;
+    if (claim.tx_status) {
+      if (claim.tx_status === TX_STATUS.pending) {
+        body = <PendingClaim claim={claim} />
+      }
+      if (claim.tx_status === TX_STATUS.passed) {
+        body = <FinishedClaim claim={claim} />
+      }
     }
   }
 
   return (
     <div className={'code-claim-page'}>
-      <ClaimHeader title={title} />
+      <ClaimHeader title={title} image={image} claimed={!!(claim && claim.tx_status === TX_STATUS.passed)} />
       <div className={'claim-body'}>
         {body}
       </div>
