@@ -114,7 +114,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   let signerWallet: Wallet;
   // Use extraParams signer if it's specified in extraParams 
   if (extraParams && extraParams.signer) {
-    signerWallet = await getSignerWallet(extraParams.signer);
+    signerWallet = await getSignerWallet(extraParams.signer.toLowerCase());
   } else if (onlyAdminSigner) {
     signerWallet = env.poapAdmin;
   } else {

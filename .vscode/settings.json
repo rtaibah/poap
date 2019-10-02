@@ -15,5 +15,5 @@
       "username": "poap"
     }
   ],
-  "debug.node.autoAttach": "off"
+  "debug.node.autoAttach": "on"
 }

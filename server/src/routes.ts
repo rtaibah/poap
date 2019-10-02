@@ -269,6 +269,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/bump',
     {
+      preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
