@@ -7,8 +7,8 @@ import ReactPaginate from 'react-paginate';
 import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'formik';
 
 /* Helpers */
-import { TX_STATUS } from '../lib/constants';
 import { GasPriceSchema } from '../lib/schemas';
+import { TX_STATUS, etherscanLinks } from '../lib/constants';
 import { Transaction, getTransactions, pumpTransaction } from '../api';
 import { convertFromGWEI, convertToGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
@@ -112,13 +112,13 @@ const TransactionsPage: FC = () => {
         {isFetchingTx && <Loading />}
         {transactions && transactions.map((tx, i) => {
           return (
-            <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={tx.id}>
+            <div className={`row`} key={tx.id}>
               <div className={'col-xs-1 center'}>{tx.id}</div>
               <div className={'col-xs-3'}>
-                <a href={`https://etherscan.io/tx/${tx.tx_hash}`} target={"_blank"}>{reduceAddress(tx.tx_hash)}</a>
+                <a href={etherscanLinks.tx(tx.tx_hash)} target={"_blank"}>{reduceAddress(tx.tx_hash)}</a>
               </div>
               <div className={'col-xs-3'}>
-                <a href={`https://etherscan.io/address/${tx.signer}`} target={"_blank"}>{reduceAddress(tx.signer)}</a>
+                <a href={etherscanLinks.address(tx.signer)} target={"_blank"}>{reduceAddress(tx.signer)}</a>
               </div>
               <div className={'col-xs-2 capitalize'}>{tx.operation}</div>
               <div className={'col-xs-1 center'}>
@@ -154,7 +154,7 @@ const TransactionsPage: FC = () => {
           {selectedTx &&
             <>
               <div className={'description'}>
-                Modify gas price for tx <a href={`https://etherscan.io/tx/${selectedTx.tx_hash}`} target={"_blank"}>{selectedTx.tx_hash}</a>.
+                Modify gas price for tx <a href={etherscanLinks.tx(selectedTx.tx_hash)} target={"_blank"}>{selectedTx.tx_hash}</a>.
                 Operation: {selectedTx.operation}
               </div>
             <Formik
