@@ -179,7 +179,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintEventToManyUsers',
     {
-      //preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
@@ -213,7 +213,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintUserToManyEvents',
     {
-      //preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
