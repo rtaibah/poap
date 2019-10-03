@@ -4,7 +4,7 @@ import {
   getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
   getPoapSettingByName, getPoapSettings, updatePoapSettingByName, 
   getTransactions, getTotalTransactions, getSigners, updateSignerGasPrice, 
-  getQrClaim, getTransaction, claimQrClaim, updateQrClaim, checkDualQrClaim
+  getQrClaim, getTransaction, claimQrClaim, updateQrClaim, checkDualQrClaim, getPendingTxsAmount
 } from './db';
 
 import {
@@ -22,7 +22,8 @@ import {
   lookupAddress,
   checkAddress
 } from './poap-helper';
-import { Claim, PoapEvent, TransactionStatus, Vote } from './types';
+
+import { Claim, PoapEvent, TransactionStatus, Vote, Address } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
 
@@ -178,24 +179,32 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintEventToManyUsers',
     {
-      preValidation: [fastify.authenticate],
+      //preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
-          required: ['eventId', 'addresses'],
+          required: ['eventId', 'addresses', 'signer_address'],
           properties: {
             eventId: { type: 'integer', minimum: 1 },
             addresses: {
               type: 'array',
               minItems: 1,
-              items: 'address#',
             },
           },
         },
       },
     },
     async (req, res) => {
-      await mintEventToManyUsers(req.body.eventId, req.body.addresses);
+      let parsed_addresses: Address[] = []
+      for (var address of req.body.addresses) {
+        const parsed_address = await checkAddress(address);
+        if (!parsed_address) {
+          return new createError.BadRequest('Address is not valid');
+        }
+        parsed_addresses.push(parsed_address);
+      }
+
+      await mintEventToManyUsers(req.body.eventId, parsed_addresses, {'signer': req.body.signer_address});
       res.status(204);
       return;
     }
@@ -204,11 +213,11 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintUserToManyEvents',
     {
-      preValidation: [fastify.authenticate],
+      //preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
-          required: ['eventIds', 'address'],
+          required: ['eventIds', 'address', 'signer_address'],
           properties: {
             eventIds: { type: 'array', minItems: 1, items: { type: 'integer', minimum: 1 } },
             address: 'address#',
@@ -217,7 +226,12 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      await mintUserToManyEvents(req.body.eventIds, req.body.address);
+      const parsed_address = await checkAddress(req.body.address);
+      if (!parsed_address) {
+        return new createError.BadRequest('Address is not valid');
+      }
+
+      await mintUserToManyEvents(req.body.eventIds, parsed_address, {'signer': req.body.signer_address});
       res.status(204);
       return;
     }
@@ -686,15 +700,16 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/signers', {},
     async (req, res) => {
-      const signers = await getSigners();
+      let signers = await getSigners();
 
       if (!signers) {
         return new createError.NotFound('Signers not found');
       }
+      signers = await Promise.all(signers.map(signer => getPendingTxsAmount(signer)));
+      signers = await Promise.all(signers.map(signer => getAddressBalance(signer)));
 
-      return await Promise.all(signers.map(signer => getAddressBalance(signer)))
-    }
-  );
+      return signers
+    });
 
   fastify.put(
     '/signers/:id',
@@ -717,6 +732,128 @@ export default async function routes(fastify: FastifyInstance) {
       }
       res.status(204);
       return;
+    }
+  );
+
+  fastify.get(
+    '/claim-qr',
+    {
+      schema: {
+        querystring: {
+          qr_hash: { type: 'string' },
+        },
+      }
+    },
+    async (req, res) => {
+      const qr_hash = req.query.qr_hash || ''
+
+      if (!qr_hash) {
+        return new createError.NotFound('Please send qr_hash as querystring parameter');
+      }
+
+      const qr_claim = await getQrClaim(qr_hash);
+      if (!qr_claim) {
+        await sleep(5000)
+        return new createError.NotFound('Qr Claim not found');
+      }
+
+      const event = await getEvent(qr_claim.event_id);
+      if (!event) {
+        return new createError.InternalServerError('Qr Claim does not have any event');
+      }
+      qr_claim.event = event
+
+      const env = getEnv();
+      qr_claim.secret = crypto.createHmac('sha256', env.secretKey).update(qr_hash).digest('hex');
+
+      qr_claim.tx_status = null
+      if (qr_claim.tx_hash) {
+        const transaction_status = await getTransaction(qr_claim.tx_hash);
+        if(transaction_status) {
+          qr_claim.tx_status = transaction_status.status
+        }
+        
+      }
+
+      return qr_claim
+    }
+  );
+
+  fastify.post(
+    '/claim-qr',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['address', 'qr_hash', 'secret'],
+        },
+      },
+    },
+    async (req, res) => {
+      const env = getEnv();
+      const secret = crypto.createHmac('sha256', env.secretKey).update(req.body.qr_hash).digest('hex');
+
+      if(req.body.secret != secret) {
+        await sleep(5000)
+        return new createError.NotFound('Invalid secret');
+      }
+
+      const qr_claim = await getQrClaim(req.body.qr_hash);
+      if (!qr_claim) {
+        await sleep(5000)
+        return new createError.NotFound('Qr Claim not found');
+      }
+
+      const event = await getEvent(qr_claim.event_id);
+      if (!event) {
+        return new createError.InternalServerError('Qr Claim does not have any event');
+      }
+      qr_claim.event = event
+
+      if (qr_claim.claimed) {
+        return new createError.BadRequest('Qr is already Claimed');
+      }
+
+      const parsed_address = await checkAddress(req.body.address);
+      if (!parsed_address) {
+        return new createError.BadRequest('Address is not valid');
+      }
+
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address);
+      if (!dual_qr_claim) {
+        return new createError.BadRequest('Address already has this claim');
+      }
+
+      let claim_qr_claim = await claimQrClaim(req.body.qr_hash);
+      if (!claim_qr_claim) {
+        return new createError.InternalServerError('There was a problem updating claim boolean');
+      }
+      qr_claim.claimed = true
+
+      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
+      if (!tx_mint || !tx_mint.hash) {
+        return new createError.InternalServerError('There was a problem in token mint');
+      }
+
+      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
+      if (!set_qr_claim_hash) {
+        return new createError.InternalServerError('There was a problem saving tx_hash');
+      }
+
+      qr_claim.tx_hash = tx_mint.hash
+      qr_claim.beneficiary = parsed_address
+      qr_claim.signer = tx_mint.from
+      qr_claim.tx_status = null
+
+      if (qr_claim.tx_hash) {
+        const transaction_status = await getTransaction(qr_claim.tx_hash);
+        if(transaction_status) {
+          qr_claim.tx_status = transaction_status.status
+        }
+        
+      }
+
+      return qr_claim
     }
   );
 

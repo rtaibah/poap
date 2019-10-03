@@ -57,6 +57,7 @@ export interface Signer {
   gas_price: string;
   created_date: Date;
   balance: string;
+  pending_tx: number;
 }
 
 export interface Transaction {

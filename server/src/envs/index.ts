@@ -18,6 +18,11 @@ export interface PoapHelpers {
 function getHelperWallets(provider: Provider) {
   let helpers: any = {}
   const helpersPK = ensureEnvVariable('POAP_HELPERS_PK')
+  const ownerPK = ensureEnvVariable('POAP_OWNER_PK');
+
+  // Add admin wallet as helper
+  let admin_wallet = new Wallet(ownerPK, provider)
+  helpers[admin_wallet.address.toLowerCase()] = new Wallet(ownerPK, provider);
 
   var jsonObj = JSON.parse(helpersPK)
   for (let item of jsonObj) {
@@ -39,7 +44,7 @@ function getDevelopmentVariables(): EnvVariables {
       provider
     ),
     poapHelpers: {
-      '0xaa82fde1a5266971b27f135d16d282fa20b84c94': new Wallet(
+      '0xaa82fde1a5266971b27f135d16d282fa20b84c94':  new Wallet(
         'CDF2DF30545E16094B4D62FA1624DE9A44432547CE3F582DE8F066C42ABBC4EE',
         provider
       ),
