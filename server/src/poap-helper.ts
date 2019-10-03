@@ -80,7 +80,7 @@ export function getVoteContract(wallet: Wallet): VotePoap {
  * @param n number of addresses
  */
 export function estimateMintingGas(n: number) {
-  const delta = 136907;
+  const delta = 1369070;
   const baseCost = 35708;
   return (baseCost + n * delta) * 1.5;
 }
@@ -111,6 +111,7 @@ export async function getCurrentGasPrice(address: string) {
 
 export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   const env = getEnv();
+  let estimate_mint_gas = 1;
   let signerWallet: Wallet;
   // Use extraParams signer if it's specified in extraParams 
   if (extraParams && extraParams.signer) {
@@ -130,10 +131,13 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   } else {
     gasPrice = await getCurrentGasPrice(signerWallet.address);
   }
-    
+
+  if (extraParams && extraParams.estimate_mint_gas) {
+    estimate_mint_gas = extraParams.estimate_mint_gas
+  }
 
   const transactionParams: any = {
-    gasLimit: estimateMintingGas(1),
+    gasLimit: estimateMintingGas(estimate_mint_gas),
     gasPrice: Number(gasPrice),
   };
 
@@ -248,8 +252,8 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[], e
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
-  await tx.wait();
-  console.log(`mintTokenBatch: Finished ${tx.hash}`);
+  // await tx.wait();
+  // console.log(`mintTokenBatch: Finished ${tx.hash}`);
 }
 
 export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, extraParams?: any) {
@@ -272,8 +276,8 @@ export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, 
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
-  await tx.wait();
-  console.log(`mintTokenBatch: Finished ${tx.hash}`);
+  // await tx.wait();
+  // console.log(`mintTokenBatch: Finished ${tx.hash}`);
 }
 
 export async function burnToken(tokenId: string | number, extraParams?: any): Promise<boolean> {

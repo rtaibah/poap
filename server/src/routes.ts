@@ -180,7 +180,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintEventToManyUsers',
     {
-      preValidation: [fastify.authenticate],
+      //preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
@@ -205,7 +205,10 @@ export default async function routes(fastify: FastifyInstance) {
         parsed_addresses.push(parsed_address);
       }
 
-      await mintEventToManyUsers(req.body.eventId, parsed_addresses, {'signer': req.body.signer_address});
+      await mintEventToManyUsers(req.body.eventId, parsed_addresses, {
+        'signer': req.body.signer_address,
+        'estimate_mint_gas': parsed_addresses.length
+      });
       res.status(204);
       return;
     }
