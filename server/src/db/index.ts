@@ -33,7 +33,7 @@ export async function getTransactions(limit:number, offset:number): Promise<Tran
 }
 
 export async function getTotalTransactions(): Promise<number> {
-  let query = 'SELECT COUNT(*) FROM server_transactions'
+  const query = 'SELECT COUNT(*) FROM server_transactions'
   const res = await db.result(query);
   return res.rows[0].count;
 }
@@ -85,6 +85,18 @@ export async function getTransaction(tx_hash: string): Promise<null | Transactio
 export async function getPendingTxs(): Promise<Transaction[]> {
   const res = await db.manyOrNone<Transaction>("SELECT * FROM server_transactions WHERE status = 'pending' ORDER BY id ASC");
   return res;
+}
+
+export async function getPendingTxsAmount(signer: Signer): Promise<Signer> {
+  const signer_address = signer.signer
+  const status = 'pending';
+  const res = await db.result('SELECT COUNT(*) FROM server_transactions WHERE status = ${status} AND signer = ${signer_address}', 
+  {
+    status,
+    signer_address
+  });
+  signer.pending_tx = res.rows[0].count;
+  return signer
 }
 
 export async function getEvent(id: number): Promise<null | PoapEvent> {

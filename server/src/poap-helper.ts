@@ -439,12 +439,18 @@ export async function lookupAddress(address: string): Promise<string> {
   return resolved
 }
 
-export async function checkAddress(address: string): Promise<boolean> {
+export async function checkAddress(address: string): Promise<string | null> {
+  let response:string | null = null;
   try {
-    await utils.getAddress(address);
+    response = await utils.getAddress(address);
   }
   catch(error) {
-    return false;
+    try {
+      response = await resolveName(address)
+    }
+    catch(error) {
+      return response;
+    }
   }
-  return true;
+  return response;
 }
