@@ -2,8 +2,18 @@ import { getDefaultProvider } from 'ethers';
 import { FastifyInstance } from 'fastify';
 import createError from 'http-errors';
 import {
-  getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
-  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, getTransactions, getTotalTransactions, getSigners, updateSignerGasPrice
+  getEvent,
+  getEventByFancyId,
+  getEvents,
+  updateEvent,
+  createEvent,
+  getPoapSettingByName,
+  getPoapSettings,
+  updatePoapSettingByName,
+  getTransactions,
+  getTotalTransactions,
+  getSigners,
+  updateSignerGasPrice,
 } from './db';
 
 import {
@@ -15,7 +25,7 @@ import {
   mintUserToManyEvents,
   burnToken,
   relayedVoteCall,
-  getAddressBalance
+  getAddressBalance,
 } from './poap-helper';
 import { Claim, PoapEvent, Vote } from './types';
 
@@ -239,23 +249,18 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
-  fastify.post(
-    '/actions/qr',
-    {
-    },
-    async (req, res) => {
-      // TODO - validate QR, claimer, event, etc.
-      const isValid = true
-      const claimer = '0xeEF6cc9bEA0ee9A508127Af5269209Aeb45769DE'
-      const eventId = 3
-      if (isValid) {
-        await mintToken(eventId, claimer);
-        res.status(204);
-      } else {
-        throw new createError.BadRequest('Invalid QR');
-      }
+  fastify.post('/actions/qr', {}, async (req, res) => {
+    // TODO - validate QR, claimer, event, etc.
+    const isValid = true;
+    const claimer = '0xeEF6cc9bEA0ee9A508127Af5269209Aeb45769DE';
+    const eventId = 3;
+    if (isValid) {
+      await mintToken(eventId, claimer);
+      res.status(204);
+    } else {
+      throw new createError.BadRequest('Invalid QR');
     }
-  );
+  });
 
   fastify.post(
     '/actions/vote',
@@ -274,12 +279,12 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const { signature: claimerSignature, proposal, address: claimer } = req.body ;
+      const { signature: claimerSignature, proposal, address: claimer } = req.body;
       const vote: Vote = {
         proposal,
         claimerSignature,
-        claimer
-      }
+        claimer,
+      };
       const tx = await relayedVoteCall(vote);
       if (tx) {
         res.status(204);
@@ -353,7 +358,7 @@ export default async function routes(fastify: FastifyInstance) {
       schema: {
         params: {
           name: { type: 'string' },
-          value: { type: 'string' }
+          value: { type: 'string' },
         },
       },
     },
@@ -364,7 +369,11 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('unsuccessful operation');
       }
 
-      const isOk = await updatePoapSettingByName(req.params.name, setting_type['type'], req.params.value);
+      const isOk = await updatePoapSettingByName(
+        req.params.name,
+        setting_type['type'],
+        req.params.value
+      );
       if (!isOk) {
         return new createError.BadRequest('unsuccessful operation');
       }
@@ -508,11 +517,11 @@ export default async function routes(fastify: FastifyInstance) {
           limit: { type: 'number' },
           offset: { type: 'number' },
         },
-      }
+      },
     },
     async (req, res) => {
-      const limit = parseInt(req.query.limit) || 0
-      const offset = parseInt(req.query.offset) || 0
+      const limit = parseInt(req.query.limit) || 0;
+      const offset = parseInt(req.query.offset) || 0;
 
       const transactions = await getTransactions(limit, offset);
       const totalTransactions = await getTotalTransactions();
@@ -524,22 +533,20 @@ export default async function routes(fastify: FastifyInstance) {
         limit: limit,
         offset: offset,
         total: totalTransactions,
-        transactions: transactions
-      }
+        transactions: transactions,
+      };
     }
   );
 
-  fastify.get('/signers', {},
-    async (req, res) => {
-      const signers = await getSigners();
+  fastify.get('/signers', {}, async (req, res) => {
+    const signers = await getSigners();
 
-      if (!signers) {
-        return new createError.NotFound('Signers not found');
-      }
-
-      return await Promise.all(signers.map(signer => getAddressBalance(signer)))
+    if (!signers) {
+      return new createError.NotFound('Signers not found');
     }
-  );
+
+    return await Promise.all(signers.map(signer => getAddressBalance(signer)));
+  });
 
   fastify.put(
     '/signers/:id',
@@ -551,7 +558,7 @@ export default async function routes(fastify: FastifyInstance) {
         },
         body: {
           type: 'object',
-          required: ['gas_price', ],
+          required: ['gas_price'],
         },
       },
     },
@@ -564,5 +571,4 @@ export default async function routes(fastify: FastifyInstance) {
       return;
     }
   );
-
 }

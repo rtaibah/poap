@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus } from '../types';
 
 const db = pgPromise()({
   host: process.env.INSTANCE_CONNECTION_NAME ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}` : 'localhost',
@@ -13,12 +13,6 @@ function replaceDates(event: PoapEvent): PoapEvent {
   event.start_date = format(new Date(event.start_date), 'MM/DD/YYYY');
   event.end_date = format(new Date(event.end_date), 'MM/DD/YYYY');
   return event;
-}
-
-export async function getEvents(): Promise<PoapEvent[]> {
-  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events ORDER BY start_date DESC');
-
-  return res.map(replaceDates);
 }
 
 export async function getTransactions(limit:number, offset:number): Promise<Transaction[]> {
@@ -73,7 +67,18 @@ export async function getAvailableHelperSigner(): Promise<null | Signer> {
     LIMIT 1
   `)
   return res;
-} 
+}
+
+export async function getPendingTxs(): Promise<Transaction[]> {
+  const res = await db.manyOrNone<Transaction>("SELECT * FROM server_transactions WHERE status = 'pending' ORDER BY id ASC");
+  return res;
+}
+
+export async function getEvents(): Promise<PoapEvent[]> {
+  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events ORDER BY start_date DESC');
+
+  return res.map(replaceDates);
+}
 
 export async function getEvent(id: number): Promise<null | PoapEvent> {
   const res = await db.oneOrNone<PoapEvent>('SELECT * FROM events WHERE id = $1', [id]);
@@ -126,8 +131,6 @@ export async function createEvent(event: Omit<PoapEvent, 'id'>): Promise<PoapEve
   };
 }
 
-// export async function insertEvent
-
 export async function saveTransaction(hash: string, nonce: number, operation: string, params: string, signer: Address, status: string, gas_price: string ): Promise<boolean>{
   let query = "INSERT INTO server_transactions(tx_hash, nonce, operation, arguments, signer, status, gas_price) VALUES (${hash}, ${nonce}, ${operation}, ${params}, ${signer}, ${status}, ${gas_price})";
   let values = {hash, nonce, operation, params: params.substr(0, 950), signer, status, gas_price};
@@ -140,4 +143,15 @@ export async function saveTransaction(hash: string, nonce: number, operation: st
     return res.rowCount === 1;
   }
   return false;
+}
+
+export async function updateTransactionStatus(hash: string, status: TransactionStatus) {
+  const res = await db.result(
+    'update server_transactions set status=${status} where tx_hash = ${hash}',
+    {
+      status,
+      hash,
+    }
+  );
+  return res.rowCount === 1;
 }

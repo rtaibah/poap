@@ -1,13 +1,20 @@
 import { Contract, ContractTransaction, Wallet, getDefaultProvider } from 'ethers';
-import { verifyMessage, toUtf8Bytes, keccak256, } from 'ethers/utils';
-import { readFileSync, } from 'fs';
+import { verifyMessage, toUtf8Bytes, keccak256 } from 'ethers/utils';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
-import { getEvent, getEvents, getPoapSettingByName, saveTransaction, getSigner, getAvailableHelperSigner } from './db';
+import {
+  getEvent,
+  getEvents,
+  getPoapSettingByName,
+  saveTransaction,
+  getSigner,
+  getAvailableHelperSigner,
+} from './db';
 import getEnv from './envs';
 import { Poap } from './poap-eth/Poap';
 import { VotePoap } from './poap-eth/VotePoap';
-import { Address, Claim, TokenInfo, Vote, Signer, TransactionStatus, OperationType} from './types';
+import { Address, Claim, TokenInfo, Vote, Signer, TransactionStatus, OperationType } from './types';
 
 const Logger = pino();
 const ABI_DIR = join(__dirname, '../abi');
@@ -31,10 +38,10 @@ export async function getHelperSigner(): Promise<null | Wallet> {
   const env = getEnv();
   const signer: null | Signer = await getAvailableHelperSigner();
   if (signer) {
-    const wallet = env.poapHelpers[signer.signer.toLowerCase()]
-    return wallet
+    const wallet = env.poapHelpers[signer.signer.toLowerCase()];
+    return wallet;
   }
-  return null
+  return null;
 }
 
 export function getVoteContract(wallet: Wallet): VotePoap {
@@ -64,10 +71,10 @@ export async function getCurrentGasPrice(address: string) {
   let gasPrice = 5e9;
 
   // Get defined gasPrice for selected signer
-  let signer: Signer | null = await getSigner(address)
+  let signer: Signer | null = await getSigner(address);
   if (signer) {
     if (signer.gas_price) {
-      return parseInt(signer.gas_price)
+      return parseInt(signer.gas_price);
     }
   }
 
@@ -83,7 +90,7 @@ export async function getCurrentGasPrice(address: string) {
 export async function mintToken(eventId: number, toAddr: Address) {
   const env = getEnv();
   const helperWallet = await getHelperSigner();
-  const signerWallet = (helperWallet) ? helperWallet : env.poapAdmin;
+  const signerWallet = helperWallet ? helperWallet : env.poapAdmin;
   const contract = getContract(signerWallet);
   const gasPrice = await getCurrentGasPrice(signerWallet.address);
 
@@ -93,8 +100,16 @@ export async function mintToken(eventId: number, toAddr: Address) {
     gasPrice: gasPrice,
   });
 
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, OperationType.mintToken, JSON.stringify([eventId, toAddr]), signerWallet.address, TransactionStatus.pending, gasPrice.toString());
+  if (tx.hash) {
+    await saveTransaction(
+      tx.hash,
+      tx.nonce,
+      OperationType.mintToken,
+      JSON.stringify([eventId, toAddr]),
+      signerWallet.address,
+      TransactionStatus.pending,
+      gasPrice.toString()
+    );
   }
 
   console.log(`mintToken: Transaction: ${tx.hash}`);
@@ -115,8 +130,16 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[]) {
     gasPrice: gasPrice,
   });
 
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, OperationType.mintEventToManyUsers, JSON.stringify([eventId, toAddr]), env.poapAdmin.address, TransactionStatus.pending, gasPrice.toString());
+  if (tx.hash) {
+    await saveTransaction(
+      tx.hash,
+      tx.nonce,
+      OperationType.mintEventToManyUsers,
+      JSON.stringify([eventId, toAddr]),
+      env.poapAdmin.address,
+      TransactionStatus.pending,
+      gasPrice.toString()
+    );
   }
 
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
@@ -137,8 +160,16 @@ export async function mintUserToManyEvents(eventIds: number[], toAddr: Address) 
     gasPrice: gasPrice,
   });
 
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, OperationType.mintUserToManyEvents, JSON.stringify({eventIds, toAddr}), env.poapAdmin.address, TransactionStatus.pending, gasPrice.toString());
+  if (tx.hash) {
+    await saveTransaction(
+      tx.hash,
+      tx.nonce,
+      OperationType.mintUserToManyEvents,
+      JSON.stringify({ eventIds, toAddr }),
+      env.poapAdmin.address,
+      TransactionStatus.pending,
+      gasPrice.toString()
+    );
   }
 
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
@@ -159,8 +190,16 @@ export async function burnToken(tokenId: string | number): Promise<boolean> {
     gasPrice: gasPrice,
   });
 
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, OperationType.burnToken, tokenId.toString(), env.poapAdmin.address, TransactionStatus.pending, gasPrice.toString());
+  if (tx.hash) {
+    await saveTransaction(
+      tx.hash,
+      tx.nonce,
+      OperationType.burnToken,
+      tokenId.toString(),
+      env.poapAdmin.address,
+      TransactionStatus.pending,
+      gasPrice.toString()
+    );
   }
 
   console.log(`burn: Transaction: ${tx.hash}`);
@@ -168,7 +207,7 @@ export async function burnToken(tokenId: string | number): Promise<boolean> {
   // The operation is NOT complete yet; we must wait until it is mined
   await tx.wait();
   console.log(`burn: Finished ${tx.hash}`);
-  return true
+  return true;
 }
 
 export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
@@ -181,7 +220,7 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     }
     return ev;
   };
-  
+
   const env = getEnv();
   const contract = getContract(env.poapAdmin);
   const tokensAmount = (await contract.functions.balanceOf(address)).toNumber();
@@ -214,7 +253,7 @@ export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo>
   };
 }
 
-export async function verifyClaim(claim: Claim): Promise<string|boolean> {
+export async function verifyClaim(claim: Claim): Promise<string | boolean> {
   const event = await getEvent(claim.eventId);
 
   if (!event) {
@@ -246,10 +285,10 @@ export async function verifyClaim(claim: Claim): Promise<string|boolean> {
   return true;
 }
 
-export async function relayedVoteCall(vote: Vote): Promise<boolean|ContractTransaction> {
+export async function relayedVoteCall(vote: Vote): Promise<boolean | ContractTransaction> {
   const env = getEnv();
   const helperWallet: null | Wallet = await getHelperSigner();
-  const signerWallet = (helperWallet) ? helperWallet : env.poapAdmin;
+  const signerWallet = helperWallet ? helperWallet : env.poapAdmin;
   const contract = getVoteContract(signerWallet);
   const gasPrice = await getCurrentGasPrice(contract.address);
 
@@ -259,17 +298,25 @@ export async function relayedVoteCall(vote: Vote): Promise<boolean|ContractTrans
   const supposedClaimedAddress = verifyMessage(keccak256(messageBytes), vote.claimerSignature);
   const isValid = supposedClaimedAddress === vote.claimer;
 
-  if(isValid){
+  if (isValid) {
     try {
       // @ts-ignore
       const { claimer, proposal } = vote;
       const tx = await contract.functions.relayedVote(claimer, proposal, {
         gasLimit: 450000000,
-        gasPrice: gasPrice
+        gasPrice: gasPrice,
       });
 
-      if(tx.hash){
-        await saveTransaction(tx.hash, tx.nonce, OperationType.vote, JSON.stringify([claimer, proposal]), env.poapAdmin.address, TransactionStatus.pending, gasPrice.toString());
+      if (tx.hash) {
+        await saveTransaction(
+          tx.hash,
+          tx.nonce,
+          OperationType.vote,
+          JSON.stringify([claimer, proposal]),
+          env.poapAdmin.address,
+          TransactionStatus.pending,
+          gasPrice.toString()
+        );
       }
       return tx;
     } catch (e) {
@@ -285,5 +332,5 @@ export async function getAddressBalance(signer: Signer): Promise<Signer> {
 
   signer.balance = balance.toString();
 
-  return signer
+  return signer;
 }
