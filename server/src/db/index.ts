@@ -174,7 +174,6 @@ export async function updateTransactionStatus(hash: string, status: TransactionS
 
 export async function getQrClaim(qr_hash: string): Promise<null | ClaimQR> {
   const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash=${qr_hash}', {qr_hash});
-  console.log('RES; ', res)
   return res;
 }
 

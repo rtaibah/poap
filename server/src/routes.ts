@@ -20,7 +20,8 @@ import {
   getAddressBalance,
   resolveName,
   lookupAddress,
-  checkAddress
+  checkAddress,
+  checkHasToken
 } from './poap-helper';
 
 import { Claim, PoapEvent, TransactionStatus, Vote, Address } from './types';
@@ -344,13 +345,18 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Qr is already Claimed');
       }
 
-      const is_valid_address = await checkAddress(req.body.address);
-      if (!is_valid_address) {
+      const parsed_address = await checkAddress(req.body.address);
+      if (!parsed_address) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, req.body.address);
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address);
       if (!dual_qr_claim) {
+        return new createError.BadRequest('Address already has this claim');
+      }
+
+      const has_token = await checkHasToken(qr_claim.event.id, parsed_address);
+      if (has_token) {
         return new createError.BadRequest('Address already has this claim');
       }
 
@@ -360,18 +366,18 @@ export default async function routes(fastify: FastifyInstance) {
       }
       qr_claim.claimed = true
 
-      const tx_mint = await mintToken(qr_claim.event.id, req.body.address, false);
+      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
       if (!tx_mint || !tx_mint.hash) {
         return new createError.InternalServerError('There was a problem in token mint');
       }
 
-      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, req.body.address, tx_mint);
+      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
       if (!set_qr_claim_hash) {
         return new createError.InternalServerError('There was a problem saving tx_hash');
       }
 
       qr_claim.tx_hash = tx_mint.hash
-      qr_claim.beneficiary = req.body.address
+      qr_claim.beneficiary = parsed_address
       qr_claim.signer = tx_mint.from
       qr_claim.tx_status = null
 
@@ -732,128 +738,6 @@ export default async function routes(fastify: FastifyInstance) {
       }
       res.status(204);
       return;
-    }
-  );
-
-  fastify.get(
-    '/claim-qr',
-    {
-      schema: {
-        querystring: {
-          qr_hash: { type: 'string' },
-        },
-      }
-    },
-    async (req, res) => {
-      const qr_hash = req.query.qr_hash || ''
-
-      if (!qr_hash) {
-        return new createError.NotFound('Please send qr_hash as querystring parameter');
-      }
-
-      const qr_claim = await getQrClaim(qr_hash);
-      if (!qr_claim) {
-        await sleep(5000)
-        return new createError.NotFound('Qr Claim not found');
-      }
-
-      const event = await getEvent(qr_claim.event_id);
-      if (!event) {
-        return new createError.InternalServerError('Qr Claim does not have any event');
-      }
-      qr_claim.event = event
-
-      const env = getEnv();
-      qr_claim.secret = crypto.createHmac('sha256', env.secretKey).update(qr_hash).digest('hex');
-
-      qr_claim.tx_status = null
-      if (qr_claim.tx_hash) {
-        const transaction_status = await getTransaction(qr_claim.tx_hash);
-        if(transaction_status) {
-          qr_claim.tx_status = transaction_status.status
-        }
-        
-      }
-
-      return qr_claim
-    }
-  );
-
-  fastify.post(
-    '/claim-qr',
-    {
-      schema: {
-        body: {
-          type: 'object',
-          required: ['address', 'qr_hash', 'secret'],
-        },
-      },
-    },
-    async (req, res) => {
-      const env = getEnv();
-      const secret = crypto.createHmac('sha256', env.secretKey).update(req.body.qr_hash).digest('hex');
-
-      if(req.body.secret != secret) {
-        await sleep(5000)
-        return new createError.NotFound('Invalid secret');
-      }
-
-      const qr_claim = await getQrClaim(req.body.qr_hash);
-      if (!qr_claim) {
-        await sleep(5000)
-        return new createError.NotFound('Qr Claim not found');
-      }
-
-      const event = await getEvent(qr_claim.event_id);
-      if (!event) {
-        return new createError.InternalServerError('Qr Claim does not have any event');
-      }
-      qr_claim.event = event
-
-      if (qr_claim.claimed) {
-        return new createError.BadRequest('Qr is already Claimed');
-      }
-
-      const parsed_address = await checkAddress(req.body.address);
-      if (!parsed_address) {
-        return new createError.BadRequest('Address is not valid');
-      }
-
-      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address);
-      if (!dual_qr_claim) {
-        return new createError.BadRequest('Address already has this claim');
-      }
-
-      let claim_qr_claim = await claimQrClaim(req.body.qr_hash);
-      if (!claim_qr_claim) {
-        return new createError.InternalServerError('There was a problem updating claim boolean');
-      }
-      qr_claim.claimed = true
-
-      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
-      if (!tx_mint || !tx_mint.hash) {
-        return new createError.InternalServerError('There was a problem in token mint');
-      }
-
-      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
-      if (!set_qr_claim_hash) {
-        return new createError.InternalServerError('There was a problem saving tx_hash');
-      }
-
-      qr_claim.tx_hash = tx_mint.hash
-      qr_claim.beneficiary = parsed_address
-      qr_claim.signer = tx_mint.from
-      qr_claim.tx_status = null
-
-      if (qr_claim.tx_hash) {
-        const transaction_status = await getTransaction(qr_claim.tx_hash);
-        if(transaction_status) {
-          qr_claim.tx_status = transaction_status.status
-        }
-        
-      }
-
-      return qr_claim
     }
   );
 

@@ -454,3 +454,9 @@ export async function checkAddress(address: string): Promise<string | null> {
   }
   return response;
 }
+
+export async function checkHasToken(event_id:number, address: string): Promise<boolean> {
+  const all_tokens = await getAllTokens(address);
+  let token = all_tokens.find(token => token.event.id === event_id);
+  return !!token;
+}
