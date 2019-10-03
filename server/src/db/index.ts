@@ -37,7 +37,7 @@ export async function getTotalTransactions(): Promise<number> {
 }
 
 export async function getSigners(): Promise<Signer[]> {
-  const res = await db.manyOrNone<Signer>('SELECT * FROM signers ORDER BY created_date DESC');
+  const res = await db.manyOrNone<Signer>('SELECT * FROM signers ORDER BY id ASC');
   return res;
 }
 

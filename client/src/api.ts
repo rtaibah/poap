@@ -22,7 +22,6 @@ export interface PoapEvent {
   start_date: string;
   end_date: string;
 }
-
 export interface Claim extends ClaimProof {
   claimerSignature: string;
 }
@@ -37,6 +36,31 @@ export interface PoapSetting {
   name: string;
   type: string;
   value: string;
+}
+export interface AdminAddress {
+  id: number;
+  signer: Address;
+  role: string;
+  gas_price: string;
+  balance: string;
+  created_date: string;
+}
+export interface Transaction {
+  id: number;
+  tx_hash: string;
+  nonce: number;
+  operation: string;
+  arguments: string;
+  created_date: string;
+  gas_price: string;
+  signer: string;
+  status: string;
+}
+export interface PaginatedTransactions {
+  limit: number;
+  offset: number;
+  total: number;
+  transactions: Transaction[]
 }
 
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
@@ -67,6 +91,21 @@ async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Pr
   if (!res.ok) {
     throw new Error(`Request Failed => statusCode: ${res.status} msg: ${res.statusText}`);
   }
+}
+
+async function secureFetch<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
+  const bearer = 'Bearer ' + (await authClient.getAPIToken());
+  const res = await fetch(input, {
+    ...init,
+    headers: {
+      Authorization: bearer,
+      ...(init ? init.headers : {}),
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Request Failed => statusCode: ${res.status} msg: ${res.statusText}`);
+  }
+  return await res.json();
 }
 
 export function resolveENS(name: string): Promise<ENSQueryResult> {
@@ -195,5 +234,28 @@ export async function createEvent(event: PoapEvent) {
     method: 'POST',
     body: JSON.stringify(event),
     headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export async function getSigners(): Promise<AdminAddress[]> {
+  return fetchJson(`${API_BASE}/signers`);
+}
+
+export function setSigner(id: number, gasPrice: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/signers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({gas_price: gasPrice})
+  });
+}
+
+export function getTransactions(limit: number, offset: number): Promise<PaginatedTransactions> {
+  return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}`);
+}
+
+export function pumpTransaction(tx_hash: string, gasPrice: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/transactions`, {
+    method: 'POST',
+    body: JSON.stringify({tx_hash, gas_price: gasPrice})
   });
 }
