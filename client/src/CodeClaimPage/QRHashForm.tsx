@@ -12,7 +12,10 @@ type HashFormValues = {
   hash: string;
 };
 
-const ClaimHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash: string) => void}> = ({error, loading, checkClaim}) => {
+/*
+* @dev: Form component to get the QR if code was not scanned
+* */
+const QRHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash: string) => void}> = ({error, loading, checkClaim}) => {
 
   const handleForm = (
     values: HashFormValues
@@ -66,4 +69,4 @@ const ClaimHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (ha
   );
 };
 
-export default ClaimHashForm;
+export default QRHashForm;

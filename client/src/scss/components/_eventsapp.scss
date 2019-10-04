@@ -444,6 +444,15 @@
        text-align: center;
        margin: auto;
 
+       .claim-preloader {
+         padding: 50px 0;
+         text-align: center;
+
+         img {
+           width: 50px;
+         }
+       }
+
        .info-title {
          font-family: $font-family-narrow;
          font-weight: bold;
