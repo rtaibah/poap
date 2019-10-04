@@ -3,8 +3,8 @@ import classNames from 'classnames';
 import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'formik';
 
 /* Helpers */
-import { hasMetamask, tryGetAccount, loginMetamask } from '../poap-eth';
-import { HashClaim, postClaimHash } from '../api';
+import { hasMetamask, tryGetAccount, loginMetamask, isMetamaskLogged } from '../poap-eth';
+import { HashClaim } from '../api';
 import { AddressSchema } from '../lib/schemas';
 
 /* Components */
@@ -16,6 +16,12 @@ type QRFormValues = {
 
 /*
 * @dev: Form component to get the address and submit mint request
+* Logic behind web3 enabled status
+* We will always try to populate the address field, but as Metamask requires
+* that the user 'connect' their wallet to the site (`ethereum.enable()`),
+* we ask if the user has a web3 instance that is not Metamask or if it's, it should
+* be already logged-in: `if(enabledWeb3 && (!hasMetamask() || isMetamaskLogged()))`
+* If the user has another provider, we will try to get the account at the moment
 * */
 const ClaimForm: React.FC<{
   enabledWeb3: boolean | null,
@@ -25,11 +31,11 @@ const ClaimForm: React.FC<{
   const [account, setAccount] = useState<string>('');
 
   useEffect(() => {
-    if(enabledWeb3 && !hasMetamask()) getAddress();
+    if(enabledWeb3 && (!hasMetamask() || isMetamaskLogged())) getAddress();
   }, [enabledWeb3]);
 
   const getAddress = () => {
-    if(!hasMetamask()) {
+    if(!hasMetamask() || isMetamaskLogged()) {
       tryGetAccount()
         .then(address => {
           if (address) setAccount(address);
@@ -58,7 +64,7 @@ const ClaimForm: React.FC<{
   };
 
   return (
-    <div className={'container'}>
+    <div className={'container'} data-aos="fade-up" data-aos-delay="300">
       <div>
         <Formik
           enableReinitialize

@@ -21,7 +21,7 @@ const ClaimHeader: React.FC<{title: string, image?: string, claimed?: boolean}> 
         }
       </div>
       <div className={'wave-holder'}>
-        <img src={HeaderShadow} />
+        <img src={HeaderShadow} alt={''} />
       </div>
     </div>
   )

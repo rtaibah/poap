@@ -23,7 +23,7 @@ const ClaimPending: React.FC<{claim: HashClaim, checkClaim: (hash: string) => vo
   }, []);
 
   return (
-    <div className={'claim-info'}>
+    <div className={'claim-info'} data-aos="fade-up" data-aos-delay="300">
       <div className={'info-title'}>
         Your badge is on it's way to your wallet
       </div>

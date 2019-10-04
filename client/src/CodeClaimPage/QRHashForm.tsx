@@ -46,14 +46,16 @@ const QRHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash:
                         type="text"
                         autoComplete="off"
                         className={classNames(!!form.errors[field.name] && 'error')}
-                        placeholder={'Type your code'}
+                        placeholder={'Six-digit code'}
                         {...field}
                       />
                     );
                   }}
                 />
                 {error && (
-                  <p className={'bk-msg-error'}>Badge not found</p>
+                  <p className={'bk-msg-error'}>
+                    We couldn't find the code, please try again.
+                  </p>
                 )}
                 <SubmitButton
                   text="Claim my badge"
