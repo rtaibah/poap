@@ -1,16 +1,12 @@
-import React, { useState } from 'react';
-import { Redirect } from 'react-router-dom';
+import React  from 'react';
 import classNames from 'classnames';
 
-import { Formik, Form, Field, FieldProps, ErrorMessage } from 'formik';
+import { Formik, Form, Field, FieldProps } from 'formik';
 
 /* Schemas */
 import { ClaimHashSchema } from '../lib/schemas';
-/* Constants */
-import { ROUTES } from '../lib/constants';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
-import { HashClaim } from '../api';
 
 type HashFormValues = {
   hash: string;

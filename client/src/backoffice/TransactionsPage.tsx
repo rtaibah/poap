@@ -161,7 +161,7 @@ const TransactionsPage: FC = () => {
                 <span className={'visible-sm'}>Operation: </span>
                 {tx.operation}</div>
               <div className={'col-md-1 center'}>
-                <img src={txStatus[tx.status]} className={'status-icon'} />
+                <img src={txStatus[tx.status]} className={'status-icon'} alt={tx.status} />
               </div>
               <div className={'col-md-2 center'}>
                 <span className={'visible-sm'}>Gas Price (GWei): </span>

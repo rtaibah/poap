@@ -157,6 +157,7 @@ const FinishedClaim: React.FC<{claim: HashClaim}> = ({claim}) => {
 };
 
 export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({ match }) => {
+  // const [claim, setClaim] = useState<null | HashClaim>(null);
   const [claim, setClaim] = useState<null | HashClaim>(null);
   const [claimError, setClaimError] = useState<boolean>(false);
   const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
@@ -165,7 +166,9 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   let image = EmptyBadge;
 
   useEffect(() => {
-    if (hash) fetchClaim(hash);
+    if (hash) {
+      fetchClaim(hash);
+    }
   }, []);
 
   const fetchClaim = (hash: string) => {
@@ -197,6 +200,10 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
     }
   }
 
+  if (hash && !claim && !claimError) {
+    body = <h1>Loading...</h1>
+
+  }
   return (
     <div className={'code-claim-page'}>
       <ClaimHeader title={title} image={image} claimed={!!(claim && claim.tx_status === TX_STATUS.passed)} />

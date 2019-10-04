@@ -20,13 +20,13 @@ export const ClaimFooter: React.FC = React.memo(() => (
         </a>
         <div className={'social-icons'}>
           <a href={'https://twitter.com/poapxyz/'} target={'_blank'}>
-            <img src={Twitter} />
+            <img src={Twitter} alt="Twitter" />
           </a>
           <a href={'https://t.me/poapxyz'} target={'_blank'}>
-            <img src={Telegram} />
+            <img src={Telegram} alt="Telegram" />
           </a>
           <a href={'https://github.com/poapxyz/poap'} target={'_blank'}>
-            <img src={Github} />
+            <img src={Github} alt="Github" />
           </a>
         </div>
         <p className="made-by">
@@ -49,9 +49,6 @@ export const ClaimFooter: React.FC = React.memo(() => (
             Xivis
           </a>
         </p>
-        {/*<div className="eth-branding">*/}
-        {/*  <img src={BuiltOnEth} alt="Built on Ethereum" />*/}
-        {/*</div>*/}
       </div>
     </div>
   </footer>
