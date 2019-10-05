@@ -194,7 +194,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintEventToManyUsers',
     {
-      //preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
@@ -205,6 +205,8 @@ export default async function routes(fastify: FastifyInstance) {
               type: 'array',
               minItems: 1,
             },
+            address: {type: 'string'},
+            signer: {type: 'string'}
           },
         },
       },
@@ -238,7 +240,8 @@ export default async function routes(fastify: FastifyInstance) {
           required: ['eventIds', 'address', 'signer_address'],
           properties: {
             eventIds: { type: 'array', minItems: 1, items: { type: 'integer', minimum: 1 } },
-            address: 'address#',
+            address: {type: 'string'},
+            signer: {type: 'string'}
           },
         },
       },

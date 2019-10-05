@@ -3,7 +3,7 @@ import classNames from 'classnames';
 import { ErrorMessage, Field, Form, Formik, FormikActions, FieldProps } from 'formik';
 
 /* Helpers */
-import { getEvents, mintEventToManyUsers, PoapEvent, mintUserToManyEvents } from '../api';
+import { getEvents, getSigners, mintEventToManyUsers, AdminAddress, PoapEvent, mintUserToManyEvents } from '../api';
 import { IssueForEventFormValueSchema, IssueForUserFormValueSchema } from '../lib/schemas';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
@@ -11,11 +11,13 @@ import { SubmitButton } from '../components/SubmitButton';
 interface IssueForEventPageState {
   events: PoapEvent[];
   initialValues: IssueForEventFormValues;
+  signers: AdminAddress[];
 }
 
 interface IssueForEventFormValues {
   eventId: number;
   addressList: string;
+  signer: string;
 }
 
 export class IssueForEventPage extends React.Component<{}, IssueForEventPageState> {
@@ -24,11 +26,14 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
     initialValues: {
       eventId: 0,
       addressList: '',
+      signer: ''
     },
+    signers: []
   };
 
   async componentDidMount() {
     const events = await getEvents();
+    const signers = await getSigners();
 
     this.setState(old => {
       return {
@@ -38,6 +43,7 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
           ...old.initialValues,
           eventId: events[1].id,
         },
+        signers
       };
     });
   }
@@ -66,7 +72,7 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
 
     try {
       actions.setStatus(null);
-      await mintEventToManyUsers(values.eventId, addresses);
+      await mintEventToManyUsers(values.eventId, addresses, values.signer);
       actions.setStatus({
         ok: true,
         msg: `All Done`,
@@ -127,6 +133,20 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
                   <ErrorMessage name="addressList" component="p" className="bk-error" />
                   <br />
                 </div>
+                <div className="bk-form-row">
+                  <label htmlFor="signer">Choose Address:</label>
+                  <Field name="signer" component="select">
+                    {this.state.signers.map(signer => {
+                      let label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${signer.pending_tx} - Gas: ${signer.gas_price}`;
+                      return (
+                        <option key={signer.id} value={signer.signer}>
+                          {label}
+                        </option>
+                      )
+                    })}
+                  </Field>
+                  <ErrorMessage name="signer" component="p" className="bk-error" />
+                </div>
                 {status && (
                   <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>
                 )}
@@ -147,11 +167,13 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
 interface IssueForUserPageState {
   events: PoapEvent[];
   initialValues: IssueForUserFormValues;
+  signers: AdminAddress[];
 }
 
 interface IssueForUserFormValues {
   eventIds: number[];
   address: string;
+  signer: string;
 }
 
 export class IssueForUserPage extends React.Component<{}, IssueForUserPageState> {
@@ -160,13 +182,16 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
     initialValues: {
       eventIds: [],
       address: '',
+      signer: ''
     },
+    signers: []
   };
 
   async componentDidMount() {
     const events = await getEvents();
+    const signers = await getSigners();
 
-    this.setState({ events });
+    this.setState({ events, signers });
   }
 
   onSubmit = async (
@@ -175,7 +200,7 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
   ) => {
     try {
       actions.setStatus(null);
-      await mintUserToManyEvents(values.eventIds, values.address);
+      await mintUserToManyEvents(values.eventIds, values.address, values.signer);
       actions.setStatus({
         ok: true,
         msg: `All Done`,
@@ -195,7 +220,6 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
       return <div className="bk-msg-error">No Events</div>;
     }
 
-    console.log(this.state.initialValues);
     return (
       <div className={"bk-container"}>
         <Formik
@@ -236,6 +260,20 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
                     )}
                   />
                   <ErrorMessage name="address" component="p" className="bk-error" />
+                </div>
+                <div className="bk-form-row">
+                  <label htmlFor="signer">Choose Address:</label>
+                  <Field name="signer" component="select">
+                    {this.state.signers.map(signer => {
+                      let label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${signer.pending_tx} - Gas: ${signer.gas_price}`;
+                      return (
+                        <option key={signer.id} value={signer.signer}>
+                          {label}
+                        </option>
+                      )
+                    })}
+                  </Field>
+                  <ErrorMessage name="signer" component="p" className="bk-error" />
                 </div>
                 {status && (
                   <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>

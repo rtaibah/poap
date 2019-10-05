@@ -4,7 +4,7 @@ import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'fo
 
 /* Helpers */
 import { hasMetamask, tryGetAccount, loginMetamask, isMetamaskLogged } from '../poap-eth';
-import { HashClaim } from '../api';
+import { HashClaim, postClaimHash } from '../api';
 import { AddressSchema } from '../lib/schemas';
 
 /* Components */
@@ -54,7 +54,7 @@ const ClaimForm: React.FC<{
   ) => {
     try {
       actions.setSubmitting(true);
-      // await postClaimHash(claim.qr_hash, values.address, claim.secret);
+      await postClaimHash(claim.qr_hash, values.address, claim.secret);
       checkClaim(claim.qr_hash);
     } catch (error) {
       actions.setStatus({ ok: false, msg: `Badge couldn't be minted` });
