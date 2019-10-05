@@ -33,6 +33,7 @@ type GasPriceFormValues = {
 const TransactionsPage: FC = () => {
   const [page, setPage] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
+  const [statusList, setStatusList] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [selectedTx, setSelectedTx] = useState<null | Transaction>(null);
   const [isFetchingTx, setIsFetchingTx] = useState<null | boolean>(null);
@@ -40,7 +41,7 @@ const TransactionsPage: FC = () => {
 
   useEffect(() => {
     fetchTransactions();
-  }, [page]);
+  }, [page, statusList]);
 
   const txStatus = {
     [TX_STATUS.pending]: clock,
@@ -52,7 +53,7 @@ const TransactionsPage: FC = () => {
     setIsFetchingTx(true);
     setTransactions(null);
 
-    getTransactions(PAGE_SIZE, page  * PAGE_SIZE)
+    getTransactions(PAGE_SIZE, page  * PAGE_SIZE, statusList.join(','))
       .then(response => {
         if (!response) return;
         setTransactions(response.transactions);
@@ -86,6 +87,17 @@ const TransactionsPage: FC = () => {
     }
   };
 
+  const handleFilterToggle = (status: string) => {
+    let newStatusList = [...statusList];
+    let index = newStatusList.indexOf(status);
+    if (index > -1) {
+      newStatusList.splice(index, 1);
+    } else {
+      newStatusList.push(status);
+    }
+    setStatusList(newStatusList)
+  };
+
   const openEditModal = (transaction: Transaction) => {
     setModalOpen(true);
     setSelectedTx(transaction);
@@ -96,35 +108,63 @@ const TransactionsPage: FC = () => {
     setSelectedTx(null);
   };
 
-
   return (
-    <div className={'admin-table'}>
+    <div className={'admin-table transactions'}>
       <h2>Transactions</h2>
-      <div className={'row table-header'}>
-        <div className={'col-xs-1 center'}>#</div>
-        <div className={'col-xs-3'}>Tx Hash</div>
-        <div className={'col-xs-3'}>Signer</div>
-        <div className={'col-xs-2'}>Operation</div>
-        <div className={'col-xs-1 center'}>Status</div>
-        <div className={'col-xs-2 center'}>Gas Price (GWei)</div>
+      <div>
+        <h4>Filters</h4>
+        <div className={'filters'}>
+          {Object.entries(TX_STATUS).map((entry, index) => {
+            let status = entry[1];
+            return (
+              <div key={index} className={'filter'}>
+                <input
+                  type={'checkbox'}
+                  id={`id_${status}`}
+                  onChange={() => handleFilterToggle(status)}
+                />
+                <label htmlFor={`id_${status}`}>{status}</label>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div className={'row table-header visible-md'}>
+        <div className={'col-md-1 center'}>#</div>
+        <div className={'col-md-3'}>Tx Hash</div>
+        <div className={'col-md-3'}>Signer</div>
+        <div className={'col-md-2'}>Operation</div>
+        <div className={'col-md-1 center'}>Status</div>
+        <div className={'col-md-2 center'}>Gas Price (GWei)</div>
+      </div>
+      <div className={'row table-header visible-sm'}>
+        <div className={'center'}>Transactions</div>
       </div>
       <div className={'admin-table-row'}>
         {isFetchingTx && <Loading />}
         {transactions && transactions.map((tx, i) => {
           return (
-            <div className={`row`} key={tx.id}>
-              <div className={'col-xs-1 center'}>{tx.id}</div>
-              <div className={'col-xs-3'}>
-                <a href={etherscanLinks.tx(tx.tx_hash)} target={"_blank"}>{reduceAddress(tx.tx_hash)}</a>
+            <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={tx.id}>
+              <div className={'col-md-1 center'}>
+                <span className={'visible-sm'}>#</span>
+                {tx.id}
               </div>
-              <div className={'col-xs-3'}>
-                <a href={etherscanLinks.address(tx.signer)} target={"_blank"}>{reduceAddress(tx.signer)}</a>
+              <div className={'col-md-3'}>
+                <span className={'visible-sm'}>Tx: </span>
+                <a href={`https://etherscan.io/tx/${tx.tx_hash}`} target={"_blank"}>{reduceAddress(tx.tx_hash)}</a>
               </div>
-              <div className={'col-xs-2 capitalize'}>{tx.operation}</div>
-              <div className={'col-xs-1 center'}>
+              <div className={'col-md-3'}>
+                <span className={'visible-sm'}>Signer: </span>
+                <a href={`https://etherscan.io/address/${tx.signer}`} target={"_blank"}>{reduceAddress(tx.signer)}</a>
+              </div>
+              <div className={'col-md-2 capitalize'}>
+                <span className={'visible-sm'}>Operation: </span>
+                {tx.operation}</div>
+              <div className={'col-md-1 center'}>
                 <img src={txStatus[tx.status]} className={'status-icon'} />
               </div>
-              <div className={'col-xs-2 center'}>
+              <div className={'col-md-2 center'}>
+                <span className={'visible-sm'}>Gas Price (GWei): </span>
                 {convertToGWEI(tx.gas_price)}
                 {tx.status === TX_STATUS.pending &&
                 <img src={gas} alt={'Edit'} className={'edit-icon'} onClick={() => openEditModal(tx)} />

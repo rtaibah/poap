@@ -6,7 +6,8 @@ import { AuthProvider, AuthService } from './auth';
 import { Callback } from './auth/Callback';
 import { PrivateRoute } from './auth/PrivateRoute';
 import { BackOffice } from './backoffice/Main';
-import { ClaimPage } from './ClaimPage';
+import { SignerClaimPage } from './SignerClaimPage';
+import { CodeClaimPage } from './CodeClaimPage';
 import { ScanPage } from './ScanPage';
 
 type AppProps = { auth: AuthService };
@@ -17,7 +18,9 @@ const App: React.FC<AppProps> = ({ auth }) => (
       <Switch>
         <Route exact path={ROUTES.callback} component={Callback} />
         <PrivateRoute path={ROUTES.admin} component={BackOffice} />
-        <Route path={ROUTES.claimPage} component={ClaimPage} />
+        <Route path={ROUTES.signerClaimPage} component={SignerClaimPage} />
+        <Route path={ROUTES.codeClaimPageHash} component={CodeClaimPage} />
+        <Route path={ROUTES.codeClaimPage} component={CodeClaimPage} />
         <Route path={ROUTES.home} component={ScanPage} />
       </Switch>
     </Router>

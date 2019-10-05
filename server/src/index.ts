@@ -1,6 +1,7 @@
 import fastifyFactory from 'fastify';
 import fastifyHelmet from 'fastify-helmet';
 import fastifyCors from 'fastify-cors';
+import fastifyRateLimit from 'fastify-rate-limit';
 
 // @ts-ignore
 import fastifyCompress from 'fastify-compress';
@@ -16,6 +17,11 @@ const fastify = fastifyFactory({
 fastify.register(fastifyHelmet, {
   hidePoweredBy: true,
 });
+
+fastify.register(fastifyRateLimit, {
+  max: 40,
+  timeWindow: 60000
+})
 
 fastify.register(fastifyCors, {});
 fastify.register(fastifyCompress, {});

@@ -46,7 +46,6 @@ export default fp(function transactionsMonitorCron(
   fastify.decorate('updateTransactions', async () => {
     cron.schedule('*/12 * * * * *', monitor);
   });
-
   fastify.updateTransactions();
 
   next();

@@ -62,6 +62,7 @@ export interface Signer {
   gas_price: string;
   created_date: Date;
   balance: string;
+  pending_tx: number;
 }
 
 export interface Transaction {
@@ -79,11 +80,14 @@ export interface Transaction {
 export interface ClaimQR {
   id: number;
   qr_hash: string;
+  secret: null | string;
   tx_hash: null | string;
   event_id: number;
+  event: PoapEvent;
   beneficiary: null | Address;
   signer: null | Address;
   claimed: boolean;
+  tx_status: null | TransactionStatus;
   claimed_date: Date;
   created_date: Date;
 }

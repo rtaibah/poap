@@ -31,6 +31,21 @@ export interface ClaimProof {
   claimer: Address;
   proof: string;
 }
+export interface HashClaim {
+  id: number;
+  qr_hash: string;
+  tx_hash: string;
+  tx: Transaction;
+  event_id: number;
+  event: PoapEvent;
+  beneficiary: Address;
+  signer: Address;
+  claimed: boolean;
+  claimed_date: string;
+  created_date: string;
+  tx_status: string
+  secret: string;
+}
 export interface PoapSetting {
   id: number;
   name: string;
@@ -249,13 +264,25 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
   });
 }
 
-export function getTransactions(limit: number, offset: number): Promise<PaginatedTransactions> {
-  return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}`);
+export function getTransactions(limit: number, offset: number, status: string): Promise<PaginatedTransactions> {
+  return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}&status=${status}`);
 }
 
 export function pumpTransaction(tx_hash: string, gasPrice: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/transactions`, {
     method: 'POST',
     body: JSON.stringify({tx_hash, gas_price: gasPrice})
+  });
+}
+
+export async function getClaimHash(hash: string): Promise<HashClaim> {
+  return fetchJson(`${API_BASE}/actions/claim-qr?qr_hash=${hash}`);
+}
+
+export async function postClaimHash(qr_hash: string, address: string, secret: string): Promise<HashClaim> {
+  return fetchJson(`${API_BASE}/actions/claim-qr`, {
+    method: 'POST',
+    body: JSON.stringify({ qr_hash, address, secret }),
+    headers: { 'Content-Type': 'application/json' },
   });
 }

@@ -1,6 +1,10 @@
 import * as yup from 'yup';
 import { utils } from 'ethers';
 
+const AddressSchema = yup.object().shape({
+  address: yup.string().required()
+});
+
 const GasPriceSchema = yup.object().shape({
   gasPrice: yup
     .number()
@@ -60,7 +64,6 @@ const IssueForEventFormValueSchema = yup.object().shape({
   addressList: yup
     .string()
     .required()
-    .matches(/^0x[0-9a-fA-F]{40}(\n0x[0-9a-fA-F]{40})*\n*$/, 'Not a valid address or address list'),
 });
 
 const IssueForUserFormValueSchema = yup.object().shape({
@@ -75,10 +78,19 @@ const IssueForUserFormValueSchema = yup.object().shape({
     .matches(/^0x[0-9a-fA-F]{40}$/, 'Not a valid address'),
 });
 
+const ClaimHashSchema = yup.object().shape({
+  hash: yup
+    .string()
+    .required()
+    .length(6),
+});
+
 export {
+  AddressSchema,
   GasPriceSchema,
   BurnFormSchema,
   PoapEventSchema,
+  ClaimHashSchema,
   IssueForEventFormValueSchema,
   IssueForUserFormValueSchema,
 };

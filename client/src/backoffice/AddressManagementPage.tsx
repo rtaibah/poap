@@ -79,14 +79,14 @@ const AddressManagementPage: FC = () => {
 
 
   return (
-    <div className={'admin-table'}>
+    <div className={'admin-table addresses'}>
       <h2>Admin addresses management</h2>
-      <div className={'row table-header'}>
-        <div className={'col-xs-1 center'}>#</div>
-        <div className={'col-xs-5'}>Address</div>
-        <div className={'col-xs-2'}>Role</div>
-        <div className={'col-xs-2 center'}>Balance (ETH)</div>
-        <div className={'col-xs-2 center'}>Gas Price (GWei)</div>
+      <div className={'row table-header visible-md'}>
+        <div className={'col-md-1 center'}>#</div>
+        <div className={'col-md-5'}>Address</div>
+        <div className={'col-md-2'}>Role</div>
+        <div className={'col-md-2 center'}>Balance (ETH)</div>
+        <div className={'col-md-2 center'}>Gas Price (GWei)</div>
       </div>
       <div className={'admin-table-row'}>
         {isFetchingAddresses && <Loading />}
