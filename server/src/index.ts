@@ -8,8 +8,7 @@ import fastifyCompress from 'fastify-compress';
 
 import authPlugin from './auth';
 import routes from './routes';
-// TODO uncomment this
-//import transactionsMonitorCron  from './plugins/tx-monitor';
+import transactionsMonitorCron  from './plugins/tx-monitor';
 
 const fastify = fastifyFactory({
   logger: true,
@@ -21,7 +20,7 @@ fastify.register(fastifyHelmet, {
 
 fastify.register(fastifyRateLimit, {
   max: 40,
-  timeWindow: '1 minute'
+  timeWindow: 60000
 })
 
 fastify.register(fastifyCors, {});
@@ -29,8 +28,7 @@ fastify.register(fastifyCompress, {});
 
 fastify.register(authPlugin);
 fastify.register(routes);
-// TODO uncomment this
-//fastify.register(transactionsMonitorCron);
+fastify.register(transactionsMonitorCron);
 
 const start = async () => {
   try {

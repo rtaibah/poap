@@ -84,6 +84,18 @@ export async function getPendingTxs(): Promise<Transaction[]> {
   return res;
 }
 
+export async function getPendingTxsAmount(signer: Signer): Promise<Signer> {
+  const signer_address = signer.signer
+  const status = TransactionStatus.pending;
+  const res = await db.result('SELECT COUNT(*) FROM server_transactions WHERE status = ${status} AND signer = ${signer_address}', 
+  {
+    status,
+    signer_address
+  });
+  signer.pending_tx = res.rows[0].count;
+  return signer
+}
+
 export async function getEvent(id: number): Promise<null | PoapEvent> {
   const res = await db.oneOrNone<PoapEvent>('SELECT * FROM events WHERE id = $1', [id]);
   return res ? replaceDates(res) : res;
@@ -162,7 +174,6 @@ export async function updateTransactionStatus(hash: string, status: TransactionS
 
 export async function getQrClaim(qr_hash: string): Promise<null | ClaimQR> {
   const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash=${qr_hash}', {qr_hash});
-  console.log('RES; ', res)
   return res;
 }
 

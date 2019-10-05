@@ -7,6 +7,7 @@ import { Formik, FormikActions, Form, Field, FieldProps, ErrorMessage } from 'fo
 
 /* Helpers */
 import { GasPriceSchema } from '../lib/schemas';
+import { etherscanLinks } from '../lib/constants';
 import { getSigners, setSigner, AdminAddress } from '../api';
 import { convertToGWEI, convertFromGWEI, convertToETH, reduceAddress } from '../lib/helpers';
 
@@ -91,25 +92,16 @@ const AddressManagementPage: FC = () => {
         {isFetchingAddresses && <Loading />}
         {addresses && addresses.map((address, i) => {
           return (
-            <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={address.id}>
-              <div className={'col-md-1 center'}>
-                <span className={'visible-sm'}>#</span>
-                {address.id}
+            <div className={`row`} key={address.id}>
+              <div className={'col-xs-1 center'}>{address.id}</div>
+              <div className={'col-xs-5'}>
+                <a href={etherscanLinks.address(address.signer)} target={"_blank"}>{reduceAddress(address.signer)}</a>
               </div>
-              <div className={'col-md-5'}>
-                <span className={'visible-sm'}>Address: </span>
-                <a href={`https://etherscan.io/address/${address.signer}`} target={"_blank"}>{reduceAddress(address.signer)}</a>
-              </div>
-              <div className={'col-md-2 capitalize'}>
-                <span className={'visible-sm'}>Role: </span>
-                {address.role}
-              </div>
-              <div className={'col-md-2 center'}>
-                <span className={'visible-sm'}>Balance (ETH): </span>
+              <div className={'col-xs-2 capitalize'}>{address.role}</div>
+              <div className={'col-xs-2 center'}>
                 {Math.round(convertToETH(address.balance) * 1000) / 1000}
               </div>
-              <div className={'col-md-2 center'}>
-                <span className={'visible-sm'}>Gas Price (GWei): </span>
+              <div className={'col-xs-2 center'}>
                 {convertToGWEI(address.gas_price)}
                 <img src={edit} alt={'Edit'} className={'edit-icon'} onClick={() => openEditModal(address)} />
               </div>

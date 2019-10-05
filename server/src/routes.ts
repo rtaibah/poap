@@ -1,10 +1,24 @@
 import { FastifyInstance } from 'fastify';
 import createError from 'http-errors';
 import {
-  getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
-  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, 
-  getTransactions, getTotalTransactions, getSigners, updateSignerGasPrice, 
-  getQrClaim, getTransaction, claimQrClaim, updateQrClaim, checkDualQrClaim
+  getEvent,
+  getEventByFancyId,
+  getEvents,
+  updateEvent,
+  createEvent,
+  getPoapSettingByName,
+  getPoapSettings,
+  updatePoapSettingByName,
+  getTransactions,
+  getTotalTransactions,
+  getSigners,
+  updateSignerGasPrice,
+  getQrClaim,
+  getTransaction,
+  claimQrClaim,
+  updateQrClaim,
+  checkDualQrClaim,
+  getPendingTxsAmount
 } from './db';
 
 import {
@@ -20,9 +34,11 @@ import {
   getAddressBalance,
   resolveName,
   lookupAddress,
-  checkAddress
+  checkAddress,
+  checkHasToken
 } from './poap-helper';
-import { Claim, PoapEvent, TransactionStatus, Vote } from './types';
+
+import { Claim, PoapEvent, TransactionStatus, Vote, Address } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
 
@@ -178,24 +194,35 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintEventToManyUsers',
     {
-      preValidation: [fastify.authenticate],
+      //preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
-          required: ['eventId', 'addresses'],
+          required: ['eventId', 'addresses', 'signer_address'],
           properties: {
             eventId: { type: 'integer', minimum: 1 },
             addresses: {
               type: 'array',
               minItems: 1,
-              items: 'address#',
             },
           },
         },
       },
     },
     async (req, res) => {
-      await mintEventToManyUsers(req.body.eventId, req.body.addresses);
+      let parsed_addresses: Address[] = []
+      for (var address of req.body.addresses) {
+        const parsed_address = await checkAddress(address);
+        if (!parsed_address) {
+          return new createError.BadRequest('Address is not valid');
+        }
+        parsed_addresses.push(parsed_address);
+      }
+
+      await mintEventToManyUsers(req.body.eventId, parsed_addresses, {
+        'signer': req.body.signer_address,
+        'estimate_mint_gas': parsed_addresses.length
+      });
       res.status(204);
       return;
     }
@@ -208,7 +235,7 @@ export default async function routes(fastify: FastifyInstance) {
       schema: {
         body: {
           type: 'object',
-          required: ['eventIds', 'address'],
+          required: ['eventIds', 'address', 'signer_address'],
           properties: {
             eventIds: { type: 'array', minItems: 1, items: { type: 'integer', minimum: 1 } },
             address: 'address#',
@@ -217,7 +244,12 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      await mintUserToManyEvents(req.body.eventIds, req.body.address);
+      const parsed_address = await checkAddress(req.body.address);
+      if (!parsed_address) {
+        return new createError.BadRequest('Address is not valid');
+      }
+
+      await mintUserToManyEvents(req.body.eventIds, parsed_address, {'signer': req.body.signer_address});
       res.status(204);
       return;
     }
@@ -330,13 +362,18 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Qr is already Claimed');
       }
 
-      const is_valid_address = await checkAddress(req.body.address);
-      if (!is_valid_address) {
+      const parsed_address = await checkAddress(req.body.address);
+      if (!parsed_address) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, req.body.address);
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address);
       if (!dual_qr_claim) {
+        return new createError.BadRequest('Address already has this claim');
+      }
+
+      const has_token = await checkHasToken(qr_claim.event.id, parsed_address);
+      if (has_token) {
         return new createError.BadRequest('Address already has this claim');
       }
 
@@ -346,18 +383,18 @@ export default async function routes(fastify: FastifyInstance) {
       }
       qr_claim.claimed = true
 
-      const tx_mint = await mintToken(qr_claim.event.id, req.body.address, false);
+      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
       if (!tx_mint || !tx_mint.hash) {
         return new createError.InternalServerError('There was a problem in token mint');
       }
 
-      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, req.body.address, tx_mint);
+      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
       if (!set_qr_claim_hash) {
         return new createError.InternalServerError('There was a problem saving tx_hash');
       }
 
       qr_claim.tx_hash = tx_mint.hash
-      qr_claim.beneficiary = req.body.address
+      qr_claim.beneficiary = parsed_address
       qr_claim.signer = tx_mint.from
       qr_claim.tx_status = null
 
@@ -376,6 +413,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/bump',
     {
+      preValidation: [fastify.authenticate],
       schema: {
         body: {
           type: 'object',
@@ -411,12 +449,12 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const { signature: claimerSignature, proposal, address: claimer } = req.body ;
+      const { signature: claimerSignature, proposal, address: claimer } = req.body;
       const vote: Vote = {
         proposal,
         claimerSignature,
-        claimer
-      }
+        claimer,
+      };
       const tx = await relayedVoteCall(vote);
       if (tx) {
         res.status(204);
@@ -494,7 +532,7 @@ export default async function routes(fastify: FastifyInstance) {
       schema: {
         params: {
           name: { type: 'string' },
-          value: { type: 'string' }
+          value: { type: 'string' },
         },
       },
     },
@@ -505,7 +543,11 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('unsuccessful operation');
       }
 
-      const isOk = await updatePoapSettingByName(req.params.name, setting_type['type'], req.params.value);
+      const isOk = await updatePoapSettingByName(
+        req.params.name,
+        setting_type['type'],
+        req.params.value
+      );
       if (!isOk) {
         return new createError.BadRequest('unsuccessful operation');
       }
@@ -650,7 +692,7 @@ export default async function routes(fastify: FastifyInstance) {
           offset: { type: 'number' },
           status: { type: 'string' },
         },
-      }
+      },
     },
     async (req, res) => {
       const limit = parseInt(req.query.limit) || 10;
@@ -672,11 +714,10 @@ export default async function routes(fastify: FastifyInstance) {
         limit: limit,
         offset: offset,
         total: totalTransactions,
-        transactions: transactions
-      }
+        transactions: transactions,
+      };
     }
   );
-
 
   //********************************************************************
   // SIGNERS
@@ -685,15 +726,16 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/signers', {},
     async (req, res) => {
-      const signers = await getSigners();
+      let signers = await getSigners();
 
       if (!signers) {
         return new createError.NotFound('Signers not found');
       }
+      signers = await Promise.all(signers.map(signer => getPendingTxsAmount(signer)));
+      signers = await Promise.all(signers.map(signer => getAddressBalance(signer)));
 
-      return await Promise.all(signers.map(signer => getAddressBalance(signer)))
-    }
-  );
+      return signers
+    });
 
   fastify.put(
     '/signers/:id',
@@ -705,7 +747,7 @@ export default async function routes(fastify: FastifyInstance) {
         },
         body: {
           type: 'object',
-          required: ['gas_price', ],
+          required: ['gas_price'],
         },
       },
     },
@@ -718,5 +760,4 @@ export default async function routes(fastify: FastifyInstance) {
       return;
     }
   );
-
 }

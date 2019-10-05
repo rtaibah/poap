@@ -1,6 +1,6 @@
 import { Contract, ContractTransaction, Wallet, getDefaultProvider, utils } from 'ethers';
-import { verifyMessage, toUtf8Bytes, keccak256, } from 'ethers/utils';
-import { readFileSync, } from 'fs';
+import { verifyMessage, toUtf8Bytes, keccak256 } from 'ethers/utils';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
 import {
@@ -10,7 +10,7 @@ import {
   saveTransaction,
   getSigner,
   getAvailableHelperSigner,
-  getTransaction,
+  getTransaction
 } from './db';
 import getEnv from './envs';
 import { Poap } from './poap-eth/Poap';
@@ -80,7 +80,7 @@ export function getVoteContract(wallet: Wallet): VotePoap {
  * @param n number of addresses
  */
 export function estimateMintingGas(n: number) {
-  const delta = 136907;
+  const delta = 1369070;
   const baseCost = 35708;
   return (baseCost + n * delta) * 1.5;
 }
@@ -111,10 +111,12 @@ export async function getCurrentGasPrice(address: string) {
 
 export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   const env = getEnv();
+  let estimate_mint_gas = 1;
   let signerWallet: Wallet;
+
   // Use extraParams signer if it's specified in extraParams 
   if (extraParams && extraParams.signer) {
-    signerWallet = await getSignerWallet(extraParams.signer);
+    signerWallet = await getSignerWallet(extraParams.signer.toLowerCase());
   } else if (onlyAdminSigner) {
     signerWallet = env.poapAdmin;
   } else {
@@ -130,10 +132,13 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   } else {
     gasPrice = await getCurrentGasPrice(signerWallet.address);
   }
-    
+
+  if (extraParams && extraParams.estimate_mint_gas) {
+    estimate_mint_gas = extraParams.estimate_mint_gas
+  }
 
   const transactionParams: any = {
-    gasLimit: estimateMintingGas(1),
+    gasLimit: estimateMintingGas(estimate_mint_gas),
     gasPrice: Number(gasPrice),
   };
 
@@ -248,13 +253,12 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[], e
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
-  await tx.wait();
-  console.log(`mintTokenBatch: Finished ${tx.hash}`);
+  // await tx.wait();
+  // console.log(`mintTokenBatch: Finished ${tx.hash}`);
 }
 
 export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, extraParams?: any) {
   const txObj = await getTxObj(true, extraParams);
-
   const tx = await txObj.contract.functions.mintUserToManyEvents(eventIds, toAddr, txObj.transactionParams);
 
   if (tx.hash) {
@@ -272,8 +276,8 @@ export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, 
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
-  await tx.wait();
-  console.log(`mintTokenBatch: Finished ${tx.hash}`);
+  // await tx.wait();
+  // console.log(`mintTokenBatch: Finished ${tx.hash}`);
 }
 
 export async function burnToken(tokenId: string | number, extraParams?: any): Promise<boolean> {
@@ -424,7 +428,7 @@ export async function getAddressBalance(signer: Signer): Promise<Signer> {
 
   signer.balance = balance.toString();
 
-  return signer
+  return signer;
 }
 
 export async function resolveName(name: string): Promise<string> {
@@ -439,12 +443,24 @@ export async function lookupAddress(address: string): Promise<string> {
   return resolved
 }
 
-export async function checkAddress(address: string): Promise<boolean> {
+export async function checkAddress(address: string): Promise<string | null> {
+  let response:string | null = null;
   try {
-    await utils.getAddress(address);
+    response = await utils.getAddress(address);
   }
   catch(error) {
-    return false;
+    try {
+      response = await resolveName(address)
+    }
+    catch(error) {
+      return response;
+    }
   }
-  return true;
+  return response;
+}
+
+export async function checkHasToken(event_id:number, address: string): Promise<boolean> {
+  const all_tokens = await getAllTokens(address);
+  let token = all_tokens.find(token => token.event.id === event_id);
+  return !!token;
 }

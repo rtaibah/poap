@@ -1,6 +1,5 @@
 import * as yup from 'yup';
-
-import { ADDRESS_REGEXP } from './constants';
+import { utils } from 'ethers';
 
 const AddressSchema = yup.object().shape({
   address: yup.string().required()
@@ -49,7 +48,11 @@ const PoapEventSchema = yup.object().shape({
     .nullable(),
   signer: yup
     .string()
-    .matches(ADDRESS_REGEXP, 'Must be a valid Ethereum Address')
+    .test(
+      'is-signer-an-address',
+      'Must be a valid Ethereum Address',
+      signer => utils.isHexString(signer, 20)
+    )
     .nullable(),
 });
 

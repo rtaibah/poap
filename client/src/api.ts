@@ -108,7 +108,7 @@ async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Pr
   }
 }
 
-async function secureFetch(input: RequestInfo, init?: RequestInit): Promise<void> {
+async function secureFetch<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const bearer = 'Bearer ' + (await authClient.getAPIToken());
   const res = await fetch(input, {
     ...init,
@@ -264,7 +264,7 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
   });
 }
 
-export function getTransactions(limit: number, offset: number, status: string): Promise<any> {
+export function getTransactions(limit: number, offset: number, status: string): Promise<PaginatedTransactions> {
   return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}&status=${status}`);
 }
 

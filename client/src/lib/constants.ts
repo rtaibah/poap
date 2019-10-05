@@ -1,5 +1,3 @@
-const ADDRESS_REGEXP = /^0x[0-9a-fA-F]{40}$/;
-
 const ROUTES = {
   home: '/',
   scan: '/scan/:account',
@@ -26,4 +24,11 @@ const TX_STATUS = {
   pending: 'pending'
 }
 
-export { ADDRESS_REGEXP, ROUTES, TX_STATUS };
+const ETHERSCAN_URL = 'https://etherscan.io'
+
+const etherscanLinks = {
+  tx: (hash: string): string => `https://etherscan.io/tx/${hash}`,
+  address: (address: string): string => `https://etherscan.io/address/${address}`
+}
+
+export { ROUTES, TX_STATUS, etherscanLinks };
