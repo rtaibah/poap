@@ -42,7 +42,6 @@ const TransactionsPage: FC = () => {
   useEffect(() => {
     fetchTransactions();
   }, [page, statusList]);
-  }, [page]);
 
   const txStatus = {
     [TX_STATUS.pending]: clock,

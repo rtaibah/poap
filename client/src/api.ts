@@ -264,7 +264,7 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
   });
 }
 
-export function getTransactions(limit: number, offset: number, status: string): Promise<any> {
+export function getTransactions(limit: number, offset: number, status: string): Promise<PaginatedTransactions> {
   return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}&status=${status}`);
 }
 

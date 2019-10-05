@@ -20,7 +20,7 @@ fastify.register(fastifyHelmet, {
 
 fastify.register(fastifyRateLimit, {
   max: 40,
-  timeWindow: '1 minute'
+  timeWindow: 60000
 })
 
 fastify.register(fastifyCors, {});
