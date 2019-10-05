@@ -9,14 +9,15 @@ declare module 'fastify' {
     HttpResponse = ServerResponse
   > {
     authenticate: any;
+    updateTransactions: () => void;
   }
 }
 
-const cron = require('node-cron');
-const fetch = require('node-fetch');
+import cron from 'node-cron';
+import fetch from 'node-fetch';
 
 import { getPendingTxs, updateTransactionStatus } from '../db';
-import { TransactionStatus } from '../types';
+import { TransactionStatus, TxStatusPayload } from '../types';
 
 const EXPLORER_API_BASE = 'https://api.blockcypher.com/v1';
 
@@ -25,43 +26,33 @@ export default fp(function transactionsMonitorCron(
   opts,
   next
 ) {
-    const monitor = async () => {
-        const pendingTransactions = await getPendingTxs();
-        if (!pendingTransactions || pendingTransactions.length === 0) return;
-        ​
-        const txPromises = pendingTransactions.map(async ({ tx_hash: txHash }) => {
-            const json: any = await getTxStatus(txHash);
-        ​
-            if (json) {
-                if (json.confirmed) {
-                    await updateTransactionStatus(txHash, TransactionStatus.passed);
-                } else if (json.execution_error) {
-                    await updateTransactionStatus(txHash, TransactionStatus.failed);
-                }
-            }
-        ​
-            return json;
-        });
-        ​
-        const results = Promise.all(txPromises);
-        return results;
-    };
-      ​
-
+  const monitor = async () => {
+    const pendingTransactions = await getPendingTxs();
+    if (!pendingTransactions || pendingTransactions.length === 0) return;
+    const txPromises = pendingTransactions.map(async ({ tx_hash: txHash }) => {
+      const json: TxStatusPayload = await getTxStatus(txHash);
+      if (json) {
+        if (json.confirmed) {
+          await updateTransactionStatus(txHash, TransactionStatus.passed);
+        } else if (json.execution_error) {
+          await updateTransactionStatus(txHash, TransactionStatus.failed);
+        }
+      }
+      return json;
+    });
+    const results = Promise.all(txPromises);
+    return results;
+  };
   fastify.decorate('updateTransactions', async () => {
-    cron.schedule('*/12 * * * * *', () => monitor());
+    cron.schedule('*/12 * * * * *', monitor);
   });
-
-  // @ts-ignore
   fastify.updateTransactions();
 
   next();
 });
 
-async function getTxStatus<A>(hash: string): Promise<A> {
+async function getTxStatus(hash: string): Promise<TxStatusPayload> {
   const url = `${EXPLORER_API_BASE}/eth/main/txs/${encodeURIComponent(hash)}`;
-  console.log(url);
-
   const res = await fetch(url);
   if (res.ok) {
     return await res.json();

@@ -2,23 +2,28 @@ export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export type Address = string;
 
+export type TxStatusPayload = {
+  confirmed?: string,
+  execution_error?: string
+}
+
 export enum OperationType {
-  mintToken = "mintToken",
-  mintEventToManyUsers = "mintEventToManyUsers",
-  mintUserToManyEvents = "mintUserToManyEvents",
-  burnToken = "burnToken",
-  vote = "vote"
+  mintToken = 'mintToken',
+  mintEventToManyUsers = 'mintEventToManyUsers',
+  mintUserToManyEvents = 'mintUserToManyEvents',
+  burnToken = 'burnToken',
+  vote = 'vote',
 }
 
 export enum TransactionStatus {
-  pending = "pending",
-  passed = "passed",
-  failed = "failed"
+  pending = 'pending',
+  passed = 'passed',
+  failed = 'failed',
 }
 
 export enum SignerRole {
-  administrator = "administrator",
-  standard = "standard",
+  administrator = 'administrator',
+  standard = 'standard',
 }
 
 export interface TokenInfo {

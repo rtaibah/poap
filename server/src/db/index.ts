@@ -86,7 +86,7 @@ export async function getPendingTxs(): Promise<Transaction[]> {
 
 export async function getPendingTxsAmount(signer: Signer): Promise<Signer> {
   const signer_address = signer.signer
-  const status = 'pending';
+  const status = TransactionStatus.pending;
   const res = await db.result('SELECT COUNT(*) FROM server_transactions WHERE status = ${status} AND signer = ${signer_address}', 
   {
     status,

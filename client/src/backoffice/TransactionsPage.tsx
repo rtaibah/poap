@@ -7,8 +7,8 @@ import ReactPaginate from 'react-paginate';
 import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'formik';
 
 /* Helpers */
-import { TX_STATUS } from '../lib/constants';
 import { GasPriceSchema } from '../lib/schemas';
+import { TX_STATUS, etherscanLinks } from '../lib/constants';
 import { Transaction, getTransactions, pumpTransaction } from '../api';
 import { convertFromGWEI, convertToGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
@@ -42,6 +42,7 @@ const TransactionsPage: FC = () => {
   useEffect(() => {
     fetchTransactions();
   }, [page, statusList]);
+  }, [page]);
 
   const txStatus = {
     [TX_STATUS.pending]: clock,
@@ -194,7 +195,7 @@ const TransactionsPage: FC = () => {
           {selectedTx &&
             <>
               <div className={'description'}>
-                Modify gas price for tx <a href={`https://etherscan.io/tx/${selectedTx.tx_hash}`} target={"_blank"}>{selectedTx.tx_hash}</a>.
+                Modify gas price for tx <a href={etherscanLinks.tx(selectedTx.tx_hash)} target={"_blank"}>{selectedTx.tx_hash}</a>.
                 Operation: {selectedTx.operation}
               </div>
             <Formik

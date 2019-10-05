@@ -166,7 +166,7 @@
     .capitalize {
       text-transform: capitalize;
     }
-    .even {
+    .row:nth-child(even) {
       background: white;
       border: 1px solid #d2d2d2;
     }
@@ -256,6 +256,7 @@
   &.addresses {
 
   }
+
 }
 
 .price-gas-modal-form {

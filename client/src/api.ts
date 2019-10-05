@@ -108,7 +108,7 @@ async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Pr
   }
 }
 
-async function secureFetch(input: RequestInfo, init?: RequestInit): Promise<void> {
+async function secureFetch<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const bearer = 'Bearer ' + (await authClient.getAPIToken());
   const res = await fetch(input, {
     ...init,

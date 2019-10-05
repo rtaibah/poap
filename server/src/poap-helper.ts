@@ -1,6 +1,6 @@
 import { Contract, ContractTransaction, Wallet, getDefaultProvider, utils } from 'ethers';
-import { verifyMessage, toUtf8Bytes, keccak256, } from 'ethers/utils';
-import { readFileSync, } from 'fs';
+import { verifyMessage, toUtf8Bytes, keccak256 } from 'ethers/utils';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
 import {
@@ -10,7 +10,7 @@ import {
   saveTransaction,
   getSigner,
   getAvailableHelperSigner,
-  getTransaction,
+  getTransaction
 } from './db';
 import getEnv from './envs';
 import { Poap } from './poap-eth/Poap';
@@ -113,6 +113,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   const env = getEnv();
   let estimate_mint_gas = 1;
   let signerWallet: Wallet;
+
   // Use extraParams signer if it's specified in extraParams 
   if (extraParams && extraParams.signer) {
     signerWallet = await getSignerWallet(extraParams.signer.toLowerCase());
@@ -258,7 +259,6 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[], e
 
 export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, extraParams?: any) {
   const txObj = await getTxObj(true, extraParams);
-
   const tx = await txObj.contract.functions.mintUserToManyEvents(eventIds, toAddr, txObj.transactionParams);
 
   if (tx.hash) {
@@ -428,7 +428,7 @@ export async function getAddressBalance(signer: Signer): Promise<Signer> {
 
   signer.balance = balance.toString();
 
-  return signer
+  return signer;
 }
 
 export async function resolveName(name: string): Promise<string> {

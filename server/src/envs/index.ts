@@ -8,11 +8,11 @@ export interface EnvVariables {
   poapAddress: Address;
   poapVoteAddress: Address;
   poapHelpers: PoapHelpers,
-  secretKey: string
+  secretKey: string;
 }
 
 export interface PoapHelpers {
-  [address: string]: Wallet
+  [address: string]: Wallet;
 }
 
 function getHelperWallets(provider: Provider) {
@@ -24,12 +24,12 @@ function getHelperWallets(provider: Provider) {
   let admin_wallet = new Wallet(ownerPK, provider)
   helpers[admin_wallet.address.toLowerCase()] = new Wallet(ownerPK, provider);
 
-  var jsonObj = JSON.parse(helpersPK)
+  var jsonObj = JSON.parse(helpersPK);
   for (let item of jsonObj) {
     let wallet = new Wallet(item, provider);
     helpers[wallet.address.toLowerCase()] = new Wallet(item, provider);
   }
-  return helpers
+  return helpers;
 }
 
 function getDevelopmentVariables(): EnvVariables {

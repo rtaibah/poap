@@ -1,10 +1,24 @@
 import { FastifyInstance } from 'fastify';
 import createError from 'http-errors';
 import {
-  getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
-  getPoapSettingByName, getPoapSettings, updatePoapSettingByName, 
-  getTransactions, getTotalTransactions, getSigners, updateSignerGasPrice, 
-  getQrClaim, getTransaction, claimQrClaim, updateQrClaim, checkDualQrClaim, getPendingTxsAmount
+  getEvent,
+  getEventByFancyId,
+  getEvents,
+  updateEvent,
+  createEvent,
+  getPoapSettingByName,
+  getPoapSettings,
+  updatePoapSettingByName,
+  getTransactions,
+  getTotalTransactions,
+  getSigners,
+  updateSignerGasPrice,
+  getQrClaim,
+  getTransaction,
+  claimQrClaim,
+  updateQrClaim,
+  checkDualQrClaim,
+  getPendingTxsAmount
 } from './db';
 
 import {
@@ -435,12 +449,12 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const { signature: claimerSignature, proposal, address: claimer } = req.body ;
+      const { signature: claimerSignature, proposal, address: claimer } = req.body;
       const vote: Vote = {
         proposal,
         claimerSignature,
-        claimer
-      }
+        claimer,
+      };
       const tx = await relayedVoteCall(vote);
       if (tx) {
         res.status(204);
@@ -518,7 +532,7 @@ export default async function routes(fastify: FastifyInstance) {
       schema: {
         params: {
           name: { type: 'string' },
-          value: { type: 'string' }
+          value: { type: 'string' },
         },
       },
     },
@@ -529,7 +543,11 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('unsuccessful operation');
       }
 
-      const isOk = await updatePoapSettingByName(req.params.name, setting_type['type'], req.params.value);
+      const isOk = await updatePoapSettingByName(
+        req.params.name,
+        setting_type['type'],
+        req.params.value
+      );
       if (!isOk) {
         return new createError.BadRequest('unsuccessful operation');
       }
@@ -674,7 +692,7 @@ export default async function routes(fastify: FastifyInstance) {
           offset: { type: 'number' },
           status: { type: 'string' },
         },
-      }
+      },
     },
     async (req, res) => {
       const limit = parseInt(req.query.limit) || 10;
@@ -696,11 +714,10 @@ export default async function routes(fastify: FastifyInstance) {
         limit: limit,
         offset: offset,
         total: totalTransactions,
-        transactions: transactions
-      }
+        transactions: transactions,
+      };
     }
   );
-
 
   //********************************************************************
   // SIGNERS
@@ -730,7 +747,7 @@ export default async function routes(fastify: FastifyInstance) {
         },
         body: {
           type: 'object',
-          required: ['gas_price', ],
+          required: ['gas_price'],
         },
       },
     },
@@ -743,5 +760,4 @@ export default async function routes(fastify: FastifyInstance) {
       return;
     }
   );
-
 }

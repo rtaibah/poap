@@ -1,3 +1,4 @@
+/* CREATE TABLE server_transactions */
 CREATE TABLE server_transactions (
   "id" SERIAL PRIMARY KEY,
   "tx_hash" varchar(256) UNIQUE not null,
