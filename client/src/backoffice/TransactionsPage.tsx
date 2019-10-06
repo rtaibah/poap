@@ -9,7 +9,7 @@ import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'fo
 /* Helpers */
 import { GasPriceSchema } from '../lib/schemas';
 import { TX_STATUS, etherscanLinks } from '../lib/constants';
-import { Transaction, getTransactions, pumpTransaction } from '../api';
+import { Transaction, getTransactions, bumpTransaction } from '../api';
 import { convertFromGWEI, convertToGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
 import { Loading } from '../components/Loading';
@@ -77,7 +77,7 @@ const TransactionsPage: FC = () => {
       actions.setSubmitting(true);
 
       const gasPriceInWEI = convertFromGWEI(values.gasPrice);
-      await pumpTransaction(selectedTx.tx_hash, gasPriceInWEI);
+      await bumpTransaction(selectedTx.tx_hash, gasPriceInWEI);
       fetchTransactions();
       closeEditModal();
     } catch (error) {
@@ -151,17 +151,17 @@ const TransactionsPage: FC = () => {
               </div>
               <div className={'col-md-3'}>
                 <span className={'visible-sm'}>Tx: </span>
-                <a href={`https://etherscan.io/tx/${tx.tx_hash}`} target={"_blank"}>{reduceAddress(tx.tx_hash)}</a>
+                <a href={etherscanLinks.tx(tx.tx_hash)} target={"_blank"}>{reduceAddress(tx.tx_hash)}</a>
               </div>
               <div className={'col-md-3'}>
                 <span className={'visible-sm'}>Signer: </span>
-                <a href={`https://etherscan.io/address/${tx.signer}`} target={"_blank"}>{reduceAddress(tx.signer)}</a>
+                <a href={etherscanLinks.address(tx.signer)} target={"_blank"}>{reduceAddress(tx.signer)}</a>
               </div>
               <div className={'col-md-2 capitalize'}>
                 <span className={'visible-sm'}>Operation: </span>
                 {tx.operation}</div>
               <div className={'col-md-1 center'}>
-                <img src={txStatus[tx.status]} className={'status-icon'} />
+                <img src={txStatus[tx.status]} className={'status-icon'} alt={tx.status} />
               </div>
               <div className={'col-md-2 center'}>
                 <span className={'visible-sm'}>Gas Price (GWei): </span>
@@ -173,6 +173,9 @@ const TransactionsPage: FC = () => {
             </div>
           )
         })}
+        {transactions && transactions.length === 0 && !isFetchingTx &&
+        <div className={'no-results'}>No transactions found</div>
+        }
       </div>
       {total > 0 &&
         <div className={'pagination'}>

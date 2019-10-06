@@ -108,6 +108,18 @@
       @media (min-width: $bp-l) {
         margin: -60px auto 10px;
       }
+
+      &.big-picture {
+          max-width: 330px;
+          margin: -120px auto 10px;
+
+          @media (min-width: $bp-m) {
+            margin: -100px auto 10px;
+          }
+          @media (min-width: $bp-l) {
+            margin: -105px auto 10px;
+          }
+      }
     }
 
     p {
@@ -398,10 +410,8 @@
      }
 
      .wave-holder {
-       //position: absolute;
        width: 100%;
        margin-top: -60px;
-       //bottom: 0;
 
        @media (min-width: $bp-mw) {
          margin-top: -100px;
@@ -416,6 +426,12 @@
 
    .claim-body {
      padding-top: 50px;
+     @media (min-width: $bp-mw) {
+       padding-top: 0;
+     }
+     @media (min-width: $bp-xxl) {
+       margin-top: -50px;
+     }
 
      .claim-form {
        text-align: center;
@@ -443,6 +459,15 @@
        max-width: 600px;
        text-align: center;
        margin: auto;
+
+       .claim-preloader {
+         padding: 50px 0;
+         text-align: center;
+
+         img {
+           width: 50px;
+         }
+       }
 
        .info-title {
          font-family: $font-family-narrow;

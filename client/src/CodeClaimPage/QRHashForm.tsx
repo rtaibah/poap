@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
-import { Redirect } from 'react-router-dom';
+import React  from 'react';
 import classNames from 'classnames';
 
-import { Formik, Form, Field, FieldProps, ErrorMessage } from 'formik';
+import { Formik, Form, Field, FieldProps } from 'formik';
 
 /* Schemas */
 import { ClaimHashSchema } from '../lib/schemas';
-/* Constants */
-import { ROUTES } from '../lib/constants';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
-import { HashClaim } from '../api';
 
 type HashFormValues = {
   hash: string;
 };
 
-const ClaimHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash: string) => void}> = ({error, loading, checkClaim}) => {
+/*
+* @dev: Form component to get the QR if code was not scanned
+* */
+const QRHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash: string) => void}> = ({error, loading, checkClaim}) => {
 
   const handleForm = (
     values: HashFormValues
@@ -47,14 +46,16 @@ const ClaimHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (ha
                         type="text"
                         autoComplete="off"
                         className={classNames(!!form.errors[field.name] && 'error')}
-                        placeholder={'Type your code'}
+                        placeholder={'Six-digit code'}
                         {...field}
                       />
                     );
                   }}
                 />
                 {error && (
-                  <p className={'bk-msg-error'}>Badge not found</p>
+                  <p className={'bk-msg-error'}>
+                    We couldn't find the code, please try again.
+                  </p>
                 )}
                 <SubmitButton
                   text="Claim my badge"
@@ -70,4 +71,4 @@ const ClaimHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (ha
   );
 };
 
-export default ClaimHashForm;
+export default QRHashForm;

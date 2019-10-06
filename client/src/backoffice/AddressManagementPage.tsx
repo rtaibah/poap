@@ -83,8 +83,9 @@ const AddressManagementPage: FC = () => {
       <h2>Admin addresses management</h2>
       <div className={'row table-header visible-md'}>
         <div className={'col-md-1 center'}>#</div>
-        <div className={'col-md-5'}>Address</div>
+        <div className={'col-md-3'}>Address</div>
         <div className={'col-md-2'}>Role</div>
+        <div className={'col-md-2'}>Pending Txs</div>
         <div className={'col-md-2 center'}>Balance (ETH)</div>
         <div className={'col-md-2 center'}>Gas Price (GWei)</div>
       </div>
@@ -93,15 +94,28 @@ const AddressManagementPage: FC = () => {
         {addresses && addresses.map((address, i) => {
           return (
             <div className={`row`} key={address.id}>
-              <div className={'col-xs-1 center'}>{address.id}</div>
-              <div className={'col-xs-5'}>
+              <div className={'col-md-1 center'}>
+                <span className={'visible-sm'}>#</span>
+                {address.id}
+              </div>
+              <div className={'col-md-3'}>
+                <span className={'visible-sm'}>Address: </span>
                 <a href={etherscanLinks.address(address.signer)} target={"_blank"}>{reduceAddress(address.signer)}</a>
               </div>
-              <div className={'col-xs-2 capitalize'}>{address.role}</div>
-              <div className={'col-xs-2 center'}>
+              <div className={'col-md-2 capitalize'}>
+                <span className={'visible-sm'}>Role: </span>
+                {address.role}
+              </div>
+              <div className={'col-md-2 center'}>
+                <span className={'visible-sm'}>Pending Txs: </span>
+                {address.pending_tx}
+              </div>
+              <div className={'col-md-2 center'}>
+                <span className={'visible-sm'}>Balance (ETH): </span>
                 {Math.round(convertToETH(address.balance) * 1000) / 1000}
               </div>
-              <div className={'col-xs-2 center'}>
+              <div className={'col-md-2 center'}>
+                <span className={'visible-sm'}>Gas Price (GWei): </span>
                 {convertToGWEI(address.gas_price)}
                 <img src={edit} alt={'Edit'} className={'edit-icon'} onClick={() => openEditModal(address)} />
               </div>

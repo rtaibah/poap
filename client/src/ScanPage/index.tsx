@@ -62,7 +62,7 @@ const ScanFooter: React.FC = React.memo(() => (
     </div>
     <div className="footer-content">
       <div className="container">
-        <img src={FooterPattern} alt="" className="decoration" />
+        <img src={FooterPattern} alt="" className="decoration big-picture" />
         <p className="made-by">
           Made with{' '}
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">

@@ -222,6 +222,15 @@
 
   &.transactions,
   &.addresses{
+
+    .no-results {
+      text-align: center;
+      padding: 50px 0;
+      font-size: 1.2em;
+      font-style: italic;
+      color: $color-medium-violet;
+    }
+
     .admin-table-row{
       .center {
         @media (max-width: $bp-mw) {

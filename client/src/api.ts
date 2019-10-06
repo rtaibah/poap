@@ -59,6 +59,7 @@ export interface AdminAddress {
   gas_price: string;
   balance: string;
   created_date: string;
+  pending_tx: number;
 }
 export interface Transaction {
   id: number;
@@ -215,22 +216,25 @@ export function burnToken(tokenId: string): Promise<any> {
   });
 }
 
-export async function mintEventToManyUsers(eventId: number, addresses: string[]): Promise<any> {
+export async function mintEventToManyUsers(eventId: number, addresses: string[], signer_address: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintEventToManyUsers`, {
     method: 'POST',
     body: JSON.stringify({
       eventId,
       addresses,
+      signer_address
     }),
     headers: { 'Content-Type': 'application/json' },
   });
 }
-export async function mintUserToManyEvents(eventIds: number[], address: string): Promise<any> {
+
+export async function mintUserToManyEvents(eventIds: number[], address: string, signer_address: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintUserToManyEvents`, {
     method: 'POST',
     body: JSON.stringify({
       eventIds,
       address,
+      signer_address
     }),
     headers: { 'Content-Type': 'application/json' },
   });
@@ -268,10 +272,10 @@ export function getTransactions(limit: number, offset: number, status: string): 
   return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}&status=${status}`);
 }
 
-export function pumpTransaction(tx_hash: string, gasPrice: string): Promise<any> {
-  return secureFetchNoResponse(`${API_BASE}/transactions`, {
+export function bumpTransaction(tx_hash: string, gasPrice: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/actions/bump`, {
     method: 'POST',
-    body: JSON.stringify({tx_hash, gas_price: gasPrice})
+    body: JSON.stringify({txHash: tx_hash, gas_price: gasPrice})
   });
 }
 
