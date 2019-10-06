@@ -108,6 +108,18 @@
       @media (min-width: $bp-l) {
         margin: -60px auto 10px;
       }
+
+      &.big-picture {
+          max-width: 330px;
+          margin: -120px auto 10px;
+
+          @media (min-width: $bp-m) {
+            margin: -100px auto 10px;
+          }
+          @media (min-width: $bp-l) {
+            margin: -105px auto 10px;
+          }
+      }
     }
 
     p {

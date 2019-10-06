@@ -9,7 +9,7 @@ import {
   getPoapSettingByName,
   saveTransaction,
   getSigner,
-  getAvailableHelperSigner,
+  getAvailableHelperSigners,
   getTransaction
 } from './db';
 import getEnv from './envs';
@@ -45,12 +45,22 @@ export function getContract(wallet: Wallet): Poap {
  */
 export async function getHelperSigner(): Promise<null | Wallet> {
   const env = getEnv();
-  const signer: null | Signer = await getAvailableHelperSigner();
-  if (signer) {
-    const wallet = env.poapHelpers[signer.signer.toLowerCase()];
-    return wallet;
+  let signers: null | Signer[] = await getAvailableHelperSigners();
+
+  let wallet: null | Wallet = null;
+
+  if (signers) {
+    signers = await Promise.all(signers.map(signer => getAddressBalance(signer)));
+    for (let signer of signers) {
+      if (!wallet) {
+        console.log('signerWithBalance: ', signer);
+        if (signer.balance !== '0') {
+          wallet = env.poapHelpers[signer.signer.toLowerCase()];
+        }
+      }
+    }
   }
-  return null;
+  return wallet;
 }
 
 /**
@@ -121,6 +131,9 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
     signerWallet = env.poapAdmin;
   } else {
     const helperWallet = await getHelperSigner();
+    console.log('----------------------------')
+    console.log('helperWallet: ', helperWallet)
+    console.log('----------------------------')
     signerWallet = helperWallet ? helperWallet : env.poapAdmin;
   }
 

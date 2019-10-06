@@ -62,15 +62,14 @@ export async function getSigner(address: string): Promise<null | Signer> {
   return res;
 }
 
-export async function getAvailableHelperSigner(): Promise<null | Signer> {
-  const res = await db.oneOrNone  (`
+export async function getAvailableHelperSigners(): Promise<null | Signer[]> {
+  const res = await db.manyOrNone  (`
     SELECT s.id, s.signer, SUM(case when st.status = 'pending' then 1 else 0 end) as pending_txs
     FROM signers s LEFT JOIN server_transactions st on s.signer = st.signer
     WHERE s.role != 'administrator'
-    GROUP BY s.id, s.signer, status
+    GROUP BY s.id, s.signer
     ORDER BY pending_txs, s.id ASC
-    LIMIT 1
-  `)
+  `);
   return res;
 }
 
@@ -191,7 +190,7 @@ export async function adQrClaim(qr_hash: string): Promise<null | ClaimQR> {
 }
 
 export async function claimQrClaim(qr_hash: string) {
-  const res = await db.result('update qr_claims set claimed=true where qr_hash = $1', [qr_hash]);
+  const res = await db.result('update qr_claims set claimed=true, claimed_date=current_timestamp where qr_hash = $1', [qr_hash]);
   return res.rowCount === 1;
 }
 

@@ -3,8 +3,9 @@ import classNames from 'classnames';
 import { ErrorMessage, Field, Form, Formik, FormikActions, FieldProps } from 'formik';
 
 /* Helpers */
-import { getEvents, getSigners, mintEventToManyUsers, AdminAddress, PoapEvent, mintUserToManyEvents } from '../api';
+import { convertToGWEI } from '../lib/helpers';
 import { IssueForEventFormValueSchema, IssueForUserFormValueSchema } from '../lib/schemas';
+import { getEvents, getSigners, mintEventToManyUsers, AdminAddress, PoapEvent, mintUserToManyEvents } from '../api';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
 
@@ -26,14 +27,19 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
     initialValues: {
       eventId: 0,
       addressList: '',
-      signer: ''
+      signer: '',
     },
-    signers: []
+    signers: [],
   };
 
   async componentDidMount() {
     const events = await getEvents();
     const signers = await getSigners();
+
+    let signer = '';
+    if (signers.length > 0){
+      signer = signers[0].signer;
+    }
 
     this.setState(old => {
       return {
@@ -42,15 +48,16 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
         initialValues: {
           ...old.initialValues,
           eventId: events[1].id,
+          signer
         },
-        signers
+        signers,
       };
     });
   }
 
   onSubmit = async (
     values: IssueForEventFormValues,
-    actions: FormikActions<IssueForEventFormValues>
+    actions: FormikActions<IssueForEventFormValues>,
   ) => {
     const addresses = values.addressList
       .trim()
@@ -93,8 +100,9 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
     }
 
     return (
-      <div className={"bk-container"}>
+      <div className={'bk-container'}>
         <Formik
+          enableReinitialize
           initialValues={this.state.initialValues}
           onSubmit={this.onSubmit}
           validationSchema={IssueForEventFormValueSchema}
@@ -110,10 +118,10 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
                         <option key={event.id} value={event.id}>
                           {label}
                         </option>
-                      )
+                      );
                     })}
                   </Field>
-                  <ErrorMessage name="eventId" component="p" className="bk-error" />
+                  <ErrorMessage name="eventId" component="p" className="bk-error"/>
                 </div>
                 <div className="bk-form-row">
                   <label htmlFor="addressList">Beneficiaries Addresses</label>
@@ -130,22 +138,22 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
                     )}
                   />
                   {}
-                  <ErrorMessage name="addressList" component="p" className="bk-error" />
-                  <br />
+                  <ErrorMessage name="addressList" component="p" className="bk-error"/>
+                  <br/>
                 </div>
                 <div className="bk-form-row">
                   <label htmlFor="signer">Choose Address:</label>
                   <Field name="signer" component="select">
                     {this.state.signers.map(signer => {
-                      let label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${signer.pending_tx} - Gas: ${signer.gas_price}`;
+                      let label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${signer.pending_tx} - Gas: ${convertToGWEI(signer.gas_price)}`;
                       return (
                         <option key={signer.id} value={signer.signer}>
                           {label}
                         </option>
-                      )
+                      );
                     })}
                   </Field>
-                  <ErrorMessage name="signer" component="p" className="bk-error" />
+                  <ErrorMessage name="signer" component="p" className="bk-error"/>
                 </div>
                 {status && (
                   <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>
@@ -182,21 +190,26 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
     initialValues: {
       eventIds: [],
       address: '',
-      signer: ''
+      signer: '',
     },
-    signers: []
+    signers: [],
   };
 
   async componentDidMount() {
     const events = await getEvents();
     const signers = await getSigners();
 
-    this.setState({ events, signers });
+    let signer = '';
+    if (signers.length > 0){
+      signer = signers[0].signer;
+    }
+
+    this.setState({ events, signers, initialValues: { ...this.state.initialValues, signer } });
   }
 
   onSubmit = async (
     values: IssueForUserFormValues,
-    actions: FormikActions<IssueForUserFormValues>
+    actions: FormikActions<IssueForUserFormValues>,
   ) => {
     try {
       actions.setStatus(null);
@@ -221,8 +234,9 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
     }
 
     return (
-      <div className={"bk-container"}>
+      <div className={'bk-container'}>
         <Formik
+          enableReinitialize
           initialValues={this.state.initialValues}
           onSubmit={this.onSubmit}
           validationSchema={IssueForUserFormValueSchema}
@@ -233,18 +247,18 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
                   <label>Choose Events:</label>
                   <div>
                     {this.state.events.map(event => {
-                      let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
-                      return (
-                        <Checkbox
-                          key={event.id}
-                          name="eventIds"
-                          value={event.id}
-                          label={label}
-                        />)
-                      }
+                        let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                        return (
+                          <Checkbox
+                            key={event.id}
+                            name="eventIds"
+                            value={event.id}
+                            label={label}
+                          />);
+                      },
                     )}
                   </div>
-                  <ErrorMessage name="eventIds" component="p" className="bk-error" />
+                  <ErrorMessage name="eventIds" component="p" className="bk-error"/>
                 </div>
                 <div className="bk-form-row">
                   <label htmlFor="address">Beneficiary Address</label>
@@ -259,21 +273,21 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
                       />
                     )}
                   />
-                  <ErrorMessage name="address" component="p" className="bk-error" />
+                  <ErrorMessage name="address" component="p" className="bk-error"/>
                 </div>
                 <div className="bk-form-row">
                   <label htmlFor="signer">Choose Address:</label>
                   <Field name="signer" component="select">
                     {this.state.signers.map(signer => {
-                      let label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${signer.pending_tx} - Gas: ${signer.gas_price}`;
+                      let label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${signer.pending_tx} - Gas: ${convertToGWEI(signer.gas_price)}`;
                       return (
                         <option key={signer.id} value={signer.signer}>
                           {label}
                         </option>
-                      )
+                      );
                     })}
                   </Field>
-                  <ErrorMessage name="signer" component="p" className="bk-error" />
+                  <ErrorMessage name="signer" component="p" className="bk-error"/>
                 </div>
                 {status && (
                   <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>
