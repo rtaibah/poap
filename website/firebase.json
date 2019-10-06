@@ -31,6 +31,16 @@
         "source": "/android",
         "destination": "https://play.google.com/store/apps/details?id=xyz.explorer.poap",
         "type": 302
+      },
+      {
+        "source": "/telegram",
+        "destination": "https://t.me/poapxyz",
+        "type": 302
+      },
+      {
+        "source": "/discord",
+        "destination": "https://discord.gg/9s8U8Bn",
+        "type": 302
       }
     ]
   }

@@ -53,8 +53,35 @@
             top: 100px;
             position: relative;
         }
-         @media (min-width: $bp-l) {
+        @media (min-width: $bp-l) {
             top: 200px;
+        }
+        .start-box {
+            @media (max-width: $bp-sw) {
+                display: flex;
+                flex-wrap: wrap;
+                .description-title {
+                    font-size: 1.25rem;
+                }
+            }
+
+        }
+
+        .apps-link {
+            margin-bottom: 20px;
+        }
+        .store-link {
+            img {
+                width: 150px;
+                &:hover{
+                    background-color: #fccdd2;
+                    border-radius: 8px;
+                }
+            }
+            
+        }
+        .telegram-img{
+            height: 32px;
         }
     }
 }
@@ -464,4 +491,9 @@
             }
         }
     }
+}
+
+.mlogo {
+    height: 18px;
+    padding-right: 3px;
 }

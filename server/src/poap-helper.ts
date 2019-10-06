@@ -81,6 +81,11 @@ export function getVoteContract(wallet: Wallet): VotePoap {
   return new Contract(env.poapVoteAddress, voteABI, wallet) as VotePoap;
 }
 
+export function getVoteContract(): VotePoap {
+  const env = getEnv();
+  return new Contract(env.poapVoteAddress, voteABI, env.poapAdmin) as VotePoap;
+}
+
 /**
  * Estimate gas cost for mintTokenBatch() call.
  * We don't rely on estimateGas() since it fails.
@@ -184,6 +189,10 @@ export async function mintToken(eventId: number, toAddr: Address, awaitTx: boole
     );
   }
 
+  if(tx.hash){
+    await saveTransaction(tx.hash, tx.nonce, 'mintToken', JSON.stringify([eventId, toAddr]));
+  }
+
   console.log(`mintToken: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
@@ -263,6 +272,10 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[], e
     );
   }
 
+  if(tx.hash){
+    await saveTransaction(tx.hash, tx.nonce, 'mintEventToManyUsers', JSON.stringify([eventId, toAddr]));
+  }
+
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
@@ -284,6 +297,10 @@ export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, 
       TransactionStatus.pending,
       txObj.transactionParams.gasPrice.toString()
     );
+  }
+
+  if(tx.hash){
+    await saveTransaction(tx.hash, tx.nonce, 'mintUserToManyEvents', JSON.stringify({eventIds, toAddr}));
   }
 
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
@@ -309,6 +326,10 @@ export async function burnToken(tokenId: string | number, extraParams?: any): Pr
       TransactionStatus.pending,
       txObj.transactionParams.gasPrice.toString()
     );
+  }
+
+  if(tx.hash){
+    await saveTransaction(tx.hash, tx.nonce, 'burnToken', tokenId.toString());
   }
 
   console.log(`burn: Transaction: ${tx.hash}`);
@@ -400,7 +421,6 @@ export async function relayedVoteCall(vote: Vote): Promise<boolean | ContractTra
   const signerWallet = helperWallet ? helperWallet : env.poapAdmin;
   const contract = getVoteContract(signerWallet);
   const gasPrice = await getCurrentGasPrice(contract.address);
-
   // const claimerMessage = JSON.stringify([vote.proposal,]);
   const claimerMessage = vote.proposal.toString();
   let messageBytes = toUtf8Bytes(claimerMessage);

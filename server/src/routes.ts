@@ -287,6 +287,38 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  fastify.post(
+    '/actions/vote',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['address', 'proposal', 'signature'],
+          properties: {
+            address: { type: 'string' },
+            signature: { type: 'string' },
+            proposal: { type: 'number' },
+            nonce: { type: 'number' },
+          },
+        },
+      },
+    },
+    async (req, res) => {
+      const { signature: claimerSignature, proposal, address: claimer } = req.body ;
+      const vote: Vote = {
+        proposal,
+        claimerSignature,
+        claimer
+      }
+      const tx = await relayedVoteCall(vote);
+      if (tx) {
+        res.status(204);
+      } else {
+        throw new createError.BadRequest('Invalid Relayer call');
+      }
+    }
+  );
+
   fastify.get(
     '/actions/claim-qr',
     {
