@@ -22,7 +22,6 @@ export interface PoapEvent {
   start_date: string;
   end_date: string;
 }
-
 export interface Claim extends ClaimProof {
   claimerSignature: string;
 }
@@ -32,11 +31,52 @@ export interface ClaimProof {
   claimer: Address;
   proof: string;
 }
+export interface HashClaim {
+  id: number;
+  qr_hash: string;
+  tx_hash: string;
+  tx: Transaction;
+  event_id: number;
+  event: PoapEvent;
+  beneficiary: Address;
+  signer: Address;
+  claimed: boolean;
+  claimed_date: string;
+  created_date: string;
+  tx_status: string
+  secret: string;
+}
 export interface PoapSetting {
   id: number;
   name: string;
   type: string;
   value: string;
+}
+export interface AdminAddress {
+  id: number;
+  signer: Address;
+  role: string;
+  gas_price: string;
+  balance: string;
+  created_date: string;
+  pending_tx: number;
+}
+export interface Transaction {
+  id: number;
+  tx_hash: string;
+  nonce: number;
+  operation: string;
+  arguments: string;
+  created_date: string;
+  gas_price: string;
+  signer: string;
+  status: string;
+}
+export interface PaginatedTransactions {
+  limit: number;
+  offset: number;
+  total: number;
+  transactions: Transaction[]
 }
 
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
@@ -67,6 +107,21 @@ async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Pr
   if (!res.ok) {
     throw new Error(`Request Failed => statusCode: ${res.status} msg: ${res.statusText}`);
   }
+}
+
+async function secureFetch<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
+  const bearer = 'Bearer ' + (await authClient.getAPIToken());
+  const res = await fetch(input, {
+    ...init,
+    headers: {
+      Authorization: bearer,
+      ...(init ? init.headers : {}),
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Request Failed => statusCode: ${res.status} msg: ${res.statusText}`);
+  }
+  return await res.json();
 }
 
 export function resolveENS(name: string): Promise<ENSQueryResult> {
@@ -161,22 +216,25 @@ export function burnToken(tokenId: string): Promise<any> {
   });
 }
 
-export async function mintEventToManyUsers(eventId: number, addresses: string[]): Promise<any> {
+export async function mintEventToManyUsers(eventId: number, addresses: string[], signer_address: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintEventToManyUsers`, {
     method: 'POST',
     body: JSON.stringify({
       eventId,
       addresses,
+      signer_address
     }),
     headers: { 'Content-Type': 'application/json' },
   });
 }
-export async function mintUserToManyEvents(eventIds: number[], address: string): Promise<any> {
+
+export async function mintUserToManyEvents(eventIds: number[], address: string, signer_address: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintUserToManyEvents`, {
     method: 'POST',
     body: JSON.stringify({
       eventIds,
       address,
+      signer_address
     }),
     headers: { 'Content-Type': 'application/json' },
   });
@@ -194,6 +252,41 @@ export async function createEvent(event: PoapEvent) {
   return secureFetchNoResponse(`${API_BASE}/events`, {
     method: 'POST',
     body: JSON.stringify(event),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export async function getSigners(): Promise<AdminAddress[]> {
+  return fetchJson(`${API_BASE}/signers`);
+}
+
+export function setSigner(id: number, gasPrice: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/signers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({gas_price: gasPrice})
+  });
+}
+
+export function getTransactions(limit: number, offset: number, status: string): Promise<PaginatedTransactions> {
+  return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}&status=${status}`);
+}
+
+export function bumpTransaction(tx_hash: string, gasPrice: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/actions/bump`, {
+    method: 'POST',
+    body: JSON.stringify({txHash: tx_hash, gas_price: gasPrice})
+  });
+}
+
+export async function getClaimHash(hash: string): Promise<HashClaim> {
+  return fetchJson(`${API_BASE}/actions/claim-qr?qr_hash=${hash}`);
+}
+
+export async function postClaimHash(qr_hash: string, address: string, secret: string): Promise<HashClaim> {
+  return fetchJson(`${API_BASE}/actions/claim-qr`, {
+    method: 'POST',
+    body: JSON.stringify({ qr_hash, address, secret }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

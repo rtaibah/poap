@@ -1,6 +1,9 @@
 import * as yup from 'yup';
+import { utils } from 'ethers';
 
-import { ADDRESS_REGEXP } from './constants';
+const AddressSchema = yup.object().shape({
+  address: yup.string().required()
+});
 
 const GasPriceSchema = yup.object().shape({
   gasPrice: yup
@@ -45,7 +48,11 @@ const PoapEventSchema = yup.object().shape({
     .nullable(),
   signer: yup
     .string()
-    .matches(ADDRESS_REGEXP, 'Must be a valid Ethereum Address')
+    .test(
+      'is-signer-an-address',
+      'Must be a valid Ethereum Address',
+      signer => utils.isHexString(signer, 20)
+    )
     .nullable(),
 });
 
@@ -56,8 +63,11 @@ const IssueForEventFormValueSchema = yup.object().shape({
     .min(1),
   addressList: yup
     .string()
+    .required(),
+  signer: yup
+    .string()
     .required()
-    .matches(/^0x[0-9a-fA-F]{40}(\n0x[0-9a-fA-F]{40})*\n*$/, 'Not a valid address or address list'),
+    .matches(/^0x[0-9a-fA-F]{40}$/, 'Not a valid address'),
 });
 
 const IssueForUserFormValueSchema = yup.object().shape({
@@ -68,14 +78,26 @@ const IssueForUserFormValueSchema = yup.object().shape({
     .min(1),
   address: yup
     .string()
+    .required(),
+  signer: yup
+    .string()
     .required()
     .matches(/^0x[0-9a-fA-F]{40}$/, 'Not a valid address'),
 });
 
+const ClaimHashSchema = yup.object().shape({
+  hash: yup
+    .string()
+    .required()
+    .length(6),
+});
+
 export {
+  AddressSchema,
   GasPriceSchema,
   BurnFormSchema,
   PoapEventSchema,
+  ClaimHashSchema,
   IssueForEventFormValueSchema,
   IssueForUserFormValueSchema,
 };

@@ -3,19 +3,22 @@ import classNames from 'classnames';
 import { ErrorMessage, Field, Form, Formik, FormikActions, FieldProps } from 'formik';
 
 /* Helpers */
-import { getEvents, mintEventToManyUsers, PoapEvent, mintUserToManyEvents } from '../api';
+import { convertToGWEI } from '../lib/helpers';
 import { IssueForEventFormValueSchema, IssueForUserFormValueSchema } from '../lib/schemas';
+import { getEvents, getSigners, mintEventToManyUsers, AdminAddress, PoapEvent, mintUserToManyEvents } from '../api';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
 
 interface IssueForEventPageState {
   events: PoapEvent[];
   initialValues: IssueForEventFormValues;
+  signers: AdminAddress[];
 }
 
 interface IssueForEventFormValues {
   eventId: number;
   addressList: string;
+  signer: string;
 }
 
 export class IssueForEventPage extends React.Component<{}, IssueForEventPageState> {
@@ -24,11 +27,19 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
     initialValues: {
       eventId: 0,
       addressList: '',
+      signer: '',
     },
+    signers: [],
   };
 
   async componentDidMount() {
     const events = await getEvents();
+    const signers = await getSigners();
+
+    let signer = '';
+    if (signers.length > 0){
+      signer = signers[0].signer;
+    }
 
     this.setState(old => {
       return {
@@ -37,22 +48,38 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
         initialValues: {
           ...old.initialValues,
           eventId: events[1].id,
+          signer
         },
+        signers,
       };
     });
   }
 
   onSubmit = async (
     values: IssueForEventFormValues,
-    actions: FormikActions<IssueForEventFormValues>
+    actions: FormikActions<IssueForEventFormValues>,
   ) => {
     const addresses = values.addressList
       .trim()
       .split('\n')
       .map(adr => adr.trim());
+
+    let error = false;
+    addresses.forEach(address => {
+      if (address.indexOf('.eth') === -1 && !(address.match(/^0x[0-9a-fA-F]{40}$/))) error = true;
+    });
+    if (error) {
+      actions.setStatus({
+        ok: false,
+        msg: `Not a valid address or ENS list`,
+      });
+      actions.setSubmitting(false);
+      return;
+    }
+
     try {
       actions.setStatus(null);
-      await mintEventToManyUsers(values.eventId, addresses);
+      await mintEventToManyUsers(values.eventId, addresses, values.signer);
       actions.setStatus({
         ok: true,
         msg: `All Done`,
@@ -73,8 +100,9 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
     }
 
     return (
-      <div>
+      <div className={'bk-container'}>
         <Formik
+          enableReinitialize
           initialValues={this.state.initialValues}
           onSubmit={this.onSubmit}
           validationSchema={IssueForEventFormValueSchema}
@@ -90,10 +118,10 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
                         <option key={event.id} value={event.id}>
                           {label}
                         </option>
-                      )
+                      );
                     })}
                   </Field>
-                  <ErrorMessage name="eventId" component="p" className="bk-error" />
+                  <ErrorMessage name="eventId" component="p" className="bk-error"/>
                 </div>
                 <div className="bk-form-row">
                   <label htmlFor="addressList">Beneficiaries Addresses</label>
@@ -110,7 +138,22 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
                     )}
                   />
                   {}
-                  <ErrorMessage name="addressList" component="p" className="bk-error" />
+                  <ErrorMessage name="addressList" component="p" className="bk-error"/>
+                  <br/>
+                </div>
+                <div className="bk-form-row">
+                  <label htmlFor="signer">Choose Address:</label>
+                  <Field name="signer" component="select">
+                    {this.state.signers.map(signer => {
+                      let label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${signer.pending_tx} - Gas: ${convertToGWEI(signer.gas_price)}`;
+                      return (
+                        <option key={signer.id} value={signer.signer}>
+                          {label}
+                        </option>
+                      );
+                    })}
+                  </Field>
+                  <ErrorMessage name="signer" component="p" className="bk-error"/>
                 </div>
                 {status && (
                   <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>
@@ -132,11 +175,13 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
 interface IssueForUserPageState {
   events: PoapEvent[];
   initialValues: IssueForUserFormValues;
+  signers: AdminAddress[];
 }
 
 interface IssueForUserFormValues {
   eventIds: number[];
   address: string;
+  signer: string;
 }
 
 export class IssueForUserPage extends React.Component<{}, IssueForUserPageState> {
@@ -145,22 +190,30 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
     initialValues: {
       eventIds: [],
       address: '',
+      signer: '',
     },
+    signers: [],
   };
 
   async componentDidMount() {
     const events = await getEvents();
+    const signers = await getSigners();
 
-    this.setState({ events });
+    let signer = '';
+    if (signers.length > 0){
+      signer = signers[0].signer;
+    }
+
+    this.setState({ events, signers, initialValues: { ...this.state.initialValues, signer } });
   }
 
   onSubmit = async (
     values: IssueForUserFormValues,
-    actions: FormikActions<IssueForUserFormValues>
+    actions: FormikActions<IssueForUserFormValues>,
   ) => {
     try {
       actions.setStatus(null);
-      await mintUserToManyEvents(values.eventIds, values.address);
+      await mintUserToManyEvents(values.eventIds, values.address, values.signer);
       actions.setStatus({
         ok: true,
         msg: `All Done`,
@@ -180,10 +233,10 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
       return <div className="bk-msg-error">No Events</div>;
     }
 
-    console.log(this.state.initialValues);
     return (
-      <div>
+      <div className={'bk-container'}>
         <Formik
+          enableReinitialize
           initialValues={this.state.initialValues}
           onSubmit={this.onSubmit}
           validationSchema={IssueForUserFormValueSchema}
@@ -194,18 +247,18 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
                   <label>Choose Events:</label>
                   <div>
                     {this.state.events.map(event => {
-                      let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
-                      return (
-                        <Checkbox
-                          key={event.id}
-                          name="eventIds"
-                          value={event.id}
-                          label={label}
-                        />)
-                      }
+                        let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                        return (
+                          <Checkbox
+                            key={event.id}
+                            name="eventIds"
+                            value={event.id}
+                            label={label}
+                          />);
+                      },
                     )}
                   </div>
-                  <ErrorMessage name="eventIds" component="p" className="bk-error" />
+                  <ErrorMessage name="eventIds" component="p" className="bk-error"/>
                 </div>
                 <div className="bk-form-row">
                   <label htmlFor="address">Beneficiary Address</label>
@@ -220,7 +273,21 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
                       />
                     )}
                   />
-                  <ErrorMessage name="address" component="p" className="bk-error" />
+                  <ErrorMessage name="address" component="p" className="bk-error"/>
+                </div>
+                <div className="bk-form-row">
+                  <label htmlFor="signer">Choose Address:</label>
+                  <Field name="signer" component="select">
+                    {this.state.signers.map(signer => {
+                      let label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${signer.pending_tx} - Gas: ${convertToGWEI(signer.gas_price)}`;
+                      return (
+                        <option key={signer.id} value={signer.signer}>
+                          {label}
+                        </option>
+                      );
+                    })}
+                  </Field>
+                  <ErrorMessage name="signer" component="p" className="bk-error"/>
                 </div>
                 {status && (
                   <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>

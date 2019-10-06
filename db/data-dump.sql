@@ -393,3 +393,19 @@ VALUES
     'integer',
     '5000000000'
   );
+
+
+INSERT INTO
+  signers (
+    id,
+    signer,
+    role,
+    gas_price
+  )
+VALUES
+  (
+    1,
+    '0xe583f95bf95d0883f94efe844442c8bfc9dd7a7f',
+    'administrator',
+    '22000000000'
+  );

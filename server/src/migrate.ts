@@ -105,8 +105,9 @@ export async function writeContract(
   const eventTokens = groupByEvent(readTokensJson(tokenJsonPath));
   const BATCH_SIZE = 10;
   const eventIds = Array.from(eventTokens.keys());
-
-  const contract = getContract().connect(getEnv().poapAdmin) as Poap;
+  
+  const env = getEnv()
+  const contract = getContract(env.poapAdmin).connect(env.poapAdmin) as Poap;
 
   console.log('Number of Events:', eventIds.length);
 
@@ -155,7 +156,8 @@ export async function writeContract(
 export async function getLastTransfer(
   txHash: string
 ): Promise<{ eventId: string; address: string }> {
-  const contract = getContract();
+  const env = getEnv()
+  const contract = getContract(env.poapAdmin);
   const provider = contract.provider;
   const tx = await provider.getTransaction(txHash);
   const parsedTx = contract.interface.parseTransaction(tx);
