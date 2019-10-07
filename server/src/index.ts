@@ -9,6 +9,9 @@ import fastifyCompress from 'fastify-compress';
 import authPlugin from './auth';
 import routes from './routes';
 import transactionsMonitorCron  from './plugins/tx-monitor';
+import dotenv from 'dotenv'
+
+dotenv.config();
 
 const fastify = fastifyFactory({
   logger: true,

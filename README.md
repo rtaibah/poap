@@ -94,6 +94,11 @@ After each time you run ganache, you'll need to deploy contracts:
     yarn contracts:deploy:dev
     yarn contracts:migrate:dev # optional: to migrate current mainnet token holders
 
+### configure .env
+
+    copy env.txt file in /server/src/envs to /server
+    replace the variables inside with yours
+
 ### Start Apps in Dev Mode
 
 From root folder:
