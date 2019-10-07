@@ -1,11 +1,11 @@
 {
   "contracts": {
     "Poap": {
-      "address": "0x1c32A6E3f8B7bF205962e441d685243f39E7868e",
-      "constructorCode": "608060405234801561001057600080fd5b506142fe806100206000396000f3fe",
-      "bodyBytecodeHash": "000405d46f9aa44d3b1b14592b87b227141a1ee53c0b9925093536daa49c3a31",
-      "localBytecodeHash": "644b1122375008e4857d76a2f445cde5b4c8f793d5169a0cb533b6d297799698",
-      "deployedBytecodeHash": "644b1122375008e4857d76a2f445cde5b4c8f793d5169a0cb533b6d297799698",
+      "address": "0x98B7c665a7BccF66c8DC47611290C048693F7206",
+      "constructorCode": "608060405234801561001057600080fd5b50613c8e806100206000396000f3fe",
+      "bodyBytecodeHash": "096d1bb7c6ab3b6e63d276d2b16caa669f409299830e6f0f035d2483bcdeb892",
+      "localBytecodeHash": "b5ae870c8ccabec7dce703fe169075e2c0386070467daf6ab5dfcf6db17a9e3d",
+      "deployedBytecodeHash": "b5ae870c8ccabec7dce703fe169075e2c0386070467daf6ab5dfcf6db17a9e3d",
       "types": {
         "t_bool": {
           "id": "t_bool",
@@ -41,10 +41,23 @@
           "label": "mapping(key => address)",
           "kind": "mapping"
         },
-        "t_mapping<t_uint256>": {
-          "id": "t_mapping<t_uint256>",
-          "valueType": "t_uint256",
-          "label": "mapping(key => uint256)",
+        "t_struct<Counters.Counter>": {
+          "id": "t_struct<Counters.Counter>",
+          "kind": "struct",
+          "label": "Counters.Counter",
+          "members": [
+            {
+              "label": "_value",
+              "astId": 1167,
+              "type": "t_uint256",
+              "src": "1021:14:4"
+            }
+          ]
+        },
+        "t_mapping<t_struct<Counters.Counter>>": {
+          "id": "t_mapping<t_struct<Counters.Counter>>",
+          "valueType": "t_struct<Counters.Counter>",
+          "label": "mapping(key => Counters.Counter)",
           "kind": "mapping"
         },
         "t_array:dyn<t_uint256>": {
@@ -60,6 +73,12 @@
           "label": "mapping(key => uint256[])",
           "kind": "mapping"
         },
+        "t_mapping<t_uint256>": {
+          "id": "t_mapping<t_uint256>",
+          "valueType": "t_uint256",
+          "label": "mapping(key => uint256)",
+          "kind": "mapping"
+        },
         "t_struct<Roles.Role>": {
           "id": "t_struct<Roles.Role>",
           "kind": "struct",
@@ -67,7 +86,7 @@
           "members": [
             {
               "label": "bearer",
-              "astId": 1070,
+              "astId": 1071,
               "type": "t_mapping<t_bool>",
               "src": "150:32:3"
             }
@@ -90,127 +109,127 @@
           "contract": "Initializable",
           "path": "zos-lib/contracts/Initializable.sol",
           "label": "initialized",
-          "astId": 2500,
+          "astId": 2536,
           "type": "t_bool",
-          "src": "757:24:14"
+          "src": "757:24:15"
         },
         {
           "contract": "Initializable",
           "path": "zos-lib/contracts/Initializable.sol",
           "label": "initializing",
-          "astId": 2502,
+          "astId": 2538,
           "type": "t_bool",
-          "src": "876:25:14"
+          "src": "876:25:15"
         },
         {
           "contract": "Initializable",
           "path": "zos-lib/contracts/Initializable.sol",
           "label": "______gap",
-          "astId": 2551,
+          "astId": 2594,
           "type": "t_array:50<t_uint256>",
-          "src": "1891:29:14"
+          "src": "1951:29:15"
         },
         {
           "contract": "ERC165",
           "path": "openzeppelin-eth/contracts/introspection/ERC165.sol",
           "label": "_supportedInterfaces",
-          "astId": 1173,
+          "astId": 1223,
           "type": "t_mapping<t_bool>",
-          "src": "497:52:4"
+          "src": "496:52:5"
         },
         {
           "contract": "ERC165",
           "path": "openzeppelin-eth/contracts/introspection/ERC165.sol",
           "label": "______gap",
-          "astId": 1217,
+          "astId": 1267,
           "type": "t_array:50<t_uint256>",
-          "src": "1230:29:4"
+          "src": "1229:29:5"
         },
         {
           "contract": "ERC721",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
           "label": "_tokenOwner",
-          "astId": 1383,
+          "astId": 1437,
           "type": "t_mapping<t_address>",
-          "src": "774:48:7"
+          "src": "829:48:8"
         },
         {
           "contract": "ERC721",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
           "label": "_tokenApprovals",
-          "astId": 1387,
+          "astId": 1441,
           "type": "t_mapping<t_address>",
-          "src": "878:52:7"
+          "src": "933:52:8"
         },
         {
           "contract": "ERC721",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
           "label": "_ownedTokensCount",
-          "astId": 1391,
-          "type": "t_mapping<t_uint256>",
-          "src": "988:54:7"
+          "astId": 1445,
+          "type": "t_mapping<t_struct<Counters.Counter>>",
+          "src": "1043:63:8"
         },
         {
           "contract": "ERC721",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
           "label": "_operatorApprovals",
-          "astId": 1397,
+          "astId": 1451,
           "type": "t_mapping<t_bool>",
-          "src": "1097:73:7"
+          "src": "1161:73:8"
         },
         {
           "contract": "ERC721",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
           "label": "______gap",
-          "astId": 1938,
+          "astId": 1974,
           "type": "t_array:50<t_uint256>",
-          "src": "11668:29:7"
+          "src": "11658:29:8"
         },
         {
           "contract": "ERC721Enumerable",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721Enumerable.sol",
           "label": "_ownedTokens",
-          "astId": 1958,
+          "astId": 1994,
           "type": "t_mapping<t_array:dyn<t_uint256>>",
-          "src": "467:50:8"
+          "src": "445:50:9"
         },
         {
           "contract": "ERC721Enumerable",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721Enumerable.sol",
           "label": "_ownedTokensIndex",
-          "astId": 1962,
+          "astId": 1998,
           "type": "t_mapping<t_uint256>",
-          "src": "587:53:8"
+          "src": "565:53:9"
         },
         {
           "contract": "ERC721Enumerable",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721Enumerable.sol",
           "label": "_allTokens",
-          "astId": 1965,
+          "astId": 2001,
           "type": "t_array:dyn<t_uint256>",
-          "src": "701:28:8"
+          "src": "679:28:9"
         },
         {
           "contract": "ERC721Enumerable",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721Enumerable.sol",
           "label": "_allTokensIndex",
-          "astId": 1969,
+          "astId": 2005,
           "type": "t_mapping<t_uint256>",
-          "src": "800:51:8"
+          "src": "778:51:9"
         },
         {
           "contract": "ERC721Enumerable",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721Enumerable.sol",
           "label": "______gap",
-          "astId": 2298,
+          "astId": 2334,
           "type": "t_array:50<t_uint256>",
-          "src": "8814:29:8"
+          "src": "8801:29:9"
         },
         {
           "contract": "PoapRoles",
           "path": "contracts/PoapRoles.sol",
           "label": "_admins",
-          "astId": 842,
+          "astId": 843,
           "type": "t_struct<Roles.Role>",
           "src": "456:26:2"
         },
@@ -218,7 +237,7 @@
           "contract": "PoapRoles",
           "path": "contracts/PoapRoles.sol",
           "label": "_minters",
-          "astId": 846,
+          "astId": 847,
           "type": "t_mapping<t_struct<Roles.Role>>",
           "src": "488:47:2"
         },
@@ -226,7 +245,7 @@
           "contract": "PoapRoles",
           "path": "contracts/PoapRoles.sol",
           "label": "______gap",
-          "astId": 1063,
+          "astId": 1064,
           "type": "t_array:50<t_uint256>",
           "src": "2363:29:2"
         },
@@ -234,7 +253,7 @@
           "contract": "PoapPausable",
           "path": "contracts/PoapPausable.sol",
           "label": "_paused",
-          "astId": 737,
+          "astId": 738,
           "type": "t_bool",
           "src": "340:20:1"
         },
@@ -242,7 +261,7 @@
           "contract": "PoapPausable",
           "path": "contracts/PoapPausable.sol",
           "label": "______gap",
-          "astId": 810,
+          "astId": 811,
           "type": "t_array:50<t_uint256>",
           "src": "1390:29:1"
         },
@@ -273,18 +292,18 @@
         {
           "contract": "Poap",
           "path": "contracts/Poap.sol",
-          "label": "_tokenEvent",
-          "astId": 33,
-          "type": "t_mapping<t_uint256>",
-          "src": "909:47:0"
+          "label": "lastId",
+          "astId": 31,
+          "type": "t_uint256",
+          "src": "926:22:0"
         },
         {
           "contract": "Poap",
           "path": "contracts/Poap.sol",
-          "label": "lastId",
+          "label": "_tokenEvent",
           "astId": 35,
-          "type": "t_uint256",
-          "src": "1010:22:0"
+          "type": "t_mapping<t_uint256>",
+          "src": "985:47:0"
         }
       ],
       "warnings": {
@@ -292,26 +311,7 @@
         "hasSelfDestruct": false,
         "hasDelegateCall": false,
         "hasInitialValuesInDeclarations": false,
-        "uninitializedBaseContracts": [],
-        "storageUncheckedVars": [
-          {
-            "contract": "PoapRoles",
-            "path": "contracts/PoapRoles.sol",
-            "label": "_admins",
-            "astId": 842,
-            "type": "t_struct<Roles.Role>",
-            "src": "456:26:2"
-          },
-          {
-            "contract": "PoapRoles",
-            "path": "contracts/PoapRoles.sol",
-            "label": "_minters",
-            "astId": 846,
-            "type": "t_mapping<t_struct<Roles.Role>>",
-            "src": "488:47:2"
-          }
-        ],
-        "storageDiff": []
+        "uninitializedBaseContracts": []
       }
     }
   },
@@ -319,15 +319,17 @@
   "proxies": {
     "poap/Poap": [
       {
-        "address": "0x50C5CA3e7f5566dA3Aa64eC687D283fdBEC2A2F2",
+        "address": "0xd237716b056d5BF44181c471A7c633583b552D78",
         "version": "0.1.0",
-        "implementation": "0x1c32A6E3f8B7bF205962e441d685243f39E7868e"
+        "implementation": "0x98B7c665a7BccF66c8DC47611290C048693F7206",
+        "admin": "0xacB20221Aef2d8825017F16c8D8f8467756ED675",
+        "kind": "Upgradeable"
       }
     ]
   },
   "zosversion": "2.2",
   "version": "0.1.0",
   "proxyAdmin": {
-    "address": "0x0e09FA48E662b00658063F26517465FdC879719e"
+    "address": "0xacB20221Aef2d8825017F16c8D8f8467756ED675"
   }
 }

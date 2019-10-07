@@ -11,6 +11,7 @@ import FooterPattern from '../images/footer-pattern.svg';
 import PoapLogo from '../images/POAP.svg';
 import BuiltOnEth from '../images/built-on-eth.png';
 import { useBodyClassName } from '../react-helpers';
+import { ROUTES } from '../lib/constants';
 
 export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
   const showBadges = useCallback(
@@ -26,11 +27,11 @@ export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
       <ScanHeader />
       <Route
         exact
-        path={match.path}
+        path={ROUTES.home}
         render={() => <ChooseAddressPage onAccountDetails={showBadges} />}
       />
-      <Route path={`${match.path}scan/:account`} component={AddressTokensPage} />
-      <Route path={`${match.path}token/:tokenId`} component={TokenDetailPage} />
+      <Route path={ROUTES.scan} component={AddressTokensPage} />
+      <Route path={ROUTES.token} component={TokenDetailPage} />
       <ScanFooter />
     </div>
   );
@@ -61,7 +62,7 @@ const ScanFooter: React.FC = React.memo(() => (
     </div>
     <div className="footer-content">
       <div className="container">
-        <img src={FooterPattern} alt="" className="decoration" />
+        <img src={FooterPattern} alt="" className="decoration big-picture" />
         <p className="made-by">
           Made with{' '}
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">

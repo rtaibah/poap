@@ -9,13 +9,14 @@ import { SubmitButton } from '../components/SubmitButton';
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
 import { getEvents, PoapEvent, getEvent, updateEvent, createEvent } from '../api';
+import { ROUTES } from '../lib/constants';
 
 export const EventsPage: React.FC = () => {
   return (
     <Switch>
-      <Route exact path="/admin/events" component={EventList} />
-      <Route exact path="/admin/events/new" component={CreateEventForm} />
-      <Route exact path="/admin/events/:eventId" component={EditEventForm} />
+      <Route exact path={ROUTES.events} component={EventList} />
+      <Route exact path={ROUTES.eventsNew} component={CreateEventForm} />
+      <Route exact path={ROUTES.event} component={EditEventForm} />
     </Switch>
   );
 };
@@ -87,7 +88,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
     }
   }, [event]);
   return (
-    <>
+    <div className={"bk-container"}>
       <Formik
         initialValues={values}
         validationSchema={PoapEventSchema}
@@ -137,7 +138,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
         )}
       </Formik>
       {!create && <Link to={`/claim/${event!.fancy_id}`}>Go to Claim Page</Link>}
-    </>
+    </div>
   );
 };
 
@@ -170,7 +171,7 @@ const EventList: React.FC = () => {
   const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
 
   return (
-    <>
+    <div className={"bk-container"}>
       <h2>Events</h2>
       <Link to="/admin/events/new">
         <button className="bk-btn" style={{ margin: '30px 0px' }}>
@@ -188,7 +189,7 @@ const EventList: React.FC = () => {
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 };
 
