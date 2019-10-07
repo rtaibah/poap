@@ -379,16 +379,16 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address already has this claim');
       }
 
+      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
+      if (!tx_mint || !tx_mint.hash) {
+        return new createError.InternalServerError('There was a problem in token mint');
+      }
+
       let claim_qr_claim = await claimQrClaim(req.body.qr_hash);
       if (!claim_qr_claim) {
         return new createError.InternalServerError('There was a problem updating claim boolean');
       }
       qr_claim.claimed = true
-
-      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
-      if (!tx_mint || !tx_mint.hash) {
-        return new createError.InternalServerError('There was a problem in token mint');
-      }
 
       let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
       if (!set_qr_claim_hash) {
