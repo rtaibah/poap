@@ -251,7 +251,10 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      await mintUserToManyEvents(req.body.eventIds, parsed_address, {'signer': req.body.signer_address});
+      await mintUserToManyEvents(req.body.eventIds, parsed_address, {
+        'signer': req.body.signer_address,
+        'estimate_mint_gas': req.body.eventIds.length
+      });
       res.status(204);
       return;
     }
@@ -344,13 +347,13 @@ export default async function routes(fastify: FastifyInstance) {
       const secret = crypto.createHmac('sha256', env.secretKey).update(req.body.qr_hash).digest('hex');
 
       if(req.body.secret != secret) {
-        await sleep(5000)
+        await sleep(1000)
         return new createError.NotFound('Invalid secret');
       }
 
       const qr_claim = await getQrClaim(req.body.qr_hash);
       if (!qr_claim) {
-        await sleep(5000)
+        await sleep(1000)
         return new createError.NotFound('Qr Claim not found');
       }
 

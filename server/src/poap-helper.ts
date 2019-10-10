@@ -48,7 +48,15 @@ export async function getHelperSigner(): Promise<null | Wallet> {
 
   if (signers) {
     signers = await Promise.all(signers.map(signer => getAddressBalance(signer)));
-    for (let signer of signers) {
+    let sorted_signers: Signer[] = signers.sort((a, b) => {
+      if (a.pending_tx === b.pending_tx) {
+        return (parseInt(b.balance) - parseInt(a.balance));
+      } else if(a.pending_tx > b.pending_tx){
+        return 1;
+      }
+      return -1;
+    });
+    for (let signer of sorted_signers) {
       if (!wallet) {
         console.log('signerWithBalance: ', signer);
         if (signer.balance !== '0') {
@@ -82,7 +90,7 @@ export async function getSignerWallet(address: Address): Promise<Wallet> {
  * @param n number of addresses
  */
 export function estimateMintingGas(n: number) {
-  const delta = 1369070;
+  const delta = 136907;
   const baseCost = 35708;
   return (baseCost + n * delta) * 1.5;
 }
