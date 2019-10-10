@@ -51,7 +51,10 @@ const PoapEventSchema = yup.object().shape({
     .test(
       'is-signer-an-address',
       'Must be a valid Ethereum Address',
-      signer => utils.isHexString(signer, 20)
+      signer => {
+        if (!signer) return true;
+        return utils.isHexString(signer, 20);
+      }
     )
     .nullable(),
 });

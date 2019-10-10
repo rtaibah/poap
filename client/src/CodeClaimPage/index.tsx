@@ -36,7 +36,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
 
   const fetchClaim = (hash: string) => {
     setIsClaimLoading(true);
-    getClaimHash(hash)
+    getClaimHash(hash.toLowerCase())
       .then(claim => {
           setClaim(claim);
           setClaimError(false);
