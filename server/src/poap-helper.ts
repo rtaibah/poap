@@ -40,7 +40,7 @@ export function getContract(wallet: Wallet): Poap {
 /**
  * Get an available helper signer in order to sign a new requested transaction
  */
-export async function getHelperSigner(): Promise<null | Wallet> {
+export async function getHelperSigner(requiredBalance: number = 0): Promise<null | Wallet> {
   const env = getEnv();
   let signers: null | Signer[] = await getAvailableHelperSigners();
 
@@ -56,10 +56,11 @@ export async function getHelperSigner(): Promise<null | Wallet> {
       }
       return -1;
     });
+
     for (let signer of sorted_signers) {
       if (!wallet) {
         console.log('signerWithBalance: ', signer);
-        if (signer.balance !== '0') {
+        if (+signer.balance > requiredBalance) {
           wallet = env.poapHelpers[signer.signer.toLowerCase()];
         }
       }
@@ -123,6 +124,10 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   const env = getEnv();
   let estimate_mint_gas = 1;
   let signerWallet: Wallet;
+  let gasPrice: number = 0;
+  if (extraParams && extraParams.gas_price) {
+    gasPrice = extraParams.gas_price
+  }
 
   // Use extraParams signer if it's specified in extraParams 
   if (extraParams && extraParams.signer) {
@@ -130,7 +135,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   } else if (onlyAdminSigner) {
     signerWallet = env.poapAdmin;
   } else {
-    const helperWallet = await getHelperSigner();
+    const helperWallet = await getHelperSigner(gasPrice);
     console.log('----------------------------')
     console.log('helperWallet: ', helperWallet)
     console.log('----------------------------')
@@ -139,10 +144,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
 
   const contract = getContract(signerWallet);
 
-  let gasPrice;
-  if (extraParams && extraParams.gas_price) {
-    gasPrice = extraParams.gas_price
-  } else {
+  if(gasPrice == 0) {
     gasPrice = await getCurrentGasPrice(signerWallet.address);
   }
 
