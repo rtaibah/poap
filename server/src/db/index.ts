@@ -172,12 +172,12 @@ export async function updateTransactionStatus(hash: string, status: TransactionS
 }
 
 export async function getQrClaim(qr_hash: string): Promise<null | ClaimQR> {
-  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash=${qr_hash}', {qr_hash});
+  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash=${qr_hash} AND is_active = true', {qr_hash});
   return res;
 }
 
 export async function checkDualQrClaim(event_id: number, address: string): Promise<boolean> {
-  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE event_id = ${event_id} AND beneficiary = ${address}', {
+  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE event_id = ${event_id} AND beneficiary = ${address} AND is_active = true', {
     event_id,
     address
   });
@@ -185,7 +185,7 @@ export async function checkDualQrClaim(event_id: number, address: string): Promi
 }
 
 export async function adQrClaim(qr_hash: string): Promise<null | ClaimQR> {
-  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash = $1', [qr_hash]);
+  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash = $1 AND is_active = true', [qr_hash]);
   return res;
 }
 
