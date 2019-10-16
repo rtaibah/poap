@@ -90,6 +90,7 @@ export interface ClaimQR {
   tx_status: null | TransactionStatus;
   claimed_date: Date;
   created_date: Date;
+  is_active: boolean;
 }
 
 export interface Claim extends ClaimProof {
