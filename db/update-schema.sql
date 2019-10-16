@@ -34,5 +34,6 @@ CREATE TABLE qr_claims (
   "signer" varchar(256),
   "claimed" boolean default false,
   "claimed_date" timestamp with time zone,
-  "created_date" timestamp with time zone not null default now()
+  "created_date" timestamp with time zone not null default now(),
+  "is_active" boolean default true
 );
