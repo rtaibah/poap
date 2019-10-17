@@ -40,7 +40,7 @@ function ensureEnvVariable(name: string): string {
   return process.env[name]!;
 }
 
-function getVariables(): EnvVariables {
+export default function getEnv(): EnvVariables {
   let provider: Provider;
   let envProvider = ensureEnvVariable('PROVIDER');
 
@@ -67,8 +67,4 @@ function getVariables(): EnvVariables {
     poapHelpers: getHelperWallets(provider),
     secretKey: ensureEnvVariable('SECRET_KEY')
   };
-}
-
-export default function getEnv(): EnvVariables {
-  return getVariables();
 }
