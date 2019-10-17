@@ -29,7 +29,6 @@ import {
   verifyClaim,
   mintUserToManyEvents,
   burnToken,
-  relayedVoteCall,
   bumpTransaction,
   getAddressBalance,
   resolveName,
@@ -38,7 +37,7 @@ import {
   checkHasToken
 } from './poap-helper';
 
-import { Claim, PoapEvent, TransactionStatus, Vote, Address } from './types';
+import { Claim, PoapEvent, TransactionStatus, Address } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
 
@@ -287,38 +286,6 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
-  fastify.post(
-    '/actions/vote',
-    {
-      schema: {
-        body: {
-          type: 'object',
-          required: ['address', 'proposal', 'signature'],
-          properties: {
-            address: { type: 'string' },
-            signature: { type: 'string' },
-            proposal: { type: 'number' },
-            nonce: { type: 'number' },
-          },
-        },
-      },
-    },
-    async (req, res) => {
-      const { signature: claimerSignature, proposal, address: claimer } = req.body ;
-      const vote: Vote = {
-        proposal,
-        claimerSignature,
-        claimer
-      }
-      const tx = await relayedVoteCall(vote);
-      if (tx) {
-        res.status(204);
-      } else {
-        throw new createError.BadRequest('Invalid Relayer call');
-      }
-    }
-  );
-
   fastify.get(
     '/actions/claim-qr',
     {
@@ -412,16 +379,16 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address already has this claim');
       }
 
+      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
+      if (!tx_mint || !tx_mint.hash) {
+        return new createError.InternalServerError('There was a problem in token mint');
+      }
+
       let claim_qr_claim = await claimQrClaim(req.body.qr_hash);
       if (!claim_qr_claim) {
         return new createError.InternalServerError('There was a problem updating claim boolean');
       }
       qr_claim.claimed = true
-
-      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
-      if (!tx_mint || !tx_mint.hash) {
-        return new createError.InternalServerError('There was a problem in token mint');
-      }
 
       let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
       if (!set_qr_claim_hash) {
@@ -464,38 +431,6 @@ export default async function routes(fastify: FastifyInstance) {
       await bumpTransaction(req.body.txHash, req.body.gasPrice);
       res.status(204);
       return;
-    }
-  );
-
-  fastify.post(
-    '/actions/vote',
-    {
-      schema: {
-        body: {
-          type: 'object',
-          required: ['address', 'proposal', 'signature'],
-          properties: {
-            address: { type: 'string' },
-            signature: { type: 'string' },
-            proposal: { type: 'number' },
-            nonce: { type: 'number' },
-          },
-        },
-      },
-    },
-    async (req, res) => {
-      const { signature: claimerSignature, proposal, address: claimer } = req.body;
-      const vote: Vote = {
-        proposal,
-        claimerSignature,
-        claimer,
-      };
-      const tx = await relayedVoteCall(vote);
-      if (tx) {
-        res.status(204);
-      } else {
-        throw new createError.BadRequest('Invalid Relayer call');
-      }
     }
   );
 

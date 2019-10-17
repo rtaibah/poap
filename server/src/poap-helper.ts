@@ -1,5 +1,5 @@
 import { Contract, ContractTransaction, Wallet, getDefaultProvider, utils } from 'ethers';
-import { verifyMessage, toUtf8Bytes, keccak256 } from 'ethers/utils';
+import { verifyMessage } from 'ethers/utils';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
@@ -14,12 +14,10 @@ import {
 } from './db';
 import getEnv from './envs';
 import { Poap } from './poap-eth/Poap';
-import { VotePoap } from './poap-eth/VotePoap';
 import {
   Address,
   Claim,
   TokenInfo,
-  Vote,
   Signer,
   TransactionStatus,
   OperationType,
@@ -33,7 +31,6 @@ export function getABI(name: string) {
 }
 
 const ABI = getABI('Poap');
-const voteABI = getABI('VotePoap');
 
 export function getContract(wallet: Wallet): Poap {
   const env = getEnv();
@@ -74,16 +71,6 @@ export async function getSignerWallet(address: Address): Promise<Wallet> {
     return wallet;
   }
   throw new Error('Signer was not found');
-}
-
-export function getVoteContract(wallet: Wallet): VotePoap {
-  const env = getEnv();
-  return new Contract(env.poapVoteAddress, voteABI, wallet) as VotePoap;
-}
-
-export function getVoteContract(): VotePoap {
-  const env = getEnv();
-  return new Contract(env.poapVoteAddress, voteABI, env.poapAdmin) as VotePoap;
 }
 
 /**
@@ -189,10 +176,6 @@ export async function mintToken(eventId: number, toAddr: Address, awaitTx: boole
     );
   }
 
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, 'mintToken', JSON.stringify([eventId, toAddr]));
-  }
-
   console.log(`mintToken: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
@@ -272,10 +255,6 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[], e
     );
   }
 
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, 'mintEventToManyUsers', JSON.stringify([eventId, toAddr]));
-  }
-
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
@@ -297,10 +276,6 @@ export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, 
       TransactionStatus.pending,
       txObj.transactionParams.gasPrice.toString()
     );
-  }
-
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, 'mintUserToManyEvents', JSON.stringify({eventIds, toAddr}));
   }
 
   console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
@@ -326,10 +301,6 @@ export async function burnToken(tokenId: string | number, extraParams?: any): Pr
       TransactionStatus.pending,
       txObj.transactionParams.gasPrice.toString()
     );
-  }
-
-  if(tx.hash){
-    await saveTransaction(tx.hash, tx.nonce, 'burnToken', tokenId.toString());
   }
 
   console.log(`burn: Transaction: ${tx.hash}`);
@@ -413,46 +384,6 @@ export async function verifyClaim(claim: Claim): Promise<string | boolean> {
   }
 
   return true;
-}
-
-export async function relayedVoteCall(vote: Vote): Promise<boolean | ContractTransaction> {
-  const env = getEnv();
-  const helperWallet: null | Wallet = await getHelperSigner();
-  const signerWallet = helperWallet ? helperWallet : env.poapAdmin;
-  const contract = getVoteContract(signerWallet);
-  const gasPrice = await getCurrentGasPrice(contract.address);
-  // const claimerMessage = JSON.stringify([vote.proposal,]);
-  const claimerMessage = vote.proposal.toString();
-  let messageBytes = toUtf8Bytes(claimerMessage);
-  const supposedClaimedAddress = verifyMessage(keccak256(messageBytes), vote.claimerSignature);
-  const isValid = supposedClaimedAddress === vote.claimer;
-
-  if (isValid) {
-    try {
-      // @ts-ignore
-      const { claimer, proposal } = vote;
-      const tx = await contract.functions.relayedVote(claimer, proposal, {
-        gasLimit: 450000000,
-        gasPrice: gasPrice,
-      });
-
-      if (tx.hash) {
-        await saveTransaction(
-          tx.hash,
-          tx.nonce,
-          OperationType.vote,
-          JSON.stringify([claimer, proposal]),
-          env.poapAdmin.address,
-          TransactionStatus.pending,
-          gasPrice.toString()
-        );
-      }
-      return tx;
-    } catch (e) {
-      console.log('Error: ', e);
-    }
-  }
-  return false;
 }
 
 export async function getAddressBalance(signer: Signer): Promise<Signer> {
