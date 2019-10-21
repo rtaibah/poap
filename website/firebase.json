@@ -41,6 +41,16 @@
         "source": "/discord",
         "destination": "https://discord.gg/9s8U8Bn",
         "type": 302
+      },
+      {
+        "source": "/claim/:id*",
+        "destination": "https://app.poap.xyz/claim/:id",
+        "type": 301
+      },
+      {
+        "source": "/claim",
+        "destination": "https://app.poap.xyz/claim",
+        "type": 301
       }
     ]
   }
