@@ -34,7 +34,8 @@ import {
   resolveName,
   lookupAddress,
   checkAddress,
-  checkHasToken
+  checkHasToken,
+  getTokenImg
 } from './poap-helper';
 
 import { Claim, PoapEvent, TransactionStatus, Address } from './types';
@@ -733,4 +734,30 @@ export default async function routes(fastify: FastifyInstance) {
       return;
     }
   );
+
+  fastify.get(
+    '/token/:tokenId/image',
+    {
+      schema: {
+        params: {
+          tokenId: { type: 'integer' },
+        },
+      },
+    },
+    async (req, res) => {
+      const tokenId = req.params.tokenId;
+      if (!tokenId) {
+        return new createError.NotFound('token_id is required');
+      }
+
+      const TokenImg = await getTokenImg(tokenId);
+      if (!TokenImg) {
+        return new createError.NotFound('error getting TokenImg');
+      }
+
+      res.redirect(TokenImg)
+      return;
+    }
+  );
+
 }
