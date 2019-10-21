@@ -1,4 +1,4 @@
-import { Provider, JsonRpcProvider } from 'ethers/providers';
+import { Provider, InfuraProvider } from 'ethers/providers';
 import { Wallet, getDefaultProvider } from 'ethers';
 import { Address } from '../types';
 
@@ -33,8 +33,8 @@ function getHelperWallets(provider: Provider) {
 }
 
 function getDevelopmentVariables(): EnvVariables {
-  const provider: Provider = new JsonRpcProvider('http://localhost:7545');
-  // const provider: Provider = new InfuraProvider('ropsten', 'cf7a7eed37254ec4b95670607e76a917');
+  // const provider: Provider = new JsonRpcProvider('http://localhost:7545');
+  const provider: Provider = new InfuraProvider('ropsten', 'cf7a7eed37254ec4b95670607e76a917');
 
   return {
     provider,
