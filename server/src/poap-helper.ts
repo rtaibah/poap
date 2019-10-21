@@ -364,6 +364,18 @@ export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo>
   };
 }
 
+export async function getTokenImg(tokenId: string | number): Promise<null | string> {
+  const env = getEnv();
+  const contract = getContract(env.poapAdmin);
+  const eventId = await contract.functions.tokenEvent(tokenId);
+  const event = await getEvent(eventId.toNumber());
+  if (!event) {
+    throw new Error('Invalid Event Id');
+  }
+
+  return event.image_url
+}
+
 export async function verifyClaim(claim: Claim): Promise<string | boolean> {
   const event = await getEvent(claim.eventId);
 
