@@ -9,6 +9,9 @@ import fastifyCompress from 'fastify-compress';
 import authPlugin from './auth';
 import routes from './routes';
 import transactionsMonitorCron  from './plugins/tx-monitor';
+import dotenv from 'dotenv'
+
+dotenv.config();
 
 const fastify = fastifyFactory({
   logger: true,
@@ -19,9 +22,9 @@ fastify.register(fastifyHelmet, {
 });
 
 fastify.register(fastifyRateLimit, {
-  max: 40,
+  max: 1000,
   timeWindow: 60000
-})
+});
 
 fastify.register(fastifyCors, {});
 fastify.register(fastifyCompress, {});

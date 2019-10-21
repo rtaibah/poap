@@ -32,10 +32,10 @@ export default fp(function transactionsMonitorCron(
     const txPromises = pendingTransactions.map(async ({ tx_hash: txHash }) => {
       const json: TxStatusPayload = await getTxStatus(txHash);
       if (json) {
-        if (json.confirmed) {
-          await updateTransactionStatus(txHash, TransactionStatus.passed);
-        } else if (json.execution_error) {
+        if (json.execution_error) {
           await updateTransactionStatus(txHash, TransactionStatus.failed);
+        } else if (json.confirmed) {
+          await updateTransactionStatus(txHash, TransactionStatus.passed);
         }
       }
       return json;

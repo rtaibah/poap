@@ -38,7 +38,7 @@ CREATE TABLE server_transactions (
   "signer" varchar(256) not null,
   "operation" varchar(100) not null,
   "arguments" varchar(1000) not null,
-  "status" varchar(100) not null default "pending",
+  "status" varchar(100) not null default 'pending',
   "gas_price" varchar(1000) not null,
   "created_date" timestamp with time zone not null default now()
 );
@@ -53,5 +53,6 @@ CREATE TABLE qr_claims (
   "signer" varchar(256),
   "claimed" boolean default false,
   "claimed_date" timestamp with time zone,
-  "created_date" timestamp with time zone not null default now()
+  "created_date" timestamp with time zone not null default now(),
+  "is_active" boolean default true
 );
