@@ -136,9 +136,6 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
     signerWallet = env.poapAdmin;
   } else {
     const helperWallet = await getHelperSigner(gasPrice);
-    console.log('----------------------------')
-    console.log('helperWallet: ', helperWallet)
-    console.log('----------------------------')
     signerWallet = helperWallet ? helperWallet : env.poapAdmin;
   }
 
