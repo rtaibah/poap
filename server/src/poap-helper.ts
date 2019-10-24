@@ -169,10 +169,19 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   
 }
 
-export async function mintToken(eventId: number, toAddr: Address, awaitTx: boolean = true, extraParams?: any): Promise<ContractTransaction> {
-  const txObj = await getTxObj(false, extraParams);
+export async function mintToken(eventId: number, toAddr: Address, awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
+  let tx:ContractTransaction
+  let txObj:any
 
-  const tx = await txObj.contract.functions.mintToken(eventId, toAddr, txObj.transactionParams);
+  try {
+    txObj = await getTxObj(false, extraParams);
+    tx = await txObj.contract.functions.mintToken(eventId, toAddr, txObj.transactionParams);
+  }
+  catch(error) {
+    console.error(error);
+    return null;
+  }
+  
 
   if (tx.hash) {
     await saveTransaction(

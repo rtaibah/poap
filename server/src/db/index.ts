@@ -194,6 +194,11 @@ export async function claimQrClaim(qr_hash: string) {
   return res.rowCount === 1;
 }
 
+export async function unclaimQrClaim(qr_hash: string) {
+  const res = await db.result('update qr_claims set claimed=false, claimed_date=null where qr_hash = $1', [qr_hash]);
+  return res.rowCount === 1;
+}
+
 export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: ContractTransaction) {
   const tx_hash = tx.hash
   const signer = tx.from
