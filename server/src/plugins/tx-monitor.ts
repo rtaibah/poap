@@ -33,8 +33,18 @@ export default fp(function transactionsMonitorCron(
     if (!pendingTransactions || pendingTransactions.length === 0) return;
 
     const txPromises = pendingTransactions.map(async ({ tx_hash: txHash }) => {      
-      if(env.providerStr == 'local' || env.infuraNet == 'ropsten') {
-
+      if (env.infuraNet == 'mainnet') {
+        const json: TxStatusPayload = await getTxStatus(txHash);
+        if (json) {
+          if (json.execution_error) {
+            await updateTransactionStatus(txHash, TransactionStatus.failed);
+          } else if (json.confirmed) {
+            await updateTransactionStatus(txHash, TransactionStatus.passed);
+          }
+        }
+        return json;
+      } 
+      else {
         const receipt = await env.provider.getTransactionReceipt(txHash).then((receipt) => {
           if(receipt) {
             if(receipt.status == 1) {
@@ -48,19 +58,6 @@ export default fp(function transactionsMonitorCron(
 
         return receipt
       }
- 
-      else if (env.infuraNet == 'mainnet') {
-        const json: TxStatusPayload = await getTxStatus(txHash);
-        if (json) {
-          if (json.execution_error) {
-            await updateTransactionStatus(txHash, TransactionStatus.failed);
-          } else if (json.confirmed) {
-            await updateTransactionStatus(txHash, TransactionStatus.passed);
-          }
-        }
-        return json;
-      } 
-      return
     });
     const results = Promise.all(txPromises);
     return results;
