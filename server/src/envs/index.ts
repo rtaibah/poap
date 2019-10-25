@@ -34,7 +34,7 @@ function getHelperWallets(provider: Provider) {
   return helpers;
 }
 
-export function ensureEnvVariable(name: string): string {
+function ensureEnvVariable(name: string): string {
   if (!process.env[name]) {
     console.error(`ENV variable ${name} is required`);
     process.exit(1);
