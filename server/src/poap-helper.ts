@@ -10,7 +10,8 @@ import {
   saveTransaction,
   getSigner,
   getAvailableHelperSigners,
-  getTransaction
+  getTransaction,
+  updateTransactionStatus
 } from './db';
 import getEnv from './envs';
 import { Poap } from './poap-eth/Poap';
@@ -255,6 +256,8 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
       throw new Error('Operation not supported');
     }
   }
+
+  await updateTransactionStatus(hash, TransactionStatus.bumped);
 }
 
 export async function mintEventToManyUsers(eventId: number, toAddr: Address[], extraParams?: any) {
