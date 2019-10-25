@@ -367,7 +367,6 @@ export default async function routes(fastify: FastifyInstance) {
       if (!claim_qr_claim) {
         return new createError.InternalServerError('There was a problem updating claim boolean');
       }
-      await sleep(5000)
       qr_claim.claimed = true
 
       const event = await getEvent(qr_claim.event_id);
