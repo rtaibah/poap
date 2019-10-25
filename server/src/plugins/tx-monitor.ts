@@ -18,6 +18,7 @@ import fetch from 'node-fetch';
 
 import { getPendingTxs, updateTransactionStatus } from '../db';
 import { TransactionStatus, TxStatusPayload } from '../types';
+import getEnv from '../envs/index';
 
 const EXPLORER_API_BASE = 'https://api.blockcypher.com/v1';
 
@@ -27,18 +28,36 @@ export default fp(function transactionsMonitorCron(
   next
 ) {
   const monitor = async () => {
+    const env = getEnv();
     const pendingTransactions = await getPendingTxs();
     if (!pendingTransactions || pendingTransactions.length === 0) return;
-    const txPromises = pendingTransactions.map(async ({ tx_hash: txHash }) => {
-      const json: TxStatusPayload = await getTxStatus(txHash);
-      if (json) {
-        if (json.execution_error) {
-          await updateTransactionStatus(txHash, TransactionStatus.failed);
-        } else if (json.confirmed) {
-          await updateTransactionStatus(txHash, TransactionStatus.passed);
+
+    const txPromises = pendingTransactions.map(async ({ tx_hash: txHash }) => {      
+      if (env.infuraNet == 'mainnet') {
+        const json: TxStatusPayload = await getTxStatus(txHash);
+        if (json) {
+          if (json.execution_error) {
+            await updateTransactionStatus(txHash, TransactionStatus.failed);
+          } else if (json.confirmed) {
+            await updateTransactionStatus(txHash, TransactionStatus.passed);
+          }
         }
+        return json;
+      } 
+      else {
+        const receipt = await env.provider.getTransactionReceipt(txHash).then((receipt) => {
+          if(receipt) {
+            if(receipt.status == 1) {
+              updateTransactionStatus(txHash, TransactionStatus.passed);
+            } else if (receipt.status == 0) {
+              updateTransactionStatus(txHash, TransactionStatus.failed);
+            }
+          }
+          return receipt
+        });
+
+        return receipt
       }
-      return json;
     });
     const results = Promise.all(txPromises);
     return results;

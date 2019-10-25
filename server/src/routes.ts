@@ -439,6 +439,7 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       await bumpTransaction(req.body.txHash, req.body.gasPrice);
+
       res.status(204);
       return;
     }
