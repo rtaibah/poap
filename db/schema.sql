@@ -69,11 +69,12 @@ CREATE TABLE task_creators (
   "task_name" varchar(256)
 );
 
-/* CREATE TABLE task_events */
-CREATE TABLE task_events (
+/* CREATE TABLE task */
+CREATE TABLE task (
     "id" SERIAL PRIMARY KEY,
-    "task_name" varchar(100),
-    "arguments" varchar(256),
-    "status" varchar(100),
-    "return_data" varchar(256)
+    "name" varchar(100),
+    "task_data" varchar(256),
+    "status" varchar(100) constraint default_satus DEFAULT 'PENDING',
+    "return_data" varchar(256),
+    CONSTRAINT chk_status CHECK (status IN ('FINISH', 'FINISH_WITH_ERROR', 'IN_PROCESS', 'PENDING'))
 );
