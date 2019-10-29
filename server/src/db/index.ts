@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -211,4 +211,23 @@ export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: Con
     qr_hash
   });
   return res.rowCount === 1;
+}
+
+export async function createTask(task_name: string, task_data: string, api_key: string): Promise<Task|null> {
+
+  const now =  new Date();
+  const res = await db.result(
+    'SELECT * FROM task_creators WHERE task_name=${task_name} AND api_key=${api_key} AND valid_from < ${now} AND valid_to > ${now}',
+    {task_name, api_key, now}
+  );
+  if(res.rowCount === 0){
+    return null;
+  }
+
+ const task = await db.one(
+    'INSERT INTO task(name, task_data) VALUES(${task_name}, ${task_data}) RETURNING id, name, task_data, status, return_data',
+    {task_name, task_data}
+  );
+
+  return task;
 }

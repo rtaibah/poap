@@ -19,7 +19,8 @@ import {
   updateQrClaim,
   checkDualQrClaim,
   getPendingTxsAmount,
-  unclaimQrClaim
+  unclaimQrClaim,
+  createTask,
 } from './db';
 
 import {
@@ -767,4 +768,31 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  //********************************************************************
+  // TASKS
+  //********************************************************************
+
+  fastify.post(
+    '/tasks/',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['task_name', 'task_data', 'api_key'],
+          properties: {
+            task_name: { type: 'string'},
+            task_data: { type: 'string'},
+            api_key: {type: 'string'}
+          },
+        },
+      },
+    },
+    async (req, res) => {
+      const task = await createTask(req.body.task_name, req.body.task_data, req.body.api_key);
+      if (task == null) {
+        return new createError.BadRequest('Couldn\'t create the task');
+      }
+      return task;
+    }
+  );
 }
