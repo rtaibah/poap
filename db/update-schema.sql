@@ -37,3 +37,24 @@ CREATE TABLE qr_claims (
   "created_date" timestamp with time zone not null default now(),
   "is_active" boolean default true
 );
+
+CREATE EXTENSION pgcrypto;
+
+/* CREATE TABLE task_creators */
+CREATE TABLE task_creators (
+  "id" SERIAL PRIMARY KEY,
+  "api_key" uuid default gen_random_uuid(),
+  "valid_from" timestamp not null,
+  "valid_to" timestamp not null,
+  "description" varchar(256),
+  "task_name" varchar(256)
+);
+
+/* CREATE TABLE task_events */
+CREATE TABLE task_events (
+    "id" SERIAL PRIMARY KEY,
+    "task_name" varchar(100),
+    "arguments" varchar(256),
+    "status" varchar(100),
+    "return_data" varchar(256)
+);

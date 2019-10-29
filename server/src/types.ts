@@ -113,3 +113,20 @@ export interface POAPVote {
   claimer: Address;
   proposal: number;
 }
+
+export interface taskCreators {
+  id: number;
+  api_key: string;
+  valid_from: Date;
+  valid_to: Date;
+  description: string;
+  task_name: string;
+}
+
+export interface taskEvents{
+  id: number;
+  task_name: string;
+  arguments: string;
+  status: string;
+  return_data: string;
+}
