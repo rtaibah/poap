@@ -19,6 +19,7 @@ export enum TransactionStatus {
   pending = 'pending',
   passed = 'passed',
   failed = 'failed',
+  bumped = 'bumped',
 }
 
 export enum SignerRole {

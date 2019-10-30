@@ -7,8 +7,10 @@ export interface EnvVariables {
   poapAdmin: Wallet;
   poapAddress: Address;
   poapVoteAddress: Address;
-  poapHelpers: PoapHelpers,
+  poapHelpers: PoapHelpers;
   secretKey: string;
+  infuraNet: string;
+  providerStr: string;
 }
 
 export interface PoapHelpers {
@@ -59,12 +61,15 @@ export default function getEnv(): EnvVariables {
   }
 
   const ownerPK = ensureEnvVariable('POAP_OWNER_PK');
+
   return {
     provider,
     poapAddress: ensureEnvVariable('POAP_CONTRACT_ADDR'),
     poapVoteAddress: ensureEnvVariable('POAP_VOTE_CONTRACT_ADDR'),
     poapAdmin: new Wallet(ownerPK, provider),
     poapHelpers: getHelperWallets(provider),
-    secretKey: ensureEnvVariable('SECRET_KEY')
+    secretKey: ensureEnvVariable('SECRET_KEY'),
+    infuraNet: ensureEnvVariable('ETH_NETWORK'),
+    providerStr: ensureEnvVariable('PROVIDER')
   };
 }
