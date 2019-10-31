@@ -1,0 +1,36 @@
+import {UnlockTask} from '../types';
+import { getABI, mintToken } from '../eth/helpers';
+import { Contract, getDefaultProvider } from 'ethers';
+import { UnlockProtocol } from '../eth/UnlockProtocol';
+import { hasToken, finishTaskWithErrors, finishTask } from '../db';
+
+const ABI = getABI('UnlockProtocol');
+
+
+const eventID = 10;
+
+export async function processUnlockTask(task :UnlockTask){
+    
+    if(task.name !== 'unlock-protocol') return;
+    // Check if the address has a token
+    if(await hasToken(task)){
+        finishTaskWithErrors("Token already minted or in process", task.id);
+        return;
+    }
+    // Instantiate the unlock contract
+    let unlock = new Contract(task.task_data.lockAddress, ABI, getDefaultProvider()) as UnlockProtocol;
+    // Check if the address has a valid key 
+    const hasValidKey = await unlock.functions.getHasValidKey(task.task_data.accountAddress);
+
+    if(!hasValidKey){
+        finishTaskWithErrors("Address doesn't have a valid unlock key", task.id);
+        return;
+    }
+    // Mint token
+    const txHash = await mintToken(eventID, '0x8CbE9b8125E849579CD252F83087602b80adB219', false);
+
+    // TODO do we change the status
+    if(txHash == null) return;
+    
+    finishTask(txHash.hash, task.id);
+  }
