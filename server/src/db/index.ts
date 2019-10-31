@@ -225,9 +225,14 @@ export async function createTask(task_name: string, task_data: string, api_key: 
   }
 
  const task = await db.one(
-    'INSERT INTO task(name, task_data) VALUES(${task_name}, ${task_data}) RETURNING id, name, task_data, status, return_data',
+    'INSERT INTO tasks(name, task_data) VALUES(${task_name}, ${task_data}) RETURNING id, name, task_data, status, return_data',
     {task_name, task_data}
   );
 
   return task;
+}
+
+export async function getPendingTasks(): Promise<Task[]>{
+  const res = await db.manyOrNone<Task>('SELECT * FROM tasks WHERE status=\'PENDING\'');
+  return res;
 }

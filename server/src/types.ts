@@ -114,7 +114,7 @@ export interface POAPVote {
   proposal: number;
 }
 
-export interface TaskCreators {
+export interface TaskCreator {
   id: number;
   api_key: string;
   valid_from: Date;

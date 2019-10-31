@@ -70,7 +70,7 @@ CREATE TABLE task_creators (
 );
 
 /* CREATE TABLE task */
-CREATE TABLE task (
+CREATE TABLE tasks (
     "id" SERIAL PRIMARY KEY,
     "name" varchar(100),
     "task_data" varchar(256),
