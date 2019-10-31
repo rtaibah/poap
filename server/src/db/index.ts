@@ -215,10 +215,9 @@ export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: Con
 
 export async function createTask(task_name: string, task_data: string, api_key: string): Promise<Task|null> {
 
-  const now =  new Date();
   const res = await db.result(
-    'SELECT * FROM task_creators WHERE task_name=${task_name} AND api_key=${api_key} AND valid_from < ${now} AND valid_to > ${now}',
-    {task_name, api_key, now}
+    'SELECT * FROM task_creators WHERE task_name=${task_name} AND api_key=${api_key} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
+    {task_name, api_key}
   );
   if(res.rowCount === 0){
     return null;
