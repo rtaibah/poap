@@ -54,7 +54,7 @@ CREATE TABLE task_creators (
 CREATE TABLE task (
     "id" SERIAL PRIMARY KEY,
     "name" varchar(100),
-    "task_data" varchar(256),
+    "task_data" json,
     "status" varchar(100) constraint default_satus DEFAULT 'PENDING',
     "return_data" varchar(256),
     CONSTRAINT chk_status CHECK (status IN ('FINISH', 'FINISH_WITH_ERROR', 'IN_PROCESS', 'PENDING'))

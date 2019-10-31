@@ -16,6 +16,8 @@ declare module 'fastify' {
 import cron from 'node-cron';
 
 import { getPendingTasks } from '../db';
+import { processUnlockTask } from '../services/unlock-protocol';
+import { UnlockTask } from '../types';
 
 export default fp(function taskMonitorCron(
   fastify: FastifyInstance<Server, IncomingMessage, ServerResponse>,
@@ -32,7 +34,7 @@ export default fp(function taskMonitorCron(
       switch(task.name){
         case 'unlock-protocol':
           // TODO process the task
-          console.log(task);
+          processUnlockTask(task as UnlockTask);
       }
     }
 

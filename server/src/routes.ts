@@ -781,7 +781,7 @@ export default async function routes(fastify: FastifyInstance) {
           required: ['task_name', 'task_data', 'api_key'],
           properties: {
             task_name: { type: 'string'},
-            task_data: { type: 'string'},
+            task_data: { type: 'object'},
             api_key: {type: 'string'}
           },
         },

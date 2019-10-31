@@ -126,7 +126,15 @@ export interface TaskCreator {
 export interface Task{
   id: number;
   name: string;
-  task_data: string;
+  task_data: object;
   status: string;
   return_data: string;
+}
+
+export interface UnlockTask extends Task{
+  task_data: {
+    accountAddress: Address,
+    lockAddress: Address,
+    timestamp: Date,
+  }
 }

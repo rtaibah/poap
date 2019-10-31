@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -213,7 +213,7 @@ export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: Con
   return res.rowCount === 1;
 }
 
-export async function createTask(task_name: string, task_data: string, api_key: string): Promise<Task|null> {
+export async function createTask(task_name: string, task_data: object, api_key: string): Promise<Task|null> {
 
   const res = await db.result(
     'SELECT * FROM task_creators WHERE task_name=${task_name} AND api_key=${api_key} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
@@ -234,4 +234,27 @@ export async function createTask(task_name: string, task_data: string, api_key: 
 export async function getPendingTasks(): Promise<Task[]>{
   const res = await db.manyOrNone<Task>('SELECT * FROM tasks WHERE status=\'PENDING\'');
   return res;
+}
+
+export async function hasToken(unlockTask: UnlockTask): Promise<boolean>{
+  const task_id = unlockTask.id;
+  const address = unlockTask.task_data.accountAddress;
+  // TODO what if the status is FINISHED_WITH_ERRORS?
+  const res = await db.result(
+    'SELECT * FROM tasks WHERE id < ${task_id} AND name=\'unlock-protocol\' AND task_data ->> \'accountAddress\' = ${address}', {task_id, address})
+  return res.rowCount > 0;
+}
+
+export async function finishTaskWithErrors(errors: string, task_id: number){
+  await db.result(
+    'UPDATE tasks SET status=\'FINISH_WITH_ERROR\', return_data=${errors} where id=${task_id}',
+    {errors, task_id}
+  );
+}
+
+export async function finishTask(txHash: string | undefined, task_id: number){
+  await db.result(
+    'UPDATE tasks SET status=\'FINISH\', return_data=${txHash} where id=${task_id}',
+    {txHash, task_id}
+  );
 }
