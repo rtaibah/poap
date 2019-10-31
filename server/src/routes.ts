@@ -38,7 +38,7 @@ import {
   checkAddress,
   checkHasToken,
   getTokenImg
-} from './poap-helper';
+} from './eth/helpers';
 
 import { Claim, PoapEvent, TransactionStatus, Address } from './types';
 import crypto from 'crypto';

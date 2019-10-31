@@ -12,9 +12,9 @@ import {
   getAvailableHelperSigners,
   getTransaction,
   updateTransactionStatus
-} from './db';
-import getEnv from './envs';
-import { Poap } from './poap-eth/Poap';
+} from '../db';
+import getEnv from '../envs';
+import { Poap } from './Poap';
 import {
   Address,
   Claim,
@@ -22,10 +22,10 @@ import {
   Signer,
   TransactionStatus,
   OperationType,
-} from './types';
+} from '../types';
 
 const Logger = pino();
-const ABI_DIR = join(__dirname, '../abi');
+const ABI_DIR = join(__dirname, '../../abi');
 
 export function getABI(name: string) {
   return JSON.parse(readFileSync(join(ABI_DIR, `${name}.json`)).toString());
