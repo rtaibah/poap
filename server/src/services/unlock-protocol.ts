@@ -29,7 +29,7 @@ export async function processUnlockTask(task :UnlockTask){
     // Mint token
     const txHash = await mintToken(eventID, task.task_data.accountAddress, false);
 
-    // TODO do we change the status
+    // Return without changing the status (try it again later)
     if(txHash == null) return;
     
     finishTask(txHash.hash, task.id);

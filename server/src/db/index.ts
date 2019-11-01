@@ -213,19 +213,19 @@ export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: Con
   return res.rowCount === 1;
 }
 
-export async function createTask(task_name: string, task_data: object, api_key: string): Promise<Task|null> {
+export async function createTask(taskName: string, taskData: object, apiKey: string): Promise<Task|null> {
 
   const res = await db.result(
-    'SELECT * FROM task_creators WHERE task_name=${task_name} AND api_key=${api_key} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
-    {task_name, api_key}
+    'SELECT * FROM task_creators WHERE task_name=${taskName} AND api_key=${apiKey} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
+    {taskName, apiKey}
   );
   if(res.rowCount === 0){
     return null;
   }
 
  const task = await db.one(
-    'INSERT INTO tasks(name, task_data) VALUES(${task_name}, ${task_data}) RETURNING id, name, task_data, status, return_data',
-    {task_name, task_data}
+    'INSERT INTO tasks(name, task_data) VALUES(${taskName}, ${taskData}) RETURNING id, name, task_data, status, return_data',
+    {taskName, taskData}
   );
 
   return task;
@@ -239,16 +239,15 @@ export async function getPendingTasks(): Promise<Task[]>{
 export async function hasToken(unlockTask: UnlockTask): Promise<boolean>{
   const task_id = unlockTask.id;
   const address = unlockTask.task_data.accountAddress;
-  // TODO what if the status is FINISHED_WITH_ERRORS?
   const res = await db.result(
-    'SELECT * FROM tasks WHERE id < ${task_id} AND name=\'unlock-protocol\' AND task_data ->> \'accountAddress\' = ${address}', {task_id, address})
+    'SELECT * FROM tasks WHERE status<>\'FINISH_WITH_ERROR\' AND id < ${task_id} AND name=\'unlock-protocol\' AND task_data ->> \'accountAddress\' = ${address}', {task_id, address})
   return res.rowCount > 0;
 }
 
-export async function finishTaskWithErrors(errors: string, task_id: number){
+export async function finishTaskWithErrors(errors: string, taskId: number){
   await db.result(
-    'UPDATE tasks SET status=\'FINISH_WITH_ERROR\', return_data=${errors} where id=${task_id}',
-    {errors, task_id}
+    'UPDATE tasks SET status=\'FINISH_WITH_ERROR\', return_data=${errors} where id=${taskId}',
+    {errors, taskId}
   );
 }
 

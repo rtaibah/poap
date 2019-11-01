@@ -26,10 +26,9 @@ export default fp(function taskMonitorCron(
 ) {
   // Create monitor task
   const monitor = async () => {
-    console.log("Running task")
     // Get the PENDING tasks
-    let pending_tasks = await getPendingTasks();
-    for(let task of pending_tasks){
+    let pendingTasks = await getPendingTasks();
+    for(let task of pendingTasks){
       // Call the corresponding function to process the task
       switch(task.name){
         case 'unlock-protocol':
