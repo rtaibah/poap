@@ -17,6 +17,11 @@ export async function processUnlockTask(task :UnlockTask){
         finishTaskWithErrors('Invalid account address', task.id);
         return;
     }
+    // Check that the lockAddress is a valid address
+    if(await checkAddress(task.task_data.lockAddress) == null) {
+        finishTaskWithErrors('Invalid lock address', task.id);
+        return;
+    }
     // Check if the address has a token
     if(await hasToken(task)){
         finishTaskWithErrors("Token already minted or in process", task.id);
