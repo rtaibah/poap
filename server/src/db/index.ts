@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -213,19 +213,19 @@ export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: Con
   return res.rowCount === 1;
 }
 
-export async function createTask(taskName: string, taskData: object, apiKey: string): Promise<Task|null> {
-
-  const res = await db.result(
-    'SELECT * FROM task_creators WHERE task_name=${taskName} AND api_key=${apiKey} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
-    {taskName, apiKey}
+export async function createTask(data: any, apiKey: any): Promise<Task|null> {
+  console.log(apiKey);
+  const taskCreator = await db.one<TaskCreator>(
+    'SELECT * FROM task_creators WHERE api_key=${apiKey} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
+    {apiKey}
   );
-  if(res.rowCount === 0){
+  if(taskCreator === null){
     return null;
   }
-
- const task = await db.one(
-    'INSERT INTO tasks(name, task_data) VALUES(${taskName}, ${taskData}) RETURNING id, name, task_data, status, return_data',
-    {taskName, taskData}
+  const taskName = taskCreator.task_name 
+  const task = await db.one(
+    'INSERT INTO tasks(name, task_data) VALUES(${taskName}, ${data}) RETURNING id, name, task_data, status, return_data',
+    {taskName, data}
   );
 
   return task;

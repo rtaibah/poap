@@ -776,19 +776,17 @@ export default async function routes(fastify: FastifyInstance) {
     '/tasks/',
     {
       schema: {
-        body: {
+        headers: {
+          required: ['api-key'],
           type: 'object',
-          required: ['taskName', 'taskData', 'apiKey'],
           properties: {
-            taskName: { type: 'string'},
-            taskData: { type: 'object'},
-            apiKey: {type: 'string'}
-          },
+            'api-key': { type: 'string' },
+          }
         },
       },
     },
     async (req, res) => {
-      const task = await createTask(req.body.taskName, req.body.taskData, req.body.apiKey);
+      const task = await createTask(req.body, req.headers['api-key']);
       if (task == null) {
         return new createError.BadRequest('Couldn\'t create the task');
       }
