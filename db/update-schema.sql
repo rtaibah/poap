@@ -43,7 +43,7 @@ CREATE EXTENSION pgcrypto;
 /* CREATE TABLE task_creators */
 CREATE TABLE task_creators (
   "id" SERIAL PRIMARY KEY,
-  "api_key" uuid default gen_random_uuid(),
+  "api_key" uuid default gen_random_uuid() not null,
   "valid_from" timestamp not null,
   "valid_to" timestamp not null,
   "description" varchar(256),

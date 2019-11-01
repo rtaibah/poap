@@ -24,7 +24,7 @@ export default fp(function taskMonitorCron(
   opts,
   next
 ) {
-  // Create monitor task
+  // Create task monitor
   const monitor = async () => {
     // Get the PENDING tasks
     let pendingTasks = await getPendingTasks();

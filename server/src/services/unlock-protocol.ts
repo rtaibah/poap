@@ -1,17 +1,22 @@
 import {UnlockTask} from '../types';
-import { getABI, mintToken } from '../eth/helpers';
+import { getABI, mintToken, checkAddress } from '../eth/helpers';
 import { Contract, getDefaultProvider } from 'ethers';
 import { UnlockProtocol } from '../eth/UnlockProtocol';
 import { hasToken, finishTaskWithErrors, finishTask } from '../db';
 
 const ABI = getABI('UnlockProtocol');
 
-
 const eventID = 10;
 
 export async function processUnlockTask(task :UnlockTask){
     
     if(task.name !== 'unlock-protocol') return;
+
+    // Check that the accountAddress is a valid address
+    if(await checkAddress(task.task_data.accountAddress) == null) {
+        finishTaskWithErrors('Invalid account address', task.id);
+        return;
+    }
     // Check if the address has a token
     if(await hasToken(task)){
         finishTaskWithErrors("Token already minted or in process", task.id);
