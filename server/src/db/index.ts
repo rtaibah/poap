@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -214,7 +214,6 @@ export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: Con
 }
 
 export async function createTask(data: any, apiKey: any): Promise<Task|null> {
-  console.log(apiKey);
   const taskCreator = await db.one<TaskCreator>(
     'SELECT * FROM task_creators WHERE api_key=${apiKey} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
     {apiKey}
@@ -237,10 +236,12 @@ export async function getPendingTasks(): Promise<Task[]>{
 }
 
 export async function hasToken(unlockTask: UnlockTask): Promise<boolean>{
-  const task_id = unlockTask.id;
+  const taskId = unlockTask.id;
   const address = unlockTask.task_data.accountAddress;
+  const unlockProtocol = Services.unlockProtocol
   const res = await db.result(
-    'SELECT * FROM tasks WHERE status<>\'FINISH_WITH_ERROR\' AND id < ${task_id} AND name=\'unlock-protocol\' AND task_data ->> \'accountAddress\' = ${address}', {task_id, address})
+    'SELECT * FROM tasks WHERE status<>\'FINISH_WITH_ERROR\' AND id < ${taskId} AND name=${unlockProtocol} AND task_data ->> \'accountAddress\' = ${address}',
+    {taskId, address, unlockProtocol})
   return res.rowCount > 0;
 }
 
@@ -251,9 +252,9 @@ export async function finishTaskWithErrors(errors: string, taskId: number){
   );
 }
 
-export async function finishTask(txHash: string | undefined, task_id: number){
+export async function finishTask(txHash: string | undefined, taskId: number){
   await db.result(
-    'UPDATE tasks SET status=\'FINISH\', return_data=${txHash} where id=${task_id}',
-    {txHash, task_id}
+    'UPDATE tasks SET status=\'FINISH\', return_data=${txHash} where id=${taskId}',
+    {txHash, taskId}
   );
 }

@@ -1,4 +1,4 @@
-import {UnlockTask} from '../types';
+import {UnlockTask, Services} from '../types';
 import { getABI, mintToken, checkAddress } from '../eth/helpers';
 import { Contract, getDefaultProvider } from 'ethers';
 import { UnlockProtocol } from '../eth/UnlockProtocol';
@@ -10,7 +10,7 @@ const eventID = 10;
 
 export async function processUnlockTask(task :UnlockTask){
     
-    if(task.name !== 'unlock-protocol') return;
+    if(task.name !== Services.unlockProtocol) return;
 
     // Check that the accountAddress is a valid address
     if(await checkAddress(task.task_data.accountAddress) == null) {

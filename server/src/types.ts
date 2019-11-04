@@ -138,3 +138,7 @@ export interface UnlockTask extends Task{
     timestamp: Date,
   }
 }
+
+export enum Services {
+  unlockProtocol = 'unlock-protocol',
+}
