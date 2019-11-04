@@ -32,7 +32,6 @@ export default fp(function taskMonitorCron(
       // Call the corresponding function to process the task
       switch(task.name){
         case Services.unlockProtocol:
-          // TODO process the task
           processUnlockTask(task as UnlockTask);
       }
     }
@@ -41,7 +40,7 @@ export default fp(function taskMonitorCron(
 
   fastify.decorate('updateTasks', async () => {
     // Run the task every minute
-    cron.schedule('*/1 * * * *', monitor);
+    cron.schedule('*/3 * * * *', monitor);
   });
   fastify.updateTasks();
 

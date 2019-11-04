@@ -213,7 +213,7 @@ export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: Con
   return res.rowCount === 1;
 }
 
-export async function createTask(data: any, apiKey: any): Promise<Task|null> {
+export async function createTask(data: any, apiKey: string): Promise<Task|null> {
   const taskCreator = await db.one<TaskCreator>(
     'SELECT * FROM task_creators WHERE api_key=${apiKey} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
     {apiKey}
