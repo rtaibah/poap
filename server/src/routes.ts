@@ -777,16 +777,16 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         headers: {
-          required: ['api-key'],
+          required: ['Authentication'],
           type: 'object',
           properties: {
-            'api-key': { type: 'string' },
+            'Authentication': { type: 'string' },
           }
         },
       },
     },
     async (req, res) => {
-      const task = await createTask(req.body, req.headers['api-key']);
+      const task = await createTask(req.body, req.headers['authentication']);
       if (task == null) {
         return new createError.BadRequest('Couldn\'t create the task');
       }
