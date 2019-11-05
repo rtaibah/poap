@@ -8,6 +8,11 @@
     ],
     "redirects": [
       {
+        "source": "/tombola",
+        "destination": "https://poap.xyz/#tombola",
+        "type": 302
+      },
+      {
         "source": "/join",
         "destination": "https://testflight.apple.com/join/oZiOSCuK",
         "type": 302

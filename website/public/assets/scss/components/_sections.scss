@@ -432,7 +432,7 @@
             padding:36px 0 30%;
         }
         @media (min-width: $bp-l) {
-            padding:0 0 30%;
+            padding:0 0 15%;
         }
 
         .funny-container {
@@ -496,4 +496,110 @@
 .mlogo {
     height: 18px;
     padding-right: 3px;
+}
+
+.tombola {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .item {
+        width: 70%;
+    }
+    .title {
+        color:$color-secondary;
+        font-size: 45px;
+        line-height: 24px;
+        max-width: 260px;
+        padding-bottom: 20px;
+    }
+    .tombola-first {
+        font-weight: 400;
+        font-size: 1.25rem;
+        font-family: "Archivo", sans-serif;
+        line-height: 20px;
+    }
+    .tombola-last {
+        font-weight: 400;
+        font-size: 1rem;
+        font-family: "Archivo", sans-serif;
+        line-height: 40px;
+        text-align: center;
+    }
+    .wrapper {
+        padding: 25px 0px;
+        position: relative;
+        top: 50%;
+        width: 600px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center;
+      }
+      
+      .tweet-text {
+        display: flex;
+        color: $color-secondary;
+        font-size: 1.5rem;
+        font-style: italic;
+        text-decoration: none;
+        transition-property: all;
+        transition-duration: 0.2s;
+        transition-timing-function: ease-out;
+        text-align: right;
+        
+        &:hover {
+          color: #55acee;
+          
+          .twitter-icon {
+            background-color: #55acee;
+          }
+          
+          .left-triangle {
+            border-right-color: #55acee;
+          }
+        }
+      }
+      
+      .icon-wrapper {
+        position: relative;
+      }
+      
+      .left-triangle {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 18px;
+        display: block;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 5px 6px 5px 0;
+        border-color: transparent #d0d0d0 transparent transparent;
+        transition-property: all;
+        transition-duration: 0.2s;
+        transition-timing-function: ease-in;
+      }
+      
+      .twitter-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        align-self: center;
+        padding: 6px;
+        margin-left: 1.5rem;
+        background-color: #d0d0d0;
+        border-radius: 2px;
+        transition-property: all;
+        transition-duration: 0.2s;
+        transition-timing-function: ease-in;
+        
+        path {
+          fill: #ffffff;
+          transition-property: all;
+          transition-duration: 0.2s;
+          transition-timing-function: ease-in;
+        }
+      }
+      
 }

@@ -1,6 +1,5 @@
 import $ from 'jquery'
 import AOS from 'aos'
-import Slick from 'slick-carousel'
 import 'aos/dist/aos.css'
 
 
@@ -41,16 +40,17 @@ import 'aos/dist/aos.css'
 
 
   /* Scroll to section */
-  $(".anchor").click(function (e) {
-    e.preventDefault();
-    var anchor = $(this).attr('href');
+  // NOT WORKING FOR NORMAL LINKS!
+  // $(".anchor").click(function (e) {
+  //   e.preventDefault();
+  //   var anchor = $(this).attr('href');
 
-    $('html, body').animate({
-      scrollTop: $(anchor).offset().top - 150
-    }, 500);
-    $('body').removeClass('menu-active');
-    $('.menu-hamburger').removeClass('close');
-  });
+  //   $('html, body').animate({
+  //     scrollTop: $(anchor).offset().top - 150
+  //   }, 500);
+  //   $('body').removeClass('menu-active');
+  //   $('.menu-hamburger').removeClass('close');
+  // });
 
   AOS.init({ once: true });
 
