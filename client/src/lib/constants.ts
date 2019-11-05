@@ -1,7 +1,7 @@
 const ROUTES = {
   home: '/',
   scan: '/scan/:account',
-  token: '/token/:account',
+  token: '/token/:tokenId',
   callback: '/callback',
   signerClaimPage: '/signer/claim/:event',
   codeClaimPageHash: '/claim/:hash',
@@ -15,20 +15,20 @@ const ROUTES = {
   minters: '/admin/minters',
   burn: '/admin/burn',
   addressManagement: '/admin/address-management',
-  transactions: '/admin/transactions'
+  transactions: '/admin/transactions',
 };
 
 const TX_STATUS = {
   failed: 'failed',
   passed: 'passed',
-  pending: 'pending'
-}
+  pending: 'pending',
+};
 
-const ETHERSCAN_URL = 'https://etherscan.io'
+const ETHERSCAN_URL = 'https://etherscan.io';
 
 const etherscanLinks = {
   tx: (hash: string): string => `https://etherscan.io/tx/${hash}`,
-  address: (address: string): string => `https://etherscan.io/address/${address}`
-}
+  address: (address: string): string => `https://etherscan.io/address/${address}`,
+};
 
 export { ROUTES, TX_STATUS, etherscanLinks };
