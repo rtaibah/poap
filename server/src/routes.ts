@@ -21,6 +21,7 @@ import {
   getPendingTxsAmount,
   unclaimQrClaim,
   createTask,
+  getTaskCreator,
 } from './db';
 
 import {
@@ -777,17 +778,22 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         headers: {
-          required: ['Authentication'],
+          required: ['Authorization'],
           type: 'object',
           properties: {
-            'Authentication': { type: 'string' },
+            'Authorization': { type: 'string' },
           }
         },
       },
     },
     async (req, res) => {
-      const task = await createTask(req.body, req.headers['authentication']);
-      if (task == null) {
+      const taskCreator = await getTaskCreator(req.headers['authorization']);
+      if (!taskCreator) {
+        return new createError.NotFound('Invalid or expired token');
+      }
+
+      const task = await createTask(req.body, taskCreator.task_name);
+      if (!task) {
         return new createError.BadRequest('Couldn\'t create the task');
       }
       return task;

@@ -40,7 +40,7 @@ export default fp(function taskMonitorCron(
 
   fastify.decorate('updateTasks', async () => {
     // Run the task every minute
-    cron.schedule('*/3 * * * *', monitor);
+    cron.schedule('*/1 * * * *', monitor);
   });
   fastify.updateTasks();
 

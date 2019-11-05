@@ -213,15 +213,15 @@ export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: Con
   return res.rowCount === 1;
 }
 
-export async function createTask(data: any, apiKey: string): Promise<Task|null> {
-  const taskCreator = await db.one<TaskCreator>(
+export async function getTaskCreator(apiKey: string): Promise<null | TaskCreator> {
+  const res = await db.oneOrNone<TaskCreator>(
     'SELECT * FROM task_creators WHERE api_key=${apiKey} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
     {apiKey}
   );
-  if(taskCreator === null){
-    return null;
-  }
-  const taskName = taskCreator.task_name 
+  return res;
+}
+
+export async function createTask(data: any, taskName: string): Promise<null | Task> {
   const task = await db.one(
     'INSERT INTO tasks(name, task_data) VALUES(${taskName}, ${data}) RETURNING id, name, task_data, status, return_data',
     {taskName, data}
