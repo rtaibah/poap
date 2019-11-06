@@ -252,6 +252,20 @@ export async function finishTaskWithErrors(errors: string, taskId: number){
   );
 }
 
+export async function setInProcessTask(taskId: number){
+  await db.result(
+    'UPDATE tasks SET status=\'IN_PROCESS\' where id=${taskId}',
+    {taskId}
+  );
+}
+
+export async function setPendingTask(taskId: number){
+  await db.result(
+    'UPDATE tasks SET status=\'PENDING\' where id=${taskId}',
+    {taskId}
+  );
+}
+
 export async function finishTask(txHash: string | undefined, taskId: number){
   await db.result(
     'UPDATE tasks SET status=\'FINISH\', return_data=${txHash} where id=${taskId}',

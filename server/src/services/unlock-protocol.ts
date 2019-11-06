@@ -2,7 +2,7 @@ import {UnlockTask, Services} from '../types';
 import { getABI, mintToken, checkAddress, checkHasToken } from '../eth/helpers';
 import { Contract, getDefaultProvider } from 'ethers';
 import { UnlockProtocol } from '../eth/UnlockProtocol';
-import { hasToken, finishTaskWithErrors, finishTask } from '../db';
+import { hasToken, finishTaskWithErrors, finishTask, setInProcessTask, setPendingTask } from '../db';
 
 const ABI = getABI('UnlockProtocol');
 
@@ -44,11 +44,16 @@ export async function processUnlockTask(task :UnlockTask){
     return;
   }
 
+  await setInProcessTask(eventID);
+
   // Mint token
   const txHash = await mintToken(eventID, task.task_data.accountAddress, false);
 
   // Return without changing the status (try it again later)
-  if(txHash == null) return;
+  if(txHash == null) {
+    await setPendingTask(eventID);
+    return;
+  }
   
   finishTask(txHash.hash, task.id);
 }
