@@ -6,7 +6,7 @@ import { hasToken, finishTaskWithErrors, finishTask } from '../db';
 
 const ABI = getABI('UnlockProtocol');
 
-const eventID = 10;
+const eventID = 80;
 
 export async function processUnlockTask(task :UnlockTask){
   if(task.name !== Services.unlockProtocol) return;
