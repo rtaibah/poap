@@ -503,6 +503,17 @@
     justify-content: center;
     align-items: center;
 
+    .hash_tombola {
+        font-family: 'Fredoka One', cursive;
+        color: $color-secondary;
+
+    }
+
+    h4{
+        color:$color-primary;
+
+    }
+
     .item {
         width: 70%;
     }
@@ -512,12 +523,15 @@
         line-height: 24px;
         max-width: 260px;
         padding-bottom: 20px;
+        font-family: 'Fredoka One', cursive;
     }
     .tombola-first {
+        color:$color-primary;
+
         font-weight: 400;
         font-size: 1.25rem;
         font-family: "Archivo", sans-serif;
-        line-height: 20px;
+        line-height: 1.75rem;
     }
     .tombola-last {
         font-weight: 400;
@@ -525,6 +539,14 @@
         font-family: "Archivo", sans-serif;
         line-height: 40px;
         text-align: center;
+        color:$color-primary;
+
+    }
+    .tombola-action{
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
     }
     .wrapper {
         padding: 25px 0px;
@@ -547,7 +569,7 @@
         transition-property: all;
         transition-duration: 0.2s;
         transition-timing-function: ease-out;
-        text-align: right;
+        text-align: center;
         
         &:hover {
           color: #55acee;
