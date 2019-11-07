@@ -11,6 +11,8 @@ const eventID = 80;
 export async function processUnlockTask(task :UnlockTask){
   if(task.name !== Services.unlockProtocol) return;
 
+  await setInProcessTask(eventID);
+
   // Check that the accountAddress is a valid address
   if(await checkAddress(task.task_data.accountAddress) == null) {
     finishTaskWithErrors('Invalid account address', task.id);
@@ -35,6 +37,7 @@ export async function processUnlockTask(task :UnlockTask){
   const hasValidKey = await unlock.functions.getHasValidKey(task.task_data.accountAddress);
 
   if(!hasValidKey){
+    await setPendingTask(eventID);
     return;
   }
 
@@ -43,8 +46,6 @@ export async function processUnlockTask(task :UnlockTask){
     finishTaskWithErrors("Address already has token in blockchain", task.id);
     return;
   }
-
-  await setInProcessTask(eventID);
 
   // Mint token
   const txHash = await mintToken(eventID, task.task_data.accountAddress, false);
