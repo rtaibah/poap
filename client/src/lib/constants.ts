@@ -16,6 +16,7 @@ const ROUTES = {
   burn: '/admin/burn',
   addressManagement: '/admin/address-management',
   transactions: '/admin/transactions',
+  inbox: '/admin/inbox'
 };
 
 const TX_STATUS = {
