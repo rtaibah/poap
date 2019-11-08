@@ -216,6 +216,19 @@ export function burnToken(tokenId: string): Promise<any> {
   });
 }
 
+export async function sendNotification (title: string, description: string, notificationType: string, selectedEventId: number | null): Promise<any> {
+return secureFetchNoResponse(`${API_BASE}/actions/send`, {
+  method: 'POST',
+    body: JSON.stringify({
+      title,
+      description,
+      eventId: selectedEventId,
+      type: notificationType
+    }),
+    headers: { 'Content-Type': 'application/json' },
+})
+}
+
 export async function mintEventToManyUsers(eventId: number, addresses: string[], signer_address: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintEventToManyUsers`, {
     method: 'POST',

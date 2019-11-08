@@ -1,10 +1,10 @@
 import React from 'react';
 import classNames from 'classnames';
-import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
+import { Formik, Form, Field, ErrorMessage, FieldProps, FormikActions } from 'formik';
 import { InboxFormSchema } from '../lib/schemas';
 
 /* Helpers */
-import { getEvents, PoapEvent } from '../api';
+import { getEvents, PoapEvent, sendNotification } from '../api';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
@@ -43,14 +43,30 @@ export class InboxPage extends React.Component<{}, IInboxState> {
         events,
         initialValues: {
           ...old.initialValues,
-          // selectedEventId: events[0].id,
         },
       };
     });
   }
 
-  onSubmit = async () => {
+  onSubmit = async (values: IInboxFormValues, actions: FormikActions<IInboxFormValues>) => {
+    // const {title,description,notificationType, selectedEventId } = values;
     console.log('submit');
+
+    // try {
+    //   actions.setStatus(null);
+    //   await sendNotification(title, description, notificationType, selectedEventId);
+    //   actions.setStatus({
+    //     ok: true,
+    //     msg: `Notification sent`,
+    //   });
+    // } catch (err) {
+    //   actions.setStatus({
+    //     ok: false,
+    //     msg: `Failed to send notification: ${err.message}`,
+    //   });
+    // } finally {
+    //   actions.setSubmitting(false);
+    // }
   };
 
   render() {
