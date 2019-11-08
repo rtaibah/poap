@@ -2,7 +2,7 @@ import * as yup from 'yup';
 import { utils } from 'ethers';
 
 const AddressSchema = yup.object().shape({
-  address: yup.string().required()
+  address: yup.string().required(),
 });
 
 const GasPriceSchema = yup.object().shape({
@@ -48,14 +48,10 @@ const PoapEventSchema = yup.object().shape({
     .nullable(),
   signer: yup
     .string()
-    .test(
-      'is-signer-an-address',
-      'Must be a valid Ethereum Address',
-      signer => {
-        if (!signer) return true;
-        return utils.isHexString(signer, 20);
-      }
-    )
+    .test('is-signer-an-address', 'Must be a valid Ethereum Address', signer => {
+      if (!signer) return true;
+      return utils.isHexString(signer, 20);
+    })
     .nullable(),
 });
 
@@ -64,9 +60,7 @@ const IssueForEventFormValueSchema = yup.object().shape({
     .number()
     .required()
     .min(1),
-  addressList: yup
-    .string()
-    .required(),
+  addressList: yup.string().required(),
   signer: yup
     .string()
     .required()
@@ -79,9 +73,7 @@ const IssueForUserFormValueSchema = yup.object().shape({
     .of(yup.number().min(1))
     .required()
     .min(1),
-  address: yup
-    .string()
-    .required(),
+  address: yup.string().required(),
   signer: yup
     .string()
     .required()
@@ -95,6 +87,17 @@ const ClaimHashSchema = yup.object().shape({
     .length(6),
 });
 
+const InboxFormSchema = yup.object().shape({
+  title: yup.string().required(),
+  description: yup.string().required(),
+  recipientFilter: yup.string().required(),
+  selectedEventId: yup
+    .number()
+    .nullable()
+    .min(1),
+  notificationType: yup.string().required(),
+});
+
 export {
   AddressSchema,
   GasPriceSchema,
@@ -103,4 +106,5 @@ export {
   ClaimHashSchema,
   IssueForEventFormValueSchema,
   IssueForUserFormValueSchema,
+  InboxFormSchema,
 };

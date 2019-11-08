@@ -49,8 +49,6 @@ const NavigationMenu = withRouter(({ history }) => {
       {/* <Link to={ROUTES.minters} onClick={closeMenu}>
         Manage Minters
       </Link> */}
-
-      <h2>Inbox</h2>
       <Link to={ROUTES.inbox} onClick={closeMenu}>
         Send Notification
       </Link>
