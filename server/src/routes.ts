@@ -104,13 +104,28 @@ export default async function routes(fastify: FastifyInstance) {
     pattern: '^0x[0-9a-fA-F]{130}$',
   });
 
-  fastify.get('/metadata/:eventId/:tokenId', async (req, res) => {
-    const event = await getEvent(parseInt(req.params.eventId));
-    if (!event) {
-      throw new createError.NotFound('Invalid Event');
-    }
-    const tokenUrl = `https://api.poap.xyz/metadata/${req.params.eventId}/${req.params.tokenId}`;
-    return buildMetadataJson(tokenUrl, event);
+  fastify.get(
+    '/metadata/:eventId/:tokenId',
+    {
+      schema: {
+        tags: ['metadata', ],
+        params: {
+          eventId: {
+            type: 'string',
+          },
+          tokenId: {
+            type: 'string',
+          },
+        },
+      },
+    },
+    async (req, res) => {
+      const event = await getEvent(parseInt(req.params.eventId));
+      if (!event) {
+        throw new createError.NotFound('Invalid Event');
+      }
+      const tokenUrl = `https://api.poap.xyz/metadata/${req.params.eventId}/${req.params.tokenId}`;
+      return buildMetadataJson(tokenUrl, event);
   });
 
   //********************************************************************
@@ -121,6 +136,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/ens_resolve',
     {
       schema: {
+        tags: ['actions', ],
         querystring: {
           name: { type: 'string' },
         },
@@ -149,6 +165,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/ens_lookup/:address',
     {
       schema: {
+        tags: ['actions', ],
         params: {
           address: {
             type: 'string',
@@ -182,6 +199,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/scan/:address',
     {
       schema: {
+        tags: ['actions', ],
         params: {
           address: 'address#',
         },
@@ -199,6 +217,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['actions', ],
         body: {
           type: 'object',
           required: ['eventId', 'addresses', 'signer_address'],
@@ -238,6 +257,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['actions', ],
         body: {
           type: 'object',
           required: ['eventIds', 'address', 'signer_address'],
@@ -268,6 +288,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/claim',
     {
       schema: {
+        tags: ['actions', ],
         body: {
           type: 'object',
           required: ['claimId', 'eventId', 'proof', 'claimer', 'claimerSignature'],
@@ -297,6 +318,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/claim-qr',
     {
       schema: {
+        tags: ['actions', ],
         querystring: {
           qr_hash: { type: 'string' },
         },
@@ -340,6 +362,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/claim-qr',
     {
       schema: {
+        tags: ['actions', ],
         body: {
           type: 'object',
           required: ['address', 'qr_hash', 'secret'],
@@ -429,6 +452,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['actions', ],
         body: {
           type: 'object',
           required: ['txHash', 'gasPrice'],
@@ -451,6 +475,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/token/:tokenId',
     {
       schema: {
+        tags: ['token', ],
         params: {
           tokenId: { type: 'integer' },
         },
@@ -468,6 +493,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['burn', ],
         params: {
           tokenId: { type: 'integer' },
         },
@@ -486,13 +512,23 @@ export default async function routes(fastify: FastifyInstance) {
   //********************************************************************
   // SETTINGS
   //********************************************************************
-
-  fastify.get('/settings', () => getPoapSettings());
+  fastify.get(
+    '/settings',
+    {
+      schema: {
+        tags: ['settings', ],
+      },
+    },
+    async (req, res) => {
+      return getPoapSettings();
+    }
+  );
 
   fastify.get(
     '/settings/:name',
     {
       schema: {
+        tags: ['settings', ],
         params: {
           name: { type: 'string' },
         },
@@ -513,6 +549,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['settings', ],
         params: {
           name: { type: 'string' },
           value: { type: 'string' },
@@ -544,12 +581,25 @@ export default async function routes(fastify: FastifyInstance) {
   // EVENTS
   //********************************************************************
 
-  fastify.get('/events', () => getEvents());
+  fastify.get(
+    '/events',
+    {
+      schema: {
+        tags: ['events', ],
+      },
+    },
+    async (req, res) => {
+      const events = await getEvents();
+      return events;
+    }
+  );
+
 
   fastify.get(
     '/events/:fancyid',
     {
       schema: {
+        tags: ['events', ],
         params: {
           fancyid: { type: 'string' },
         },
@@ -569,6 +619,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['events', ],
         body: {
           type: 'object',
           required: [
@@ -631,6 +682,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['events', ],
         params: {
           fancyid: { type: 'string' },
         },
@@ -670,6 +722,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['transactions', ],
         querystring: {
           limit: { type: 'number' },
           offset: { type: 'number' },
@@ -707,7 +760,11 @@ export default async function routes(fastify: FastifyInstance) {
   //********************************************************************
 
   fastify.get(
-    '/signers', {},
+    '/signers', {
+      schema: {
+        tags: ['signers', ],
+      }
+    },
     async (req, res) => {
       let signers = await getSigners();
 
@@ -725,6 +782,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['signers', ],
         params: {
           id: { type: 'string' },
         },
@@ -748,6 +806,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/token/:tokenId/image',
     {
       schema: {
+        tags: ['token', ],
         params: {
           tokenId: { type: 'integer' },
         },
@@ -777,6 +836,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/tasks/',
     {
       schema: {
+        tags: ['tasks', ],
         headers: {
           required: ['Authorization'],
           type: 'object',
@@ -799,4 +859,124 @@ export default async function routes(fastify: FastifyInstance) {
       return task;
     }
   );
+
+  //********************************************************************
+  // INBOX
+  //********************************************************************
+
+  fastify.get(
+    '/notifications',
+    {
+      schema: {
+        tags: ['notifications', ],
+        querystring: {
+          limit: { type: 'number' },
+          offset: { type: 'number' },
+          address: { type: 'string' },
+          event_id: { type: 'string' },
+        },
+        response: {
+          200: {
+            description: 'Successful response',
+            type: 'object',
+            properties: {
+              limit: { type: 'number' },
+              offset: { type: 'number' },
+              total: { type: 'number' },
+              notifications: { 
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number'},
+                    title: { type: 'string'},
+                    description: { type: 'string'},
+                    type: { type: 'string'},
+                    event_id: { type: 'number'}
+                  }
+                }
+              },
+            }
+          }
+        },
+
+      },
+    },
+    async (req, res) => {
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = parseInt(req.query.offset) || 0;
+
+      // const transactions = await getTransactions(limit, offset, status);
+      // const totalTransactions = await getTotalTransactions(status);
+
+      // if (!transactions) {
+      //   return new createError.NotFound('Transactions not found');
+      // }
+
+      const notifications:[string] = ['', ];
+      const totalNotifications = 0;
+
+      return {
+        limit: limit,
+        offset: offset,
+        total: totalNotifications,
+        notifications: notifications,
+      };
+    }
+  );
+
+  fastify.post(
+    '/notifications/',
+    {
+      // preValidation: [fastify.authenticate],
+      schema: {
+        tags: ['notifications', ],
+        body: {
+          type: 'object',
+          required: ['title', 'description', 'type', 'event_id'],
+          properties: {
+            title: {type: 'string'},
+            description: {type: 'string'},
+            type: {type: 'string'},
+            event_id: {type: 'number'}
+          },
+        },
+        response: {
+          200: {
+            description: 'Successful response',
+            type: 'object',
+            properties: {
+              id: {type: 'number'},
+              title: {type: 'string'},
+              description: {type: 'string'},
+              type: {type: 'string'},
+              event_id: {type: 'number'}
+            }
+          }
+        },
+      },
+    },
+    async (req, res) => {
+      // const taskCreator = await getTaskCreator(req.headers['authorization']);
+      // if (!taskCreator) {
+      //   return new createError.NotFound('Invalid or expired token');
+      // }
+
+      // const task = await createTask(req.body, taskCreator.task_name);
+      // if (!task) {
+      //   return new createError.BadRequest('Couldn\'t create the task');
+      // }
+      return {};
+    }
+  );
+
+
+  //********************************************************************
+  // SWAGGER
+  //********************************************************************
+
+  fastify.ready(err => {
+    if (err) throw err
+    fastify.swagger()
+  })
 }
