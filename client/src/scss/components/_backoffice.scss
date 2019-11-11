@@ -147,9 +147,8 @@
   color: $color-secondary;
 }
 
-.admin-table{
+.admin-table {
   .row {
-
     padding: 10px 2px;
 
     &.table-header {
@@ -162,7 +161,7 @@
     }
   }
 
-  .admin-table-row{
+  .admin-table-row {
     .capitalize {
       text-transform: capitalize;
     }
@@ -185,6 +184,36 @@
   .filters {
     display: flex;
     flex-direction: row;
+
+    &.inbox {
+      .filter {
+        flex-direction: column;
+
+        > .filter-option {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+
+          &:last-child {
+            height: 50px;
+          }
+
+          label {
+            margin-bottom: 0;
+          }
+
+          input {
+            margin-bottom: 4px;
+          }
+        }
+
+        > label {
+          cursor: default;
+          margin-bottom: 24px;
+        }
+      }
+    }
+
     .filter {
       display: flex;
       margin: 10px 20px 10px 0;
@@ -213,7 +242,7 @@
           cursor: pointer;
         }
 
-        &.active{
+        &.active {
           background: white;
         }
       }
@@ -221,8 +250,7 @@
   }
 
   &.transactions,
-  &.addresses{
-
+  &.addresses {
     .no-results {
       text-align: center;
       padding: 50px 0;
@@ -231,7 +259,7 @@
       color: $color-medium-violet;
     }
 
-    .admin-table-row{
+    .admin-table-row {
       .center {
         @media (max-width: $bp-mw) {
           text-align: left;
@@ -244,28 +272,26 @@
         display: none;
       }
     }
-    .visible-sm{
+    .visible-sm {
       display: none;
       @media (max-width: $bp-mw) {
         display: inline;
       }
     }
-    .status-icon{
+    .status-icon {
       @media (max-width: $bp-mw) {
         position: absolute;
         top: -70px;
         right: 10px;
       }
     }
-    span.visible-sm{
+    span.visible-sm {
       font-weight: bold;
     }
   }
 
   &.addresses {
-
   }
-
 }
 
 .price-gas-modal-form {
@@ -293,7 +319,7 @@
   right: auto !important;
   left: auto !important;
 
-  .description{
+  .description {
     padding: 20px 0;
   }
 }
