@@ -22,6 +22,9 @@ import {
   unclaimQrClaim,
   createTask,
   getTaskCreator,
+  getNotifications,
+  getTotalNotifications,
+  createNotification
 } from './db';
 
 import {
@@ -38,10 +41,11 @@ import {
   lookupAddress,
   checkAddress,
   checkHasToken,
-  getTokenImg
+  getTokenImg,
+  getAllEventIds
 } from './eth/helpers';
 
-import { Claim, PoapEvent, TransactionStatus, Address } from './types';
+import { Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
 
@@ -861,7 +865,7 @@ export default async function routes(fastify: FastifyInstance) {
   );
 
   //********************************************************************
-  // INBOX
+  // NOTIFICATIONS
   //********************************************************************
 
   fastify.get(
@@ -873,7 +877,8 @@ export default async function routes(fastify: FastifyInstance) {
           limit: { type: 'number' },
           offset: { type: 'number' },
           address: { type: 'string' },
-          event_id: { type: 'string' },
+          event_id: { type: 'number' },
+          type: { type: 'string' },
         },
         response: {
           200: {
@@ -892,7 +897,26 @@ export default async function routes(fastify: FastifyInstance) {
                     title: { type: 'string'},
                     description: { type: 'string'},
                     type: { type: 'string'},
-                    event_id: { type: 'number'}
+                    event_id: { type: 'number'},
+                    event: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'number'},
+                        fancy_id: { type: 'string'},
+                        signer: { type: 'string'},
+                        signer_ip: { type: 'string'},
+                        name: { type: 'string'},
+                        description: { type: 'string'},
+                        city: { type: 'string'},
+                        country: { type: 'string'},
+                        event_url: { type: 'string'},
+                        image_url: { type: 'string'},
+                        year: { type: 'number'},
+                        start_date: { type: 'string'},
+                        end_date: { type: 'string'},
+                      }
+                    },
+                    created_date: { type: 'string'}
                   }
                 }
               },
@@ -903,18 +927,48 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const limit = parseInt(req.query.limit) || 10;
-      const offset = parseInt(req.query.offset) || 0;
+      const limit = req.query.limit || 10;
+      const offset = req.query.offset || 0;
+      const type = req.query.type || null;
+      const event_id = req.query.event_id || null;
+      const address = req.query.address || null;
+      let event_ids:number[] = [];
 
-      // const transactions = await getTransactions(limit, offset, status);
-      // const totalTransactions = await getTotalTransactions(status);
+      if(type && [NotificationType.inbox, NotificationType.push].indexOf(type) == -1) {
+        return new createError.BadRequest('notification type must be in ["inbox", "push"]');
+      }
 
-      // if (!transactions) {
-      //   return new createError.NotFound('Transactions not found');
-      // }
+      if(event_id) {
+        const event = await getEvent(event_id);
+        if (!event) {
+          return new createError.BadRequest('event does not exist');
+        }
 
-      const notifications:[string] = ['', ];
-      const totalNotifications = 0;
+        event_ids.push(event.id)
+      }
+
+      if(address) {
+        const parsed_address = await checkAddress(address);
+        if (!parsed_address) {
+          return new createError.BadRequest('Address is not valid');
+        }
+
+        event_ids = await getAllEventIds(address)
+      }
+
+      let notifications = await getNotifications(limit, offset, type, event_ids);
+      const totalNotifications = await getTotalNotifications(type, event_ids);
+
+      const allEvents = await getEvents();
+
+      let indexedEvents: { [id: number] : PoapEvent; } = {}
+      for (let event of allEvents) {
+        indexedEvents[event.id] = event;
+      }
+
+      notifications = notifications.map((notification: Notification) => {
+        return {...notification, event:indexedEvents[notification.event_id]};
+      });
 
       return {
         limit: limit,
@@ -946,27 +1000,52 @@ export default async function routes(fastify: FastifyInstance) {
             description: 'Successful response',
             type: 'object',
             properties: {
-              id: {type: 'number'},
-              title: {type: 'string'},
-              description: {type: 'string'},
-              type: {type: 'string'},
-              event_id: {type: 'number'}
+              id: { type: 'number'},
+              title: { type: 'string'},
+              description: { type: 'string'},
+              type: { type: 'string'},
+              event_id: { type: 'number'},
+              event: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number'},
+                  fancy_id: { type: 'string'},
+                  signer: { type: 'string'},
+                  signer_ip: { type: 'string'},
+                  name: { type: 'string'},
+                  description: { type: 'string'},
+                  city: { type: 'string'},
+                  country: { type: 'string'},
+                  event_url: { type: 'string'},
+                  image_url: { type: 'string'},
+                  year: { type: 'number'},
+                  start_date: { type: 'string'},
+                  end_date: { type: 'string'},
+                }
+              },
+              created_date: { type: 'string'}
             }
           }
         },
       },
     },
     async (req, res) => {
-      // const taskCreator = await getTaskCreator(req.headers['authorization']);
-      // if (!taskCreator) {
-      //   return new createError.NotFound('Invalid or expired token');
-      // }
+      const event = await getEvent(req.body.event_id);
+      if (!event) {
+        return new createError.BadRequest('event does not exist');
+      }
 
-      // const task = await createTask(req.body, taskCreator.task_name);
-      // if (!task) {
-      //   return new createError.BadRequest('Couldn\'t create the task');
-      // }
-      return {};
+      if([NotificationType.inbox, NotificationType.push].indexOf(req.body.type) == -1) {
+        return new createError.BadRequest('notification type must be in ["inbox", "push"]');
+      }
+
+      const notification = await createNotification(req.body);
+      if (!notification) {
+        return new createError.BadRequest('Couldn\'t create the task');
+      }
+      notification.event = event;
+
+      return notification
     }
   );
 

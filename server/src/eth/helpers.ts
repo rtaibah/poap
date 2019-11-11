@@ -357,6 +357,19 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
   return tokens;
 }
 
+export async function getAllEventIds(address: Address): Promise<number[]> {
+  const env = getEnv();
+  const contract = getContract(env.poapAdmin);
+  const tokensAmount = (await contract.functions.balanceOf(address)).toNumber();
+
+  const eventIds: number[] = [];
+  for (let i = 0; i < tokensAmount; i++) {
+    const tokenDetails = await contract.functions.tokenDetailsOfOwnerByIndex(address, i);
+    eventIds.push(tokenDetails.eventId.toNumber());
+  }
+  return eventIds;
+}
+
 export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
   const env = getEnv();
   const contract = getContract(env.poapAdmin);

@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services, Notification, NotificationType } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -271,4 +271,45 @@ export async function finishTask(txHash: string | undefined, taskId: number){
     'UPDATE tasks SET status=\'FINISH\', return_data=${txHash} where id=${taskId}',
     {txHash, taskId}
   );
+}
+
+export async function getNotifications(limit: number, offset: number, typeList: string[]|null, eventIds:number[]): Promise<Notification[]> {
+  if(!typeList) {
+    typeList = [NotificationType.inbox, NotificationType.push]
+  }
+
+  let query = "SELECT * FROM notifications WHERE type IN (${typeList:csv})"
+
+  if(eventIds.length > 0) {
+    query = query + "AND event_id IN (${eventIds:csv}) "
+  }
+
+  query = query + "ORDER BY created_date DESC LIMIT ${limit} OFFSET ${offset}";
+
+  const res = await db.manyOrNone(query, {limit, offset, typeList, eventIds});
+  return res
+}
+
+export async function getTotalNotifications(typeList: string[]|null, eventIds:number[]): Promise<number> {
+  if(!typeList) {
+    typeList = [NotificationType.inbox, NotificationType.push]
+  }
+
+  let query = "SELECT COUNT(*) FROM notifications WHERE type IN (${typeList:csv}) "
+
+  if(eventIds.length > 0) {
+    query = query + "AND event_id IN (${eventIds:csv}) "
+  }
+
+  const res = await db.result(query, {typeList, eventIds});
+  return res.rows[0].count;
+}
+
+export async function createNotification(data: any): Promise<null | Notification> {
+  const notification = await db.one(
+    'INSERT INTO notifications(title, description, type, event_id) VALUES(${title}, ${description}, ${type}, ${event_id}) RETURNING id, title, description, type, event_id, created_date',
+    {...data}
+  );
+
+  return notification;
 }

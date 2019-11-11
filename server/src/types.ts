@@ -22,6 +22,11 @@ export enum TransactionStatus {
   bumped = 'bumped',
 }
 
+export enum NotificationType {
+  inbox = 'inbox',
+  push = 'push',
+}
+
 export enum SignerRole {
   administrator = 'administrator',
   standard = 'standard',
@@ -129,6 +134,16 @@ export interface Task{
   task_data: object;
   status: string;
   return_data: string;
+}
+
+export interface Notification {
+  id: number;
+  title: string;
+  description: object;
+  type: NotificationType;
+  event_id: number;
+  event: PoapEvent | null;
+  created_date: Date;
 }
 
 export interface UnlockTask extends Task{
