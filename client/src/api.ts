@@ -76,7 +76,23 @@ export interface PaginatedTransactions {
   limit: number;
   offset: number;
   total: number;
-  transactions: Transaction[]
+  transactions: Transaction[];
+}
+
+export interface Notification {
+  id: number;
+  title: string;
+  description: string;
+  type: string;
+  event_id: number;
+  event: PoapEvent;
+}
+
+export interface PaginatedNotifications {
+  limit: number;
+  offset: number;
+  total: number;
+  notifications: Notification[];
 }
 
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
@@ -217,7 +233,7 @@ export function burnToken(tokenId: string): Promise<any> {
 }
 
 export async function sendNotification (title: string, description: string, notificationType: string, selectedEventId: number | null): Promise<any> {
-return secureFetchNoResponse(`${API_BASE}/actions/send`, {
+return secureFetchNoResponse(`${API_BASE}/notifications`, {
   method: 'POST',
     body: JSON.stringify({
       title,
@@ -279,6 +295,10 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({gas_price: gasPrice})
   });
+}
+
+export function getNotifications(limit: number, offset: number, address?: string, event_id?: number, type?: string): Promise<PaginatedNotifications> {
+  return secureFetch(`${API_BASE}/notifications?limit=${limit}&offset=${offset}&type=${type}&event_id=${event_id}`)
 }
 
 export function getTransactions(limit: number, offset: number, status: string): Promise<PaginatedTransactions> {

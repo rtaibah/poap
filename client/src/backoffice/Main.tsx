@@ -14,7 +14,8 @@ import { BurnPage } from './BurnPage';
 import { IssueForEventPage, IssueForUserPage } from './IssuePage';
 import { AddressManagementPage } from './AddressManagementPage';
 import { TransactionsPage } from './TransactionsPage';
-import {InboxPage} from './InboxPage';
+import { InboxPage } from './InboxPage';
+import { InboxListPage } from './InboxListPage';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 
@@ -33,6 +34,14 @@ const NavigationMenu = withRouter(({ history }) => {
         Many Events
       </Link>
 
+      <h2>Inbox</h2>
+      <Link to={ROUTES.inbox} onClick={closeMenu}>
+        Send Notification
+      </Link>
+      <Link to={ROUTES.inboxList} onClick={closeMenu}>
+        Notifications List
+      </Link>
+
       <h2>Other Tasks</h2>
       <Link to={ROUTES.addressManagement} onClick={closeMenu}>
         Manage Addresses
@@ -49,9 +58,6 @@ const NavigationMenu = withRouter(({ history }) => {
       {/* <Link to={ROUTES.minters} onClick={closeMenu}>
         Manage Minters
       </Link> */}
-      <Link to={ROUTES.inbox} onClick={closeMenu}>
-        Send Notification
-      </Link>
 
       <a
         className="bm-item"
@@ -93,6 +99,7 @@ export const BackOffice: React.FC = () => (
         <Route path={ROUTES.addressManagement} component={AddressManagementPage} />
         <Route path={ROUTES.transactions} component={TransactionsPage} />
         <Route path={ROUTES.inbox} component={InboxPage} />
+        <Route path={ROUTES.inboxList} component={InboxListPage} />
         <Route
           exact
           path={ROUTES.admin}
