@@ -253,7 +253,7 @@ export async function sendNotification(
     body: JSON.stringify({
       title,
       description,
-      eventId: selectedEventId,
+      event_id: selectedEventId,
       type: notificationType,
     }),
     headers: { 'Content-Type': 'application/json' },
