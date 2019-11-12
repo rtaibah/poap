@@ -1,3 +1,5 @@
+import queryString from 'query-string';
+
 import { authClient } from './auth';
 
 export type Address = string;
@@ -99,8 +101,15 @@ export type ENSQueryResult = { valid: false } | { valid: true; address: string }
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
 
-const API_BASE =
-  process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://api.poap.xyz';
+let API_BASE = 'https://api.poap.xyz';
+
+if (process.env.NODE_ENV === 'development') {
+  if (process.env.REACT_APP_API_ROOT) {
+    API_BASE = process.env.REACT_APP_API_ROOT;
+  } else {
+    API_BASE = 'http://localhost:8080';
+  }
+}
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
@@ -312,19 +321,13 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
 }
 
 export function getNotifications(
-  limit: number,
-  offset: number,
+  limit?: number,
+  offset?: number,
   type?: string,
-  event_id?: number | null
+  event_id?: number
 ): Promise<PaginatedNotifications> {
-  return secureFetch(
-    `${API_BASE}/notifications?limit=${limit}&offset=${offset}&type=${type ? type : ''}&event_id=${
-      event_id ? event_id : ''
-    }`
-    // `http://www.mocky.io/v2/5dc9d8682f0000560073ef16/notifications?limit=${limit}&offset=${offset}&type=${
-    //   type ? type : ''
-    // }&event_id=${event_id ? event_id : ''}`
-  );
+  const params = queryString.stringify({ limit, offset, type, event_id });
+  return secureFetch(`${API_BASE}/notifications?${params}`);
 }
 
 export function getTransactions(
@@ -332,6 +335,7 @@ export function getTransactions(
   offset: number,
   status: string
 ): Promise<PaginatedTransactions> {
+  // TODO: use queryString library to avoid sending empty params
   return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}&status=${status}`);
 }
 

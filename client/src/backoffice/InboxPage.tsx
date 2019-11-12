@@ -49,24 +49,25 @@ export class InboxPage extends React.Component<{}, IInboxState> {
   }
 
   onSubmit = async (values: IInboxFormValues, actions: FormikActions<IInboxFormValues>) => {
-    // const {title,description,notificationType, selectedEventId } = values;
+    const { title, description, notificationType, selectedEventId } = values;
+
     console.log('submit');
 
-    // try {
-    //   actions.setStatus(null);
-    //   await sendNotification(title, description, notificationType, selectedEventId);
-    //   actions.setStatus({
-    //     ok: true,
-    //     msg: `Notification sent`,
-    //   });
-    // } catch (err) {
-    //   actions.setStatus({
-    //     ok: false,
-    //     msg: `Failed to send notification: ${err.message}`,
-    //   });
-    // } finally {
-    //   actions.setSubmitting(false);
-    // }
+    try {
+      actions.setStatus(null);
+      await sendNotification(title, description, notificationType, selectedEventId);
+      actions.setStatus({
+        ok: true,
+        msg: `Notification sent`,
+      });
+    } catch (err) {
+      actions.setStatus({
+        ok: false,
+        msg: `Failed to send notification: ${err.message}`,
+      });
+    } finally {
+      actions.setSubmitting(false);
+    }
   };
 
   render() {

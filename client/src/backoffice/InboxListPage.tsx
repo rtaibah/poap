@@ -25,7 +25,7 @@ const InboxListPage: FC = () => {
   const [notificationType, setNotificationType] = useState<string>('inbox');
   const [recipientFilter, setRecipientFilter] = useState<string>('everyone');
   const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [selectedEvent, setSelectedEvent] = useState<null | number>(null);
+  const [selectedEvent, setSelectedEvent] = useState<number | undefined>(undefined);
   const [modalText, setModalText] = useState<string>('');
   const [isFetchingNotifications, setIsFetchingNotifications] = useState<null | boolean>(null);
   const [notifications, setNotifications] = useState<null | Notification[]>(null);
@@ -48,7 +48,8 @@ const InboxListPage: FC = () => {
     setIsFetchingNotifications(true);
     setNotifications(null);
 
-    const event_id = recipientFilter !== 'everyone' ? selectedEvent : null;
+    const event_id = recipientFilter !== 'everyone' ? selectedEvent : undefined;
+    console.log('event_id: ', event_id);
 
     getNotifications(PAGE_SIZE, page * PAGE_SIZE, notificationType, event_id)
       .then(response => {
