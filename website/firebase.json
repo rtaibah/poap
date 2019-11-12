@@ -49,12 +49,12 @@
       },
       {
         "source": "/claim/:id*",
-        "destination": "https://app.poap.xyz/claim/:id",
+        "destination": "https://poapapp.web.app/claim/:id",
         "type": 301
       },
       {
         "source": "/claim",
-        "destination": "https://app.poap.xyz/claim",
+        "destination": "https://poapapp.web.app/claim",
         "type": 301
       }
     ]
