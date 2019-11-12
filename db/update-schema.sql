@@ -59,3 +59,14 @@ CREATE TABLE task (
     "return_data" varchar(256),
     CONSTRAINT chk_status CHECK (status IN ('FINISH', 'FINISH_WITH_ERROR', 'IN_PROCESS', 'PENDING'))
 );
+
+/* CREATE TABLE notifications */
+CREATE TABLE notifications (
+    "id" SERIAL PRIMARY KEY,
+    "title" varchar(256),
+    "description" varchar(256),
+    "type" varchar(100) constraint default_type DEFAULT 'inbox',
+    "event_id" integer,
+    "created_date" timestamp with time zone not null default now()
+    CONSTRAINT chk_type CHECK (type IN ('inbox', 'push'))
+);
