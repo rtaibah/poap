@@ -983,7 +983,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/notifications',
     {
-      // preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate],
       schema: {
         tags: ['notifications', ],
         body: {
