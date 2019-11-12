@@ -48,7 +48,7 @@ import {
 import { Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
-import * as admin from "firebase-admin";
+import * as admin from 'firebase-admin';
 
 function sleep(ms: number){
   return new Promise(resolve=>{
@@ -113,7 +113,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/metadata/:eventId/:tokenId',
     {
       schema: {
-        tags: ['metadata', ],
+        tags: ['Metadata', ],
         params: {
           eventId: {
             type: 'string',
@@ -141,7 +141,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/ens_resolve',
     {
       schema: {
-        tags: ['actions', ],
+        tags: ['Actions', ],
         querystring: {
           name: { type: 'string' },
         },
@@ -170,7 +170,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/ens_lookup/:address',
     {
       schema: {
-        tags: ['actions', ],
+        tags: ['Actions', ],
         params: {
           address: {
             type: 'string',
@@ -204,7 +204,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/scan/:address',
     {
       schema: {
-        tags: ['actions', ],
+        tags: ['Actions', ],
         params: {
           address: 'address#',
         },
@@ -222,7 +222,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
-        tags: ['actions', ],
+        tags: ['Actions', ],
         body: {
           type: 'object',
           required: ['eventId', 'addresses', 'signer_address'],
@@ -262,7 +262,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
-        tags: ['actions', ],
+        tags: ['Actions', ],
         body: {
           type: 'object',
           required: ['eventIds', 'address', 'signer_address'],
@@ -293,7 +293,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/claim',
     {
       schema: {
-        tags: ['actions', ],
+        tags: ['Actions', ],
         body: {
           type: 'object',
           required: ['claimId', 'eventId', 'proof', 'claimer', 'claimerSignature'],
@@ -323,7 +323,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/claim-qr',
     {
       schema: {
-        tags: ['actions', ],
+        tags: ['Actions', ],
         querystring: {
           qr_hash: { type: 'string' },
         },
@@ -367,7 +367,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/claim-qr',
     {
       schema: {
-        tags: ['actions', ],
+        tags: ['Actions', ],
         body: {
           type: 'object',
           required: ['address', 'qr_hash', 'secret'],
@@ -457,7 +457,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
-        tags: ['actions', ],
+        tags: ['Actions', ],
         body: {
           type: 'object',
           required: ['txHash', 'gasPrice'],
@@ -480,7 +480,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/token/:tokenId',
     {
       schema: {
-        tags: ['token', ],
+        tags: ['Token', ],
         params: {
           tokenId: { type: 'integer' },
         },
@@ -498,7 +498,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
-        tags: ['burn', ],
+        tags: ['Burn', ],
         params: {
           tokenId: { type: 'integer' },
         },
@@ -521,7 +521,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/settings',
     {
       schema: {
-        tags: ['settings', ],
+        tags: ['Settings', ],
       },
     },
     async (req, res) => {
@@ -533,7 +533,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/settings/:name',
     {
       schema: {
-        tags: ['settings', ],
+        tags: ['Settings', ],
         params: {
           name: { type: 'string' },
         },
@@ -554,11 +554,14 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
-        tags: ['settings', ],
+        tags: ['Settings', ],
         params: {
           name: { type: 'string' },
           value: { type: 'string' },
         },
+        response: {
+          200: { type: 'string'},
+        }
       },
     },
     async (req, res) => {
@@ -590,7 +593,32 @@ export default async function routes(fastify: FastifyInstance) {
     '/events',
     {
       schema: {
-        tags: ['events', ],
+        description: 'Endpoint to get all events',
+        tags: ['Events', ],
+        response: {
+          200: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                fancy_id: { type: 'string' },
+                signer_ip: { type: 'string' },
+                signer: { type: 'string' },
+                name: { type: 'string' },
+                event_url: { type: 'string' },
+                image_url: { type: 'string' },
+                country: { type: 'string' },
+                city: { type: 'string' },
+                description: { type: 'string' },
+                year: { type: 'number' },
+                start_date: { type: 'string' },
+                end_date: { type: 'string' },
+                created_date: { type: 'string' }
+              },
+            }
+          }
+        }
       },
     },
     async (req, res) => {
@@ -604,10 +632,32 @@ export default async function routes(fastify: FastifyInstance) {
     '/events/:fancyid',
     {
       schema: {
-        tags: ['events', ],
+        description: 'Endpoint to get an specific event',
+        tags: ['Events', ],
         params: {
           fancyid: { type: 'string' },
         },
+        response: {
+          200: { 
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              fancy_id: { type: 'string' },
+              signer_ip: { type: 'string' },
+              signer: { type: 'string' },
+              name: { type: 'string' },
+              event_url: { type: 'string' },
+              image_url: { type: 'string' },
+              country: { type: 'string' },
+              city: { type: 'string' },
+              description: { type: 'string' },
+              year: { type: 'number' },
+              start_date: { type: 'string' },
+              end_date: { type: 'string' },
+              created_date: { type: 'string' }
+            },
+          }
+        }
       },
     },
     async (req, res) => {
@@ -622,9 +672,10 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/events',
     {
-      preValidation: [fastify.authenticate],
+      // preValidation: [fastify.authenticate],
       schema: {
-        tags: ['events', ],
+        description: 'Endpoint to create new events',
+        tags: ['Events', ],
         body: {
           type: 'object',
           required: [
@@ -652,13 +703,38 @@ export default async function routes(fastify: FastifyInstance) {
             year: { type: 'integer' },
             event_url: { type: 'string' },
             image_url: { type: 'string' },
-            signer: { anyOf: ['address#', { type: 'null' }] },
-            signer_ip: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            signer: { type: 'string' },
+            signer_ip: { type: 'string' },
           },
         },
+        response: {
+          200: { 
+            type: 'object',
+            properties: {
+              fancy_id: { type: 'string' },
+              name: { type: 'string' },
+              description: { type: 'string' },
+              city: { type: 'string' },
+              country: { type: 'string' },
+              start_date: { type: 'string' },
+              end_date: { type: 'string' },
+              year: { type: 'number' },
+              event_url: { type: 'string' },
+              image_url: { type: 'string' },
+              signer: { type: 'string' },
+              signer_ip: { type: 'string' },
+              id: { type: 'number' }
+            },
+          }
+        }
       },
     },
     async (req, res) => {
+      const signer_parsed_address = await checkAddress(req.body.signer);
+      if (!signer_parsed_address) {
+        return new createError.BadRequest('Signer address is not valid');
+      }
+
       const newEvent = {
         fancy_id: req.body.fancy_id,
         name: req.body.name,
@@ -670,7 +746,7 @@ export default async function routes(fastify: FastifyInstance) {
         year: req.body.year,
         event_url: req.body.event_url,
         image_url: req.body.image_url,
-        signer: req.body.signer,
+        signer: signer_parsed_address,
         signer_ip: req.body.signer_ip,
       };
 
@@ -687,7 +763,8 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
-        tags: ['events', ],
+        description: 'Endpoint to modify several atributes of selected event',
+        tags: ['Events', ],
         params: {
           fancyid: { type: 'string' },
         },
@@ -695,17 +772,25 @@ export default async function routes(fastify: FastifyInstance) {
           type: 'object',
           required: ['signer', 'signer_ip', 'event_url', 'image_url'],
           properties: {
-            signer: { anyOf: ['address#', { type: 'null' }] },
-            signer_ip: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            signer: { type: 'string' },
+            signer_ip: { type: 'string' },
             event_url: { type: 'string' },
             image_url: { type: 'string' },
           },
         },
+        response: {
+          204: { type: 'string'},
+        }
       },
     },
     async (req, res) => {
+      const signer_parsed_address = await checkAddress(req.body.signer);
+      if (!signer_parsed_address) {
+        return new createError.BadRequest('Signer address is not valid');
+      }
+
       const isOk = await updateEvent(req.params.fancyid, {
-        signer: req.body.signer,
+        signer: signer_parsed_address,
         signer_ip: req.body.signer_ip,
         event_url: req.body.event_url,
         image_url: req.body.image_url,
@@ -727,11 +812,49 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
-        tags: ['transactions', ],
+        description: 'Paginates endpoint of transactions, you can filter by status',
+        tags: ['Transactions', ],
         querystring: {
           limit: { type: 'number' },
           offset: { type: 'number' },
           status: { type: 'string' },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              limit: { type: 'number' },
+              offset: { type: 'number' },
+              total: { type: 'number' },
+              transactions: { 
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number'},
+                    title: { type: 'string'},
+                    description: { type: 'string'},
+                    type: { type: 'string'},
+                    event_id: { type: 'number'},
+                    event: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'number' },
+                        tx_hash: { type: 'string' },
+                        nonce: { type: 'number' },
+                        signer: { type: 'string' },
+                        operation: { type: 'string' },
+                        arguments: { type: 'string' },
+                        status: { type: 'string' },
+                        gas_price: { type: 'string' },
+                        created_date: { type: 'string' }
+                      }
+                    },
+                  }
+                }
+              },
+            }
+          }
         },
       },
     },
@@ -766,8 +889,27 @@ export default async function routes(fastify: FastifyInstance) {
 
   fastify.get(
     '/signers', {
+      preValidation: [fastify.authenticate],
       schema: {
-        tags: ['signers', ],
+        description: 'List of all the available signers',
+        tags: ['Signers', ],
+        response: {
+          200: { 
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                signer: { type: 'string' },
+                role: { type: 'string' },
+                gas_price: { type: 'string' },
+                created_date: { type: 'string' },
+                pending_tx: { type: 'string' },
+                balance: { type: 'string' }
+              },
+            }
+          }
+        }
       }
     },
     async (req, res) => {
@@ -787,14 +929,21 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
-        tags: ['signers', ],
+        description: 'In this endpoint you can modify the signer gas_price',
+        tags: ['Signers', ],
         params: {
           id: { type: 'string' },
         },
         body: {
           type: 'object',
+          properties: {
+            'gas_price': { type: 'string' },
+          },
           required: ['gas_price'],
         },
+        response: {
+          200: { type: 'string'},
+        }
       },
     },
     async (req, res) => {
@@ -811,10 +960,14 @@ export default async function routes(fastify: FastifyInstance) {
     '/token/:tokenId/image',
     {
       schema: {
-        tags: ['token', ],
+        description: 'Response an image url of the tokenId you send',
+        tags: ['Token', ],
         params: {
           tokenId: { type: 'integer' },
         },
+        response: {
+          200: { type: 'string'},
+        }
       },
     },
     async (req, res) => {
@@ -838,10 +991,11 @@ export default async function routes(fastify: FastifyInstance) {
   //********************************************************************
 
   fastify.post(
-    '/tasks/',
+    '/tasks',
     {
       schema: {
-        tags: ['tasks', ],
+        description: 'Create a task that mints a POAP nft in the background',
+        tags: ['Tasks', ],
         headers: {
           required: ['Authorization'],
           type: 'object',
@@ -849,6 +1003,21 @@ export default async function routes(fastify: FastifyInstance) {
             'Authorization': { type: 'string' },
           }
         },
+        body: {
+          type: 'object'
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              id:  { type: 'number' },
+              name:  { type: 'string' },
+              task_data: {type: 'object',},
+              status:  { type: 'string' },
+              return_data:  { type: 'string' }
+            }
+          }
+        }
       },
     },
     async (req, res) => {
@@ -873,7 +1042,8 @@ export default async function routes(fastify: FastifyInstance) {
     '/notifications',
     {
       schema: {
-        tags: ['notifications', ],
+        description: 'List paginated notifications, you can filter by type, event_id, and address',
+        tags: ['Notifications', ],
         querystring: {
           limit: { type: 'number' },
           offset: { type: 'number' },
@@ -883,7 +1053,6 @@ export default async function routes(fastify: FastifyInstance) {
         },
         response: {
           200: {
-            description: 'Successful response',
             type: 'object',
             properties: {
               limit: { type: 'number' },
@@ -985,7 +1154,8 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
-        tags: ['notifications', ],
+        description: 'Create notification and send push notification',
+        tags: ['Notifications', ],
         body: {
           type: 'object',
           required: ['title', 'description', 'type', 'event_id'],
@@ -998,7 +1168,6 @@ export default async function routes(fastify: FastifyInstance) {
         },
         response: {
           200: {
-            description: 'Successful response',
             type: 'object',
             properties: {
               id: { type: 'number'},
@@ -1062,7 +1231,7 @@ export default async function routes(fastify: FastifyInstance) {
 
       // Send a message to devices subscribed to the provided topic.
       admin.messaging().send(message).then((response) => {}).catch((error) => {
-        return new createError.InternalServerError("Error sending push notification: " + error);
+        return new createError.InternalServerError('Error sending push notification: ' + error);
       });
 
       return notification
