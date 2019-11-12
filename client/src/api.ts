@@ -248,7 +248,8 @@ export async function sendNotification(
   notificationType: string,
   selectedEventId: number | null
 ): Promise<any> {
-  return secureFetchNoResponse(`${API_BASE}/notifications`, {
+  return secureFetchNoResponse(`${API_BASE}/notifications/`, {
+    // TODO: remove / in url
     method: 'POST',
     body: JSON.stringify({
       title,

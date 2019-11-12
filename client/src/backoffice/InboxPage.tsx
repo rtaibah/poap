@@ -37,21 +37,13 @@ export class InboxPage extends React.Component<{}, IInboxState> {
   async componentDidMount() {
     const events = await getEvents();
 
-    this.setState(old => {
-      return {
-        ...old,
-        events,
-        initialValues: {
-          ...old.initialValues,
-        },
-      };
-    });
+    this.setState({ events });
   }
 
   onSubmit = async (values: IInboxFormValues, actions: FormikActions<IInboxFormValues>) => {
-    const { title, description, notificationType, selectedEventId } = values;
-
-    console.log('submit');
+    const { title, description, notificationType } = values;
+    let { selectedEventId } = values;
+    if (typeof selectedEventId === 'string') selectedEventId = Number(selectedEventId);
 
     try {
       actions.setStatus(null);
@@ -190,6 +182,9 @@ const Radio: React.FC<RadioProps> = props => {
             onChange={() => {
               if (field.value !== props.value) {
                 form.setFieldValue(props.name, props.value);
+
+                if (props.name === 'notificationType') return;
+
                 props.events
                   ? form.setFieldValue('selectedEventId', props.events[0].id)
                   : form.setFieldValue('selectedEventId', null);

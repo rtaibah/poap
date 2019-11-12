@@ -22,6 +22,7 @@ type PaginateAction = {
 const InboxListPage: FC = () => {
   const [page, setPage] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
+  const [shouldResetPage, setShouldResetPage] = useState<boolean>(false);
   const [notificationType, setNotificationType] = useState<string>('inbox');
   const [recipientFilter, setRecipientFilter] = useState<string>('everyone');
   const [modalOpen, setModalOpen] = useState<boolean>(false);
@@ -35,21 +36,39 @@ const InboxListPage: FC = () => {
     fetchEvents();
   }, []);
 
+  useEffect(() => {
+    fetchNotifications();
+  }, [page]);
+
+  useEffect(() => {
+    if (shouldResetPage) {
+      setShouldResetPage(false);
+      setPage(0);
+    }
+  }, [notifications]);
+
+  useEffect(() => {
+    if (recipientFilter === 'event') {
+      if (selectedEvent === undefined) return;
+    } else {
+      setSelectedEvent(undefined);
+    }
+
+    if (!shouldResetPage) fetchNotifications();
+  }, [notificationType, recipientFilter, selectedEvent]);
+
   const fetchEvents = async () => {
     const events = await getEvents();
     setEvents(events);
   };
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [page, notificationType, recipientFilter]);
-
   const fetchNotifications = () => {
     setIsFetchingNotifications(true);
-    setNotifications(null);
 
-    const event_id = recipientFilter !== 'everyone' ? selectedEvent : undefined;
-    console.log('event_id: ', event_id);
+    let event_id = undefined;
+    if (recipientFilter === 'event' && selectedEvent !== undefined) {
+      event_id = selectedEvent > -1 ? selectedEvent : undefined;
+    }
 
     getNotifications(PAGE_SIZE, page * PAGE_SIZE, notificationType, event_id)
       .then(response => {
@@ -65,16 +84,16 @@ const InboxListPage: FC = () => {
     setPage(obj.selected);
   };
 
-  const handleFilter = (name: string, value: string) => {
-    if (name === 'notificationType') {
-      setNotificationType(value);
-    }
-    if (name === 'recipientFilter') {
-      setRecipientFilter(value);
-    }
+  const handleRadio = (name: string, value: string) => {
+    setShouldResetPage(true);
+
+    if (name === 'notificationType') setNotificationType(value);
+    if (name === 'recipientFilter') setRecipientFilter(value);
   };
 
   const handleSelect = (e: ChangeEvent<HTMLSelectElement>) => {
+    setShouldResetPage(true);
+
     setSelectedEvent(Number(e.target.value));
   };
 
@@ -95,7 +114,7 @@ const InboxListPage: FC = () => {
               <input
                 type={'radio'}
                 id={`inbox`}
-                onChange={() => handleFilter('notificationType', 'inbox')}
+                onChange={() => handleRadio('notificationType', 'inbox')}
                 checked={notificationType === 'inbox'}
               />
               <label htmlFor={`inbox`}>Inbox</label>
@@ -104,7 +123,7 @@ const InboxListPage: FC = () => {
               <input
                 type={'radio'}
                 id={`push`}
-                onChange={() => handleFilter('notificationType', 'push')}
+                onChange={() => handleRadio('notificationType', 'push')}
                 checked={notificationType === 'push'}
               />
               <label htmlFor={`push`}>Push notification</label>
@@ -117,7 +136,7 @@ const InboxListPage: FC = () => {
               <input
                 type={'radio'}
                 id={`everyone`}
-                onChange={() => handleFilter('recipientFilter', 'everyone')}
+                onChange={() => handleRadio('recipientFilter', 'everyone')}
                 checked={recipientFilter === 'everyone'}
               />
               <label htmlFor={`everyone`}>Sent to everyone</label>
@@ -126,13 +145,16 @@ const InboxListPage: FC = () => {
               <input
                 type={'radio'}
                 id={`event`}
-                onChange={() => handleFilter('recipientFilter', 'event')}
+                onChange={() => handleRadio('recipientFilter', 'event')}
                 checked={recipientFilter === 'event'}
               />
               <label htmlFor={`event`}>Sent to the attendees of a an event</label>
 
               {recipientFilter === 'event' && (
                 <select onChange={handleSelect}>
+                  <option key={'initialValue'} value={-1}>
+                    Select an option
+                  </option>
                   {events &&
                     events.map(event => {
                       let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
@@ -160,6 +182,7 @@ const InboxListPage: FC = () => {
       <div className={'admin-table-row'}>
         {isFetchingNotifications && <Loading />}
         {notifications &&
+          !isFetchingNotifications &&
           notifications.map((notification, i) => {
             return (
               <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={notification.id}>
@@ -203,6 +226,7 @@ const InboxListPage: FC = () => {
             pageRangeDisplayed={5}
             activeClassName={'active'}
             onPageChange={handlePageChange}
+            forcePage={page}
           />
         </div>
       )}

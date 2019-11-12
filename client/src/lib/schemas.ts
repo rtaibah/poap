@@ -91,10 +91,7 @@ const InboxFormSchema = yup.object().shape({
   title: yup.string().required(),
   description: yup.string().required(),
   recipientFilter: yup.string().required(),
-  selectedEventId: yup
-    .number()
-    .nullable()
-    .min(1),
+  selectedEventId: yup.number().nullable(),
   notificationType: yup.string().required(),
 });
 
