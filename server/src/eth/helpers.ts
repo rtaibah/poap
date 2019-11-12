@@ -52,7 +52,7 @@ export async function getHelperSigner(requiredBalance: number = 0): Promise<null
     let sorted_signers: Signer[] = signers.sort((a, b) => {
       if (a.pending_tx === b.pending_tx) {
         return (parseInt(b.balance) - parseInt(a.balance));
-      } else if(a.pending_tx > b.pending_tx){
+      } else if (a.pending_tx > b.pending_tx) {
         return 1;
       }
       return -1;
@@ -130,7 +130,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
     gasPrice = extraParams.gas_price
   }
 
-  // Use extraParams signer if it's specified in extraParams 
+  // Use extraParams signer if it's specified in extraParams
   if (extraParams && extraParams.signer) {
     signerWallet = await getSignerWallet(extraParams.signer.toLowerCase());
   } else if (onlyAdminSigner) {
@@ -142,7 +142,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
 
   const contract = getContract(signerWallet);
 
-  if(gasPrice == 0) {
+  if (gasPrice == 0) {
     gasPrice = await getCurrentGasPrice(signerWallet.address);
   }
 
@@ -164,22 +164,22 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
     contract: contract,
     transactionParams: transactionParams,
   };
-  
+
 }
 
 export async function mintToken(eventId: number, toAddr: Address, awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
-  let tx:ContractTransaction
-  let txObj:any
+  let tx: ContractTransaction
+  let txObj: any
 
   try {
     txObj = await getTxObj(false, extraParams);
     tx = await txObj.contract.functions.mintToken(eventId, toAddr, txObj.transactionParams);
   }
-  catch(error) {
+  catch (error) {
     console.error(error);
     return null;
   }
-  
+
 
   if (tx.hash) {
     await saveTransaction(
@@ -196,7 +196,7 @@ export async function mintToken(eventId: number, toAddr: Address, awaitTx: boole
   console.log(`mintToken: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
-  if(awaitTx){
+  if (awaitTx) {
     await tx.wait();
   }
 
@@ -379,7 +379,7 @@ export async function getTokenImg(tokenId: string | number): Promise<null | stri
   const eventId = await contract.functions.tokenEvent(tokenId);
   const event = await getEvent(eventId.toNumber());
   if (!event) {
-    throw new Error('Invalid Event Id');
+    return 'https://www.poap.xyz/events/badges/POAP.png'
   }
 
   return event.image_url
@@ -439,22 +439,22 @@ export async function lookupAddress(address: string): Promise<string> {
 }
 
 export async function checkAddress(address: string): Promise<string | null> {
-  let response:string | null = null;
+  let response: string | null = null;
   try {
     response = await utils.getAddress(address);
   }
-  catch(error) {
+  catch (error) {
     try {
       response = await resolveName(address)
     }
-    catch(error) {
+    catch (error) {
       return response;
     }
   }
   return response;
 }
 
-export async function checkHasToken(event_id:number, address: string): Promise<boolean> {
+export async function checkHasToken(event_id: number, address: string): Promise<boolean> {
   const all_tokens = await getAllTokens(address);
   let token = all_tokens.find(token => token.event.id === event_id);
   return !!token;
