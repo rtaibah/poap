@@ -139,7 +139,7 @@ export interface Task{
 export interface Notification {
   id: number;
   title: string;
-  description: object;
+  description: string;
   type: NotificationType;
   event_id: number;
   event: PoapEvent | null;

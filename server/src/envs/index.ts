@@ -11,6 +11,8 @@ export interface EnvVariables {
   secretKey: string;
   infuraNet: string;
   providerStr: string;
+  swaggerHost: string;
+  swaggerUrl: string;
 }
 
 export interface PoapHelpers {
@@ -70,6 +72,8 @@ export default function getEnv(): EnvVariables {
     poapHelpers: getHelperWallets(provider),
     secretKey: ensureEnvVariable('SECRET_KEY'),
     infuraNet: ensureEnvVariable('ETH_NETWORK'),
-    providerStr: ensureEnvVariable('PROVIDER')
+    providerStr: ensureEnvVariable('PROVIDER'),
+    swaggerHost: ensureEnvVariable('SWAGGER_HOST'),
+    swaggerUrl: ensureEnvVariable('SWAGGER_URL')
   };
 }

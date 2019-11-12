@@ -48,6 +48,7 @@ import {
 import { Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
+import * as admin from "firebase-admin";
 
 function sleep(ms: number){
   return new Promise(resolve=>{
@@ -1044,6 +1045,19 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Couldn\'t create the task');
       }
       notification.event = event;
+
+      let message = {
+        topic: `event-${event.id}`,
+        notification: {
+          title: notification.title,
+          body: notification.description
+        }
+      }
+
+      // Send a message to devices subscribed to the provided topic.
+      admin.messaging().send(message).then((response) => {}).catch((error) => {
+        return new createError.InternalServerError("Error sending push notification: " + error);
+      });
 
       return notification
     }

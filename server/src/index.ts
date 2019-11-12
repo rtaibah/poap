@@ -10,7 +10,9 @@ import authPlugin from './auth';
 import routes from './routes';
 import transactionsMonitorCron  from './plugins/tx-monitor';
 import taskMonitorCron  from './plugins/task-monitor';
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
+import * as admin from "firebase-admin";
+import getEnv from './envs';
 
 dotenv.config();
 
@@ -30,6 +32,8 @@ fastify.register(fastifyRateLimit, {
 fastify.register(fastifyCors, {});
 fastify.register(fastifyCompress, {});
 
+const env = getEnv()
+
 fastify.register(fastifySwagger, {
   swagger: {
     info: {
@@ -38,11 +42,11 @@ fastify.register(fastifySwagger, {
       version: '1.0.0'
     },
     externalDocs: {
-      url: 'https://www.poap.xyz/',
+      url: env.swaggerUrl,
       description: 'Find more info here'
     },
-    host: 'api.poap.xyz',
-    schemes: ['http'],
+    host: env.swaggerHost,
+    schemes: ['http', 'https'],
     consumes: ['application/json'],
     produces: ['application/json'],
     tags: [
@@ -83,3 +87,7 @@ const start = async () => {
   }
 };
 start();
+
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+});
