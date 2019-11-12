@@ -981,9 +981,9 @@ export default async function routes(fastify: FastifyInstance) {
   );
 
   fastify.post(
-    '/notifications/',
+    '/notifications',
     {
-      preValidation: [fastify.authenticate],
+      // preValidation: [fastify.authenticate],
       schema: {
         tags: ['notifications', ],
         body: {
@@ -1031,10 +1031,7 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const event = await getEvent(req.body.event_id);
-      if (!event) {
-        return new createError.BadRequest('event does not exist');
-      }
+      const event_id = req.body.event_id || null;
 
       if([NotificationType.inbox, NotificationType.push].indexOf(req.body.type) == -1) {
         return new createError.BadRequest('notification type must be in ["inbox", "push"]');
@@ -1044,10 +1041,19 @@ export default async function routes(fastify: FastifyInstance) {
       if (!notification) {
         return new createError.BadRequest('Couldn\'t create the task');
       }
-      notification.event = event;
+      
+      let topic = 'all';
+      if(event_id) {
+        const event = await getEvent(req.body.event_id);
+        if (!event) {
+          return new createError.BadRequest('event does not exist');
+        }
+        notification.event = event;
+        topic = `event-${event.id}`;
+      }
 
       let message = {
-        topic: `event-${event.id}`,
+        topic: topic,
         notification: {
           title: notification.title,
           body: notification.description
@@ -1062,7 +1068,6 @@ export default async function routes(fastify: FastifyInstance) {
       return notification
     }
   );
-
 
   //********************************************************************
   // SWAGGER
