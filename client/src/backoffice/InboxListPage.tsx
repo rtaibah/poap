@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect, ChangeEvent } from 'react';
+import React, { FC, useState, useEffect, ChangeEvent, useRef } from 'react';
 
 /* Libraries */
 import ReactModal from 'react-modal';
@@ -37,25 +37,30 @@ const InboxListPage: FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchNotifications();
-  }, [page]);
+    page !== 0 ? setPage(0) : fetchNotifications();
+  }, [notificationType]);
+
+  useEffect(() => {
+    setShouldResetPage(true);
+  }, [recipientFilter, selectedEvent]);
 
   useEffect(() => {
     if (shouldResetPage) {
       setShouldResetPage(false);
-      setPage(0);
+
+      if (recipientFilter === 'event') {
+        if (selectedEvent === undefined) return;
+      } else {
+        setSelectedEvent(undefined);
+      }
+
+      page !== 0 ? setPage(0) : fetchNotifications();
     }
-  }, [notifications]);
+  }, [shouldResetPage]);
 
   useEffect(() => {
-    if (recipientFilter === 'event') {
-      if (selectedEvent === undefined) return;
-    } else {
-      setSelectedEvent(undefined);
-    }
-
-    if (!shouldResetPage) fetchNotifications();
-  }, [notificationType, recipientFilter, selectedEvent]);
+    fetchNotifications();
+  }, [page]);
 
   const fetchEvents = async () => {
     const events = await getEvents();
@@ -85,15 +90,11 @@ const InboxListPage: FC = () => {
   };
 
   const handleRadio = (name: string, value: string) => {
-    setShouldResetPage(true);
-
     if (name === 'notificationType') setNotificationType(value);
     if (name === 'recipientFilter') setRecipientFilter(value);
   };
 
   const handleSelect = (e: ChangeEvent<HTMLSelectElement>) => {
-    setShouldResetPage(true);
-
     setSelectedEvent(Number(e.target.value));
   };
 
