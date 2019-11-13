@@ -165,9 +165,41 @@
     .capitalize {
       text-transform: capitalize;
     }
+
     .row:nth-child(even) {
       background: white;
       border: 1px solid #d2d2d2;
+    }
+
+    .row {
+      .ellipsis {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .description {
+        display: flex;
+        align-items: center;
+        height: 18px;
+        width: 80px;
+
+        @media (max-width: $bp-mw) {
+          width: auto;
+          height: auto;
+        }
+
+        .edit-icon {
+          width: 26px;
+          right: 10px;
+
+          @media (max-width: $bp-mw) {
+            position: absolute;
+            top: -74px;
+            width: 22px;
+          }
+        }
+      }
     }
 
     .edit-icon {
@@ -186,6 +218,14 @@
     flex-direction: row;
 
     &.inbox {
+      @media (max-width: $bp-mw) {
+        flex-direction: column;
+
+        > div:last-child {
+          margin-top: 6px;
+        }
+      }
+
       .filter {
         flex-direction: column;
 
@@ -194,7 +234,28 @@
           flex-direction: row;
           align-items: center;
 
-          &:last-child {
+          &.select {
+            justify-content: space-between;
+            height: 50px;
+
+            @media (max-width: $bp-m) {
+              flex-direction: column;
+              align-items: flex-start;
+              height: 100px;
+            }
+
+            > div {
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+
+              @media (max-width: $bp-m) {
+                height: 50px;
+              }
+            }
+          }
+
+          &:nth-child(3):not(.select) {
             height: 50px;
           }
 
@@ -203,7 +264,7 @@
           }
 
           input {
-            margin-bottom: 4px;
+            margin-bottom: 2px;
           }
         }
 
@@ -249,6 +310,7 @@
     }
   }
 
+  &.notifications,
   &.transactions,
   &.addresses {
     .no-results {

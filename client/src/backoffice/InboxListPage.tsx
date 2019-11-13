@@ -11,7 +11,7 @@ import { Notification, getNotifications, getEvents, PoapEvent } from '../api';
 import { Loading } from '../components/Loading';
 
 /* Assets */
-import gas from '../images/gas-station.svg';
+import plus from '../images/plus.svg';
 
 const PAGE_SIZE = 10;
 
@@ -104,7 +104,7 @@ const InboxListPage: FC = () => {
   };
 
   return (
-    <div className={'admin-table transactions'}>
+    <div className={'admin-table notifications'}>
       <h2>Notifications</h2>
       <div>
         <h4>Filters</h4>
@@ -142,14 +142,16 @@ const InboxListPage: FC = () => {
               />
               <label htmlFor={`everyone`}>Sent to everyone</label>
             </div>
-            <div className="filter-option">
-              <input
-                type={'radio'}
-                id={`event`}
-                onChange={() => handleRadio('recipientFilter', 'event')}
-                checked={recipientFilter === 'event'}
-              />
-              <label htmlFor={`event`}>Sent to the attendees of a an event</label>
+            <div className="filter-option select">
+              <div>
+                <input
+                  type={'radio'}
+                  id={`event`}
+                  onChange={() => handleRadio('recipientFilter', 'event')}
+                  checked={recipientFilter === 'event'}
+                />
+                <label htmlFor={`event`}>Sent to the attendees of a an event</label>
+              </div>
 
               {recipientFilter === 'event' && (
                 <select onChange={handleSelect}>
@@ -174,8 +176,9 @@ const InboxListPage: FC = () => {
       <div className={'row table-header visible-md'}>
         <div className={'col-md-1 center'}>#</div>
         <div className={'col-md-4'}>Title</div>
-        <div className={'col-md-3'}>Type</div>
+        <div className={'col-md-2'}>Type</div>
         <div className={'col-md-4'}>Event</div>
+        <div className={'col-md-1'} />
       </div>
       <div className={'row table-header visible-sm'}>
         <div className={'center'}>Notifications</div>
@@ -192,21 +195,24 @@ const InboxListPage: FC = () => {
                   {notification.id}
                 </div>
 
-                <div className={'col-md-4'}>
+                <div className={'col-md-4 ellipsis'}>
                   <span className={'visible-sm'}>Title: </span>
                   {notification.title}
                 </div>
 
-                <div className={'col-md-3'}>
+                <div className={'col-md-2'}>
                   <span className={'visible-sm'}>Type: </span>
                   {notification.type}
                 </div>
 
-                <div className={'col-md-4'}>
+                <div className={'col-md-4 ellipsis'}>
                   <span className={'visible-sm'}>Event: </span>
                   {notification.event.name}
+                </div>
+
+                <div className={'col-md-1 description'}>
                   <img
-                    src={gas}
+                    src={plus}
                     alt={'Edit'}
                     className={'edit-icon'}
                     onClick={() => handleModal(notification.event.description)}
