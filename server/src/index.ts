@@ -53,7 +53,6 @@ fastify.register(fastifySwagger, {
       { name: 'Metadata', description: 'Metadata related end-points' },
       { name: 'Actions', description: 'Actions related end-points' },
       { name: 'Token', description: 'Token related end-points' },
-      { name: 'Burn', description: 'Burn related end-points' },
       { name: 'Settings', description: 'Settings related end-points' },
       { name: 'Events', description: 'Events related end-points' },
       { name: 'Transactions', description: 'Transactions related end-points' },
@@ -62,9 +61,9 @@ fastify.register(fastifySwagger, {
       { name: 'Notifications', description: 'Notifications related end-points' },
     ],
     securityDefinitions: {
-      apiKey: {
+      authorization: {
+        name: 'authorization',
         type: 'apiKey',
-        name: 'apiKey',
         in: 'header'
       }
     }
