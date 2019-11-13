@@ -1,5 +1,5 @@
 /* eslint jsx-a11y/anchor-is-valid: 0 */
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useContext, useState, useEffect } from 'react';
 import { Link, Route, withRouter } from 'react-router-dom';
 import { slide as Menu } from 'react-burger-menu';
 
@@ -23,6 +23,11 @@ const NavigationMenu = withRouter(({ history }) => {
   const auth = useContext(AuthContext);
   const [isOpen, setIsOpen] = useState(false);
   const closeMenu = useCallback(() => setIsOpen(false), []);
+
+  useEffect(() => {
+    const { pathname } = history.location;
+    if (pathname === '/admin' || pathname === '/admin/') setIsOpen(true);
+  }, []);
 
   return (
     <Menu isOpen={isOpen} onStateChange={state => setIsOpen(state.isOpen)} right disableAutoFocus>
