@@ -28,6 +28,7 @@ const InboxListPage: FC = () => {
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<number | undefined>(undefined);
   const [modalText, setModalText] = useState<string>('');
+  const [modalTitle, setModalTitle] = useState<string>('');
   const [isFetchingNotifications, setIsFetchingNotifications] = useState<null | boolean>(null);
   const [notifications, setNotifications] = useState<null | Notification[]>(null);
   const [events, setEvents] = useState<PoapEvent[]>([]);
@@ -98,8 +99,11 @@ const InboxListPage: FC = () => {
     setSelectedEvent(Number(e.target.value));
   };
 
-  const handleModal = (event?: string) => {
-    if (!modalOpen && event) setModalText(event);
+  const handleModal = (notification?: { title: string; description: string }) => {
+    if (!modalOpen && notification) {
+      setModalTitle(notification.title);
+      setModalText(notification.description);
+    }
     setModalOpen(!modalOpen);
   };
 
@@ -215,7 +219,12 @@ const InboxListPage: FC = () => {
                     src={plus}
                     alt={'Edit'}
                     className={'edit-icon'}
-                    onClick={() => handleModal(notification.event.description)}
+                    onClick={() =>
+                      handleModal({
+                        title: notification.title,
+                        description: notification.description,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -238,8 +247,8 @@ const InboxListPage: FC = () => {
         </div>
       )}
       <ReactModal isOpen={modalOpen} shouldFocusAfterRender={true}>
-        <div>
-          <h3>Description</h3>
+        <div className="admin-list-modal">
+          {modalTitle && <h3 className={'title'}>{modalTitle}</h3>}
           {modalText && <div className={'description'}>{modalText}</div>}
           <div onClick={() => handleModal()} className={'close-modal'}>
             Cancel
