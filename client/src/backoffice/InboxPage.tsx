@@ -9,6 +9,9 @@ import { getEvents, PoapEvent, sendNotification } from '../api';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
 
+/* Typings */
+import { Value } from '../types';
+
 interface IInboxState {
   events: PoapEvent[];
   initialValues: IInboxFormValues;
@@ -17,9 +20,9 @@ interface IInboxState {
 interface IInboxFormValues {
   title: string;
   description: string;
-  recipientFilter: string;
+  recipientFilter: Exclude<Value, 'inbox' | 'push'>;
   selectedEventId: number | null;
-  notificationType: string;
+  notificationType: Exclude<Value, 'everyone' | 'event'>;
 }
 
 export class InboxPage extends React.Component<{}, IInboxState> {
@@ -112,7 +115,7 @@ export class InboxPage extends React.Component<{}, IInboxState> {
                     <Radio name="recipientFilter" value={'everyone'} label={'Send to everyone'} />
                     <Radio
                       name="recipientFilter"
-                      value={'eventSpecific'}
+                      value={'event'}
                       label={'Send to the attendees of a an event'}
                       events={this.state.events}
                     />
@@ -120,12 +123,12 @@ export class InboxPage extends React.Component<{}, IInboxState> {
                   <ErrorMessage name="recipientFilter" component="p" className="bk-error" />
                 </div>
 
-                {values.recipientFilter === 'eventSpecific' && (
+                {values.recipientFilter === 'event' && (
                   <div className="bk-form-row">
                     <label htmlFor="selectedEventId">Choose Event:</label>
                     <Field name="selectedEventId" component="select">
                       {this.state.events.map(event => {
-                        let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                        const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
                         return (
                           <option key={event.id} value={event.id}>
                             {label}

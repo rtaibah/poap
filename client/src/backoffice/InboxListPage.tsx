@@ -13,6 +13,9 @@ import { Loading } from '../components/Loading';
 /* Assets */
 import plus from '../images/plus.svg';
 
+/* Typings */
+import { Name, Value } from '../types';
+
 const PAGE_SIZE = 10;
 
 type PaginateAction = {
@@ -46,17 +49,13 @@ const InboxListPage: FC = () => {
   }, [recipientFilter, selectedEvent]);
 
   useEffect(() => {
-    if (shouldResetPage) {
-      setShouldResetPage(false);
+    if (shouldResetPage === false) return;
+    setShouldResetPage(false);
 
-      if (recipientFilter === 'event') {
-        if (selectedEvent === undefined) return;
-      } else {
-        setSelectedEvent(undefined);
-      }
+    if (recipientFilter === 'event' && selectedEvent === undefined) return;
+    setSelectedEvent(undefined);
 
-      page !== 0 ? setPage(0) : fetchNotifications();
-    }
+    page !== 0 ? setPage(0) : fetchNotifications();
   }, [shouldResetPage]);
 
   useEffect(() => {
@@ -68,7 +67,7 @@ const InboxListPage: FC = () => {
     setEvents(events);
   };
 
-  const fetchNotifications = () => {
+  const fetchNotifications = async () => {
     setIsFetchingNotifications(true);
 
     let event_id = undefined;
@@ -76,21 +75,23 @@ const InboxListPage: FC = () => {
       event_id = selectedEvent > -1 ? selectedEvent : undefined;
     }
 
-    getNotifications(PAGE_SIZE, page * PAGE_SIZE, notificationType, event_id)
-      .then(response => {
-        if (!response) return;
-        setNotifications(response.notifications);
-        setTotal(response.total);
-      })
-      .catch(error => console.error(error))
-      .finally(() => setIsFetchingNotifications(false));
+    try {
+       const response = await getNotifications(PAGE_SIZE, page * PAGE_SIZE, notificationType, event_id);
+       if (!response) return;
+       setNotifications(response.notifications);
+       setTotal(response.total);
+    } catch(e) {
+      console.log(e)
+    } finally {
+      setIsFetchingNotifications(false);
+    }
   };
 
   const handlePageChange = (obj: PaginateAction) => {
     setPage(obj.selected);
   };
 
-  const handleRadio = (name: string, value: string) => {
+  const handleRadio = (name: Name, value: Value) => {
     if (name === 'notificationType') setNotificationType(value);
     if (name === 'recipientFilter') setRecipientFilter(value);
   };
@@ -164,7 +165,7 @@ const InboxListPage: FC = () => {
                   </option>
                   {events &&
                     events.map(event => {
-                      let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                      const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
                       return (
                         <option key={event.id} value={event.id}>
                           {label}

@@ -43,10 +43,7 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
     const events = await getEvents();
     const signers = await getSigners();
 
-    let signer = '';
-    if (signers.length > 0) {
-      signer = signers[0].signer;
-    }
+    const signer = signers.length > 0 ? signers[0].signer : '';
 
     this.setState(old => {
       return {
@@ -120,7 +117,7 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
                   <label htmlFor="eventId">Choose Event:</label>
                   <Field name="eventId" component="select">
                     {this.state.events.map(event => {
-                      let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                      const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
                       return (
                         <option key={event.id} value={event.id}>
                           {label}
@@ -152,7 +149,7 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
                   <label htmlFor="signer">Choose Address:</label>
                   <Field name="signer" component="select">
                     {this.state.signers.map(signer => {
-                      let label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${
+                      const label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${
                         signer.pending_tx
                       } - Gas: ${convertToGWEI(signer.gas_price)}`;
                       return (
@@ -208,10 +205,7 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
     const events = await getEvents();
     const signers = await getSigners();
 
-    let signer = '';
-    if (signers.length > 0) {
-      signer = signers[0].signer;
-    }
+    const signer = signers.length > 0 ? signers[0].signer : '';
 
     this.setState({ events, signers, initialValues: { ...this.state.initialValues, signer } });
   }
@@ -256,7 +250,7 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
                   <label>Choose Events:</label>
                   <div>
                     {this.state.events.map(event => {
-                      let label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                      const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
                       return (
                         <Checkbox key={event.id} name="eventIds" value={event.id} label={label} />
                       );
@@ -283,7 +277,7 @@ export class IssueForUserPage extends React.Component<{}, IssueForUserPageState>
                   <label htmlFor="signer">Choose Address:</label>
                   <Field name="signer" component="select">
                     {this.state.signers.map(signer => {
-                      let label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${
+                      const label = `${signer.id} - ${signer.signer} (${signer.role}) - Pend: ${
                         signer.pending_tx
                       } - Gas: ${convertToGWEI(signer.gas_price)}`;
                       return (
