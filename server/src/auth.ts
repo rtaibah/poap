@@ -3,6 +3,7 @@ import jwksClient from 'jwks-rsa';
 import fastifyJwt from 'fastify-jwt';
 import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { IncomingMessage, ServerResponse, Server } from 'http';
+import getEnv from './envs';
 
 declare module 'fastify' {
   export interface FastifyInstance<
@@ -14,16 +15,17 @@ declare module 'fastify' {
   }
 }
 
-export default fp(
-  (fastify: FastifyInstance<Server, IncomingMessage, ServerResponse>, opts, next) => {
+export default fp((fastify: FastifyInstance<Server, IncomingMessage, ServerResponse>, opts, next) => {
+    const env = getEnv();
+
     const client = jwksClient({
       cache: true,
       rateLimit: true,
       jwksRequestsPerMinute: 5,
-      jwksUri: 'https://poapauth.auth0.com/.well-known/jwks.json',
+      jwksUri: `https://${env.auth0AppName}.auth0.com/.well-known/jwks.json`,
     });
 
-    const kid = 'NjA3NjZFQjdDODI3QkEwRURDOUVEMEU1OUUwRkI3MDk5NTNEQjQ3RQ';
+    const kid = env.auth0Kid;
     client.getSigningKey(kid, (err, key) => {
       if (err) {
         next(err);
@@ -35,8 +37,8 @@ export default fp(
       fastify.register(fastifyJwt, {
         secret: signingKey,
         verify: {
-          audience: 'poap-api',
-          issuer: 'https://poapauth.auth0.com/',
+          audience: env.auth0Audience,
+          issuer: `https://${env.auth0AppName}.auth0.com/`,
           algorithms: ['RS256'],
         },
       });
