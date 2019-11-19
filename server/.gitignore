@@ -1,3 +1,4 @@
 dist/
 .env
 app.yaml
+service-account-file.json

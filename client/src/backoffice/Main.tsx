@@ -6,7 +6,7 @@ import { slide as Menu } from 'react-burger-menu';
 /* Assets */
 import PoapLogo from '../images/POAP.svg';
 /* Constants */
-import { ROUTES } from '../lib/constants';
+import { ROUTES, ROLES, LABELS } from '../lib/constants';
 /* Components */
 import { AuthContext } from '../auth';
 import { EventsPage } from './EventsPage';
@@ -18,6 +18,64 @@ import { InboxPage } from './InboxPage';
 import { InboxListPage } from './InboxListPage';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
+
+type RouteProps = {
+  path: string;
+  roles: string[];
+  title?: string;
+};
+
+const RoleRoute: React.FC<{ route: RouteProps; component: React.FC | React.ComponentClass }> = ({
+  route,
+  component,
+}) => {
+  const { path, roles } = route;
+
+  // TODO: Get user role (Backend WIP)
+  const userRole = 'super';
+
+  if (roles.includes(userRole)) {
+    return <Route path={path} component={component} />;
+  }
+
+  return null;
+};
+
+const RoleLink: React.FC<{ route: RouteProps; handleClick: () => void }> = ({
+  route,
+  handleClick,
+}) => {
+  const { path, title, roles } = route;
+
+  // TODO: Get user role (Backend WIP)
+  const userRole = 'super';
+
+  if (typeof route === 'object' && title && roles.includes(userRole)) {
+    return (
+      <Link className={'bm-item'} to={path} onClick={handleClick}>
+        {title}
+      </Link>
+    );
+  }
+
+  return null;
+};
+
+type LabelProps = {
+  roles: string[];
+  title: string;
+};
+
+const Label: React.FC<{ label: LabelProps }> = ({ label }) => {
+  const { roles, title } = label;
+
+  // TODO: Get user role (Backend WIP)
+  const userRole = 'super';
+
+  if (roles.includes(userRole)) return <h2>{title}</h2>;
+
+  return null;
+};
 
 const NavigationMenu = withRouter(({ history }) => {
   const auth = useContext(AuthContext);
@@ -31,39 +89,24 @@ const NavigationMenu = withRouter(({ history }) => {
 
   return (
     <Menu isOpen={isOpen} onStateChange={state => setIsOpen(state.isOpen)} right disableAutoFocus>
-      <h2>Issue Badges:</h2>
-      <Link to={ROUTES.issueForEvent} onClick={closeMenu}>
-        Many Users
-      </Link>
-      <Link to={ROUTES.issueForUser} onClick={closeMenu}>
-        Many Events
-      </Link>
+      <Label label={LABELS.issueBadges} />
+      <RoleLink route={ROUTES.issueForEvent} handleClick={closeMenu} />
+      <RoleLink route={ROUTES.issueForUser} handleClick={closeMenu} />
 
-      <h2>Inbox</h2>
-      <Link to={ROUTES.inbox} onClick={closeMenu}>
-        Send Notification
-      </Link>
-      <Link to={ROUTES.inboxList} onClick={closeMenu}>
-        Notifications List
-      </Link>
+      <Label label={LABELS.inbox} />
+      <RoleLink route={ROUTES.inbox} handleClick={closeMenu} />
+      <RoleLink route={ROUTES.inboxList} handleClick={closeMenu} />
 
-      <h2>Other Tasks</h2>
-      <Link to={ROUTES.addressManagement} onClick={closeMenu}>
-        Manage Addresses
-      </Link>
-      <Link to={ROUTES.events} onClick={closeMenu}>
-        Manage Events
-      </Link>
-      <Link to={ROUTES.burn} onClick={closeMenu}>
-        Burn Tokens
-      </Link>
-      <Link to={ROUTES.transactions} onClick={closeMenu}>
-        Transactions
-      </Link>
+      <Label label={LABELS.otherTasks} />
+      <RoleLink route={ROUTES.addressManagement} handleClick={closeMenu} />
+      <RoleLink route={ROUTES.events} handleClick={closeMenu} />
+      <RoleLink route={ROUTES.qr} handleClick={closeMenu} />
+      <RoleLink route={ROUTES.burn} handleClick={closeMenu} />
+      <RoleLink route={ROUTES.transactions} handleClick={closeMenu} />
+
       {/* <Link to={ROUTES.minters} onClick={closeMenu}>
         Manage Minters
       </Link> */}
-
       <a
         className="bm-item"
         href=""
@@ -96,15 +139,16 @@ export const BackOffice: React.FC = () => (
     </header>
     <main className="app-content">
       <div className="container">
-        <Route path={ROUTES.issueForEvent} component={IssueForEventPage} />
-        <Route path={ROUTES.issueForUser} component={IssueForUserPage} />
-        <Route path={ROUTES.events} component={EventsPage} />
-        <Route path={ROUTES.minters} component={MintersPage} />
-        <Route path={ROUTES.burn} component={BurnPage} />
-        <Route path={ROUTES.addressManagement} component={AddressManagementPage} />
-        <Route path={ROUTES.transactions} component={TransactionsPage} />
-        <Route path={ROUTES.inbox} component={InboxPage} />
-        <Route path={ROUTES.inboxList} component={InboxListPage} />
+        <RoleRoute route={ROUTES.issueForEvent} component={IssueForEventPage} />
+        <RoleRoute route={ROUTES.issueForUser} component={IssueForUserPage} />
+        <RoleRoute route={ROUTES.events} component={EventsPage} />
+        <RoleRoute route={ROUTES.minters} component={MintersPage} />
+        <RoleRoute route={ROUTES.burn} component={BurnPage} />
+        <RoleRoute route={ROUTES.addressManagement} component={AddressManagementPage} />
+        <RoleRoute route={ROUTES.transactions} component={TransactionsPage} />
+        <RoleRoute route={ROUTES.inbox} component={InboxPage} />
+        <RoleRoute route={ROUTES.inboxList} component={InboxListPage} />
+
         <Route
           exact
           path={ROUTES.admin}

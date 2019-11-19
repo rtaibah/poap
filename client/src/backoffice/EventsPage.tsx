@@ -14,9 +14,9 @@ import { ROUTES } from '../lib/constants';
 export const EventsPage: React.FC = () => {
   return (
     <Switch>
-      <Route exact path={ROUTES.events} component={EventList} />
-      <Route exact path={ROUTES.eventsNew} component={CreateEventForm} />
-      <Route exact path={ROUTES.event} component={EditEventForm} />
+      <Route exact path={ROUTES.events.path} component={EventList} />
+      <Route exact path={ROUTES.eventsNew.path} component={CreateEventForm} />
+      <Route exact path={ROUTES.event.path} component={EditEventForm} />
     </Switch>
   );
 };
@@ -88,7 +88,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
     }
   }, [event]);
   return (
-    <div className={"bk-container"}>
+    <div className={'bk-container'}>
       <Formik
         initialValues={values}
         validationSchema={PoapEventSchema}
@@ -171,7 +171,7 @@ const EventList: React.FC = () => {
   const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
 
   return (
-    <div className={"bk-container"}>
+    <div className={'bk-container'}>
       <h2>Events</h2>
       <Link to="/admin/events/new">
         <button className="bk-btn" style={{ margin: '30px 0px' }}>
