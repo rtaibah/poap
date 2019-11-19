@@ -84,6 +84,10 @@ const NavigationMenu = withRouter(({ history }) => {
 
   useEffect(() => {
     const { pathname } = history.location;
+
+    const userRole = 'super';
+    if (userRole === ROLES.eventAdmin) return;
+
     if (pathname === '/admin' || pathname === '/admin/') setIsOpen(true);
   }, []);
 
@@ -98,6 +102,7 @@ const NavigationMenu = withRouter(({ history }) => {
       <RoleLink route={ROUTES.inboxList} handleClick={closeMenu} />
 
       <Label label={LABELS.otherTasks} />
+      <Label label={LABELS.quickLinks} />
       <RoleLink route={ROUTES.addressManagement} handleClick={closeMenu} />
       <RoleLink route={ROUTES.events} handleClick={closeMenu} />
       <RoleLink route={ROUTES.qr} handleClick={closeMenu} />

@@ -5,7 +5,7 @@ const ROLES = {
 
 const LABELS = {
   issueBadges: {
-    roles: [ROLES.super, ROLES.eventAdmin],
+    roles: [ROLES.super],
     title: 'Issue Badges',
   },
   inbox: {
@@ -13,8 +13,12 @@ const LABELS = {
     title: 'Inbox',
   },
   otherTasks: {
-    roles: [ROLES.super, ROLES.eventAdmin],
+    roles: [ROLES.super],
     title: 'Other Tasks',
+  },
+  quickLinks: {
+    roles: [ROLES.eventAdmin],
+    title: 'Quick Links',
   },
 };
 
@@ -29,12 +33,12 @@ const ROUTES = {
   admin: '/admin',
   issueForEvent: {
     path: '/admin/issue-for-event',
-    roles: [ROLES.super, ROLES.eventAdmin],
+    roles: [ROLES.super],
     title: 'Many Users',
   },
   issueForUser: {
     path: '/admin/issue-for-user',
-    roles: [ROLES.super, ROLES.eventAdmin],
+    roles: [ROLES.super],
     title: 'Many Events',
   },
   events: {
@@ -81,7 +85,7 @@ const ROUTES = {
   },
   qr: {
     path: '/admin/qr',
-    roles: [ROLES.super],
+    roles: [ROLES.super, ROLES.eventAdmin],
     title: 'Manage QR Codes',
   },
 };
