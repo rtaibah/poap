@@ -14,10 +14,10 @@ export class AuthService {
 
   async init() {
     this.client = await createAuth0Client({
-      domain: 'poapauth.auth0.com',
-      client_id: 'bLaYZ7f1NQZ7K0oY6v4wAFliLRVbxqjc',
+      domain: process.env.REACT_APP_AUTH0_DOMAIN || '',
+      client_id: process.env.REACT_APP_AUTH0_CLIENT_ID || '',
       redirect_uri: `${BASE_URI}/callback`,
-      audience: 'poap-api',
+      audience: process.env.REACT_APP_AUTH0_AUDIENCE || '',
     });
     this._isAuthenticated = await this.client.isAuthenticated();
   }
