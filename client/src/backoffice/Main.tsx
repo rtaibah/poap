@@ -16,6 +16,8 @@ import { AddressManagementPage } from './AddressManagementPage';
 import { TransactionsPage } from './TransactionsPage';
 import { InboxPage } from './InboxPage';
 import { InboxListPage } from './InboxListPage';
+import Calendar from '../images/calendar.svg';
+import Qr from '../images/qr-code.svg';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 
@@ -61,7 +63,7 @@ const RoleLink: React.FC<{ route: RouteProps; handleClick: () => void }> = ({
 
 const WithRole: React.FC<{ roles: string[] }> = ({ roles, children }) => {
   // TODO: Get user role (Backend WIP)
-  const userRole = 'super';
+  const userRole = 'eventAdmin';
 
   if (!roles.includes(userRole)) return null;
 
@@ -75,7 +77,7 @@ const NavigationMenu = withRouter(({ history }) => {
 
   useEffect(() => {
     // TODO: Get user role (Backend WIP)
-    const userRole = 'super';
+    const userRole = 'eventAdmin';
 
     if (userRole === ROLES.eventAdmin) return;
 
@@ -202,7 +204,18 @@ export const BackOffice: React.FC = () => (
         <Route
           exact
           path={ROUTES.admin}
-          render={() => <div>Choose an option from the right side menu</div>}
+          render={() => (
+            <div className={'cards-container'}>
+              <Link to={ROUTES.events.path} className={'card card-link'}>
+                <h3>Manage Events</h3>
+                <img className={'icon'} src={Calendar} alt={'Manage Events'} />
+              </Link>
+              <Link to={ROUTES.qr.path} className={'card card-link'}>
+                <h3>Manage QR Codes</h3>
+                <img className={'icon'} src={Qr} alt={'Manage QR Codes'} />
+              </Link>
+            </div>
+          )}
         />
       </div>
     </main>
