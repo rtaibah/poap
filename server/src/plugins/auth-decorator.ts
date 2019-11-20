@@ -3,7 +3,7 @@ import jwksClient from 'jwks-rsa';
 import fastifyJwt from 'fastify-jwt';
 import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { IncomingMessage, ServerResponse, Server } from 'http';
-import getEnv from './envs';
+import getEnv from '../envs';
 
 declare module 'fastify' {
   export interface FastifyInstance<

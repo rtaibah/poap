@@ -304,7 +304,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintEventToManyUsers',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to mint a event to several users',
         tags: ['Actions', ],
@@ -352,7 +352,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintUserToManyEvents',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to mint a user several events',
         tags: ['Actions', ],
@@ -645,7 +645,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/bump',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to bump a transaction',
         tags: ['Actions', ],
@@ -726,7 +726,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/burn/:tokenId',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Burn Token ID',
         tags: ['Token', ],
@@ -820,7 +820,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/settings/:name/:value',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to edit a poap settings',
         tags: ['Settings', ],
@@ -1094,7 +1094,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/transactions',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Paginates endpoint of transactions, you can filter by status',
         tags: ['Transactions', ],
@@ -1221,7 +1221,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/signers/:id',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'In this endpoint you can modify the signer gas_price',
         tags: ['Signers', ],
