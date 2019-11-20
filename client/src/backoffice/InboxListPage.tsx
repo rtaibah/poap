@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect, ChangeEvent, useRef } from 'react';
+import React, { FC, useState, useEffect, ChangeEvent } from 'react';
 
 /* Libraries */
 import ReactModal from 'react-modal';
@@ -76,12 +76,17 @@ const InboxListPage: FC = () => {
     }
 
     try {
-       const response = await getNotifications(PAGE_SIZE, page * PAGE_SIZE, notificationType, event_id);
-       if (!response) return;
-       setNotifications(response.notifications);
-       setTotal(response.total);
-    } catch(e) {
-      console.log(e)
+      const response = await getNotifications(
+        PAGE_SIZE,
+        page * PAGE_SIZE,
+        notificationType,
+        event_id
+      );
+      if (!response) return;
+      setNotifications(response.notifications);
+      setTotal(response.total);
+    } catch (e) {
+      console.log(e);
     } finally {
       setIsFetchingNotifications(false);
     }

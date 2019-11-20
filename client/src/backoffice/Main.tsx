@@ -1,6 +1,6 @@
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 import React, { useCallback, useContext, useState, useEffect } from 'react';
-import { Link, Route, withRouter } from 'react-router-dom';
+import { Link, Route, withRouter, Redirect } from 'react-router-dom';
 import { slide as Menu } from 'react-burger-menu';
 
 /* Assets */
@@ -16,6 +16,7 @@ import { AddressManagementPage } from './AddressManagementPage';
 import { TransactionsPage } from './TransactionsPage';
 import { InboxPage } from './InboxPage';
 import { InboxListPage } from './InboxListPage';
+import { QrPage } from './QrPage';
 import Calendar from '../images/calendar.svg';
 import Qr from '../images/qr-code.svg';
 
@@ -63,7 +64,7 @@ const RoleLink: React.FC<{ route: RouteProps; handleClick: () => void }> = ({
 
 const WithRole: React.FC<{ roles: string[] }> = ({ roles, children }) => {
   // TODO: Get user role (Backend WIP)
-  const userRole = 'eventAdmin';
+  const userRole = 'super';
 
   if (!roles.includes(userRole)) return null;
 
@@ -77,7 +78,7 @@ const NavigationMenu = withRouter(({ history }) => {
 
   useEffect(() => {
     // TODO: Get user role (Backend WIP)
-    const userRole = 'eventAdmin';
+    const userRole = 'super';
 
     if (userRole === ROLES.eventAdmin) return;
 
@@ -149,7 +150,7 @@ const NavigationMenu = withRouter(({ history }) => {
 
 const Landing = () => {
   // TODO: Get user role (Backend WIP)
-  const userRole = 'eventAdmin';
+  const userRole = 'super';
 
   if (userRole === ROLES.super) return <div>Choose an option from the right side menu</div>;
 
@@ -221,7 +222,13 @@ export const BackOffice: React.FC = () => (
           <RoleRoute route={ROUTES.inboxList} component={InboxListPage} />
         </WithRole>
 
+        <WithRole roles={ROUTES.qr.roles}>
+          <RoleRoute route={ROUTES.qr} component={QrPage} />
+        </WithRole>
+
         <Route exact path={ROUTES.admin} render={Landing} />
+
+        <Route render={() => <Redirect to="/admin" />} />
       </div>
     </main>
   </>

@@ -97,6 +97,20 @@ export interface PaginatedNotifications {
   notifications: Notification[];
 }
 
+export interface QrCode {
+  id: number;
+  qr_hash: string;
+  claimed: boolean;
+  tx_hash: string;
+  event_id: number;
+  event: PoapEvent;
+}
+
+export interface PaginatedQrCodes {
+  limit: number;
+  offset: number;
+}
+
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
@@ -329,6 +343,11 @@ export function getNotifications(
 ): Promise<PaginatedNotifications> {
   const params = queryString.stringify({ limit, offset, type, event_id });
   return secureFetch(`${API_BASE}/notifications?${params}`);
+}
+
+export function getQrCodes(limit?: number, offset?: number): Promise<PaginatedQrCodes> {
+  const params = queryString.stringify({ limit, offset });
+  return secureFetch(`${API_BASE}/qr?${params}`);
 }
 
 export function getTransactions(
