@@ -184,6 +184,7 @@
 .admin-table {
   .row {
     padding: 10px 2px;
+    height: 75px;
 
     &.table-header {
       font-weight: bold;
@@ -216,6 +217,15 @@
           }
         }
       }
+
+      .logo-image-container {
+        height: 60px;
+      }
+
+      .logo-image {
+        height: 100%;
+      }
+
       .description {
         display: flex;
         align-items: center;
@@ -441,9 +451,6 @@
     span.visible-sm {
       font-weight: bold;
     }
-  }
-
-  &.addresses {
   }
 }
 

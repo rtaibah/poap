@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, ReactElement } from 'react';
 import { Link, Switch, Route, RouteComponentProps } from 'react-router-dom';
 import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
 
+// libraries
+import ReactPaginate from 'react-paginate';
+
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
+import { Loading } from '../components/Loading';
+
 /* Helpers */
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
@@ -21,15 +26,15 @@ export const EventsPage: React.FC = () => {
   );
 };
 
+const PAGE_SIZE = 10;
+
 const CreateEventForm: React.FC = () => {
   return <EventForm create />;
 };
 
-const EditEventForm: React.FC<
-  RouteComponentProps<{
-    eventId: string;
-  }>
-> = ({ location, match }) => {
+const EditEventForm: React.FC<RouteComponentProps<{
+  eventId: string;
+}>> = ({ location, match }) => {
   const [event, setEvent] = useState<null | PoapEvent>(null);
 
   useEffect(() => {
@@ -169,6 +174,7 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled }) => {
 
 const EventList: React.FC = () => {
   const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
+  const [criteria, setCriteria] = useState<string>('');
 
   return (
     <div className={'bk-container'}>
@@ -178,35 +184,83 @@ const EventList: React.FC = () => {
           Create New
         </button>
       </Link>
-      {fetchingEvents ? (
-        <div>Fetching Events...</div>
-      ) : fetchEventsError || events == null ? (
-        <div>There was a problem fetching events</div>
-      ) : (
-        <div>
-          {events.map(e => (
-            <EventRow key={e.id} event={e} />
-          ))}
-        </div>
-      )}
+      <input type="text" onChange={e => setCriteria(e.target.value.toLowerCase())} />
+      {fetchingEvents && <Loading />}
+
+      {(fetchEventsError || events === null) && <div>There was a problem fetching events</div>}
+
+      {events !== null && <EventTable criteria={criteria} events={events} />}
     </div>
   );
 };
 
-const EventRow: React.FC<{ event: PoapEvent }> = ({ event }) => {
+type PaginateAction = {
+  selected: number;
+};
+
+type EventTableProps = {
+  events: PoapEvent[];
+  criteria: string;
+};
+
+const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
+  const total = events.length;
+  const pageRange = 10;
+  const [page, setPage] = useState<number>(1);
+
+  const handlePageChange = (obj: PaginateAction) => {
+    setPage(obj.selected);
+  };
+
+  const eventsToShowManager = (events: PoapEvent[]): PoapEvent[] =>
+    events.slice(page * pageRange, page * pageRange + pageRange);
+
+  const handleCriteriaFilter = (event: PoapEvent): boolean =>
+    event.name.toLowerCase().includes(criteria);
+
   return (
-    <div className="bk-eventrow">
-      <div>
-        <p>
-          {event.name} - {event.year}
-        </p>
-        <p>{event.fancy_id}</p>
-        <p>{event.signer && event.signer_ip ? 'Active' : 'Inactive'}</p>
-      </div>
-      <div>
-        <Link to={{ pathname: `/admin/events/${event.fancy_id}`, state: event }}>
-          <button className="bk-btn">Edit</button>
-        </Link>
+    <div>
+      <div className={'admin-table transactions'}>
+        <div className={'row table-header visible-md'}>
+          <div className={'col-md-1 center'}>#</div>
+          <div className={'col-md-4'}>Name</div>
+          <div className={'col-md-3'}>Start Date</div>
+          <div className={'col-md-3'}>End Date</div>
+          <div className={'col-md-1 center'}>Image</div>
+        </div>
+        <div className={'admin-table-row'}>
+          {eventsToShowManager(events)
+            .filter(handleCriteriaFilter)
+            .map((event, i) => (
+              <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={event.id}>
+                <div className={'col-md-1 center'}>
+                  <span className={'visible-sm visible-md'}>#</span>
+                  {event.id}
+                </div>
+                <div className={'col-md-4'}>
+                  <span>{event.name}</span>
+                </div>
+                <div className={'col-md-3'}>
+                  <span>{event.start_date}</span>
+                </div>
+                <div className={'col-md-3'}>
+                  <span>{event.end_date}</span>
+                </div>
+                <div className={'col-md-1 center logo-image-container'}>
+                  <img className={'logo-image'} src={event.image_url} />
+                </div>
+              </div>
+            ))}
+        </div>
+        <div className={'pagination'}>
+          <ReactPaginate
+            pageCount={Math.ceil(total / PAGE_SIZE)}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={pageRange}
+            activeClassName={'active'}
+            onPageChange={handlePageChange}
+          />
+        </div>
       </div>
     </div>
   );
