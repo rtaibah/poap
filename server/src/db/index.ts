@@ -4,10 +4,10 @@ import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, Transaction
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
-  host: process.env.INSTANCE_CONNECTION_NAME ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}` : 'localhost',
-  user: process.env.SQL_USER || 'poap',
-  password: process.env.SQL_PASSWORD || 'poap',
-  database: process.env.SQL_DATABASE || 'poap_dev',
+  host: process.env.DB_INSTANCE_CONNECTION_NAME || 'localhost',
+  user: process.env.DB_USER || 'poap',
+  password: process.env.DB_PASSWORD || 'poap',
+  database: process.env.DB_DATABASE || 'poap_dev',
 });
 
 function replaceDates(event: PoapEvent): PoapEvent {

@@ -32,6 +32,11 @@ export enum SignerRole {
   standard = 'standard',
 }
 
+export enum UserRole {
+  administrator = 'administrator',
+  event_host = 'event_host',
+}
+
 export interface TokenInfo {
   tokenId: string;
   owner: Address;
