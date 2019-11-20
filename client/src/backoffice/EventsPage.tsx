@@ -184,7 +184,11 @@ const EventList: React.FC = () => {
           Create New
         </button>
       </Link>
-      <input type="text" onChange={e => setCriteria(e.target.value.toLowerCase())} />
+      <input
+        type="text"
+        placeholder="Search by name"
+        onChange={e => setCriteria(e.target.value.toLowerCase())}
+      />
       {fetchingEvents && <Loading />}
 
       {(fetchEventsError || events === null) && <div>There was a problem fetching events</div>}
