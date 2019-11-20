@@ -25,32 +25,30 @@ type RouteProps = {
   title?: string;
 };
 
+type LabelProps = {
+  roles: string[];
+  title: string;
+};
+
+const Label: React.FC<{ label: LabelProps }> = ({ label }) => {
+  const { title } = label;
+  return <h2>{title}</h2>;
+};
+
 const RoleRoute: React.FC<{ route: RouteProps; component: React.FC | React.ComponentClass }> = ({
   route,
   component,
 }) => {
-  const { path, roles } = route;
-
-  // TODO: Get user role (Backend WIP)
-  const userRole = 'super';
-
-  if (roles.includes(userRole)) {
-    return <Route path={path} component={component} />;
-  }
-
-  return null;
+  const { path } = route;
+  return <Route path={path} component={component} />;
 };
 
 const RoleLink: React.FC<{ route: RouteProps; handleClick: () => void }> = ({
   route,
   handleClick,
 }) => {
-  const { path, title, roles } = route;
-
-  // TODO: Get user role (Backend WIP)
-  const userRole = 'super';
-
-  if (typeof route === 'object' && title && roles.includes(userRole)) {
+  const { path, title } = route;
+  if (typeof route === 'object' && title) {
     return (
       <Link className={'bm-item'} to={path} onClick={handleClick}>
         {title}
@@ -61,20 +59,13 @@ const RoleLink: React.FC<{ route: RouteProps; handleClick: () => void }> = ({
   return null;
 };
 
-type LabelProps = {
-  roles: string[];
-  title: string;
-};
-
-const Label: React.FC<{ label: LabelProps }> = ({ label }) => {
-  const { roles, title } = label;
-
+const WithRole: React.FC<{ roles: string[] }> = ({ roles, children }) => {
   // TODO: Get user role (Backend WIP)
   const userRole = 'super';
 
-  if (roles.includes(userRole)) return <h2>{title}</h2>;
+  if (!roles.includes(userRole)) return null;
 
-  return null;
+  return <>{children}</>;
 };
 
 const NavigationMenu = withRouter(({ history }) => {
@@ -83,35 +74,63 @@ const NavigationMenu = withRouter(({ history }) => {
   const closeMenu = useCallback(() => setIsOpen(false), []);
 
   useEffect(() => {
-    const { pathname } = history.location;
-
+    // TODO: Get user role (Backend WIP)
     const userRole = 'super';
+
     if (userRole === ROLES.eventAdmin) return;
 
+    const { pathname } = history.location;
     if (pathname === '/admin' || pathname === '/admin/') setIsOpen(true);
   }, []);
 
   return (
     <Menu isOpen={isOpen} onStateChange={state => setIsOpen(state.isOpen)} right disableAutoFocus>
-      <Label label={LABELS.issueBadges} />
-      <RoleLink route={ROUTES.issueForEvent} handleClick={closeMenu} />
-      <RoleLink route={ROUTES.issueForUser} handleClick={closeMenu} />
+      <WithRole roles={LABELS.issueBadges.roles}>
+        <Label label={LABELS.issueBadges} />
+      </WithRole>
 
-      <Label label={LABELS.inbox} />
-      <RoleLink route={ROUTES.inbox} handleClick={closeMenu} />
-      <RoleLink route={ROUTES.inboxList} handleClick={closeMenu} />
+      <WithRole roles={ROUTES.issueForEvent.roles}>
+        <RoleLink route={ROUTES.issueForEvent} handleClick={closeMenu} />
+      </WithRole>
+      <WithRole roles={ROUTES.issueForUser.roles}>
+        <RoleLink route={ROUTES.issueForUser} handleClick={closeMenu} />
+      </WithRole>
 
-      <Label label={LABELS.otherTasks} />
-      <Label label={LABELS.quickLinks} />
-      <RoleLink route={ROUTES.addressManagement} handleClick={closeMenu} />
-      <RoleLink route={ROUTES.events} handleClick={closeMenu} />
-      <RoleLink route={ROUTES.qr} handleClick={closeMenu} />
-      <RoleLink route={ROUTES.burn} handleClick={closeMenu} />
-      <RoleLink route={ROUTES.transactions} handleClick={closeMenu} />
+      <WithRole roles={ROUTES.inbox.roles}>
+        <Label label={LABELS.inbox} />
+      </WithRole>
 
-      {/* <Link to={ROUTES.minters} onClick={closeMenu}>
-        Manage Minters
-      </Link> */}
+      <WithRole roles={ROUTES.inbox.roles}>
+        <RoleLink route={ROUTES.inbox} handleClick={closeMenu} />
+      </WithRole>
+      <WithRole roles={ROUTES.inboxList.roles}>
+        <RoleLink route={ROUTES.inboxList} handleClick={closeMenu} />
+      </WithRole>
+
+      <WithRole roles={LABELS.otherTasks.roles}>
+        <Label label={LABELS.otherTasks} />
+      </WithRole>
+
+      <WithRole roles={LABELS.quickLinks.roles}>
+        <Label label={LABELS.quickLinks} />
+      </WithRole>
+
+      <WithRole roles={ROUTES.addressManagement.roles}>
+        <RoleLink route={ROUTES.addressManagement} handleClick={closeMenu} />
+      </WithRole>
+      <WithRole roles={ROUTES.events.roles}>
+        <RoleLink route={ROUTES.events} handleClick={closeMenu} />
+      </WithRole>
+      <WithRole roles={ROUTES.qr.roles}>
+        <RoleLink route={ROUTES.qr} handleClick={closeMenu} />
+      </WithRole>
+      <WithRole roles={ROUTES.burn.roles}>
+        <RoleLink route={ROUTES.burn} handleClick={closeMenu} />
+      </WithRole>
+      <WithRole roles={ROUTES.transactions.roles}>
+        <RoleLink route={ROUTES.transactions} handleClick={closeMenu} />
+      </WithRole>
+
       <a
         className="bm-item"
         href=""
@@ -144,15 +163,41 @@ export const BackOffice: React.FC = () => (
     </header>
     <main className="app-content">
       <div className="container">
-        <RoleRoute route={ROUTES.issueForEvent} component={IssueForEventPage} />
-        <RoleRoute route={ROUTES.issueForUser} component={IssueForUserPage} />
-        <RoleRoute route={ROUTES.events} component={EventsPage} />
-        <RoleRoute route={ROUTES.minters} component={MintersPage} />
-        <RoleRoute route={ROUTES.burn} component={BurnPage} />
-        <RoleRoute route={ROUTES.addressManagement} component={AddressManagementPage} />
-        <RoleRoute route={ROUTES.transactions} component={TransactionsPage} />
-        <RoleRoute route={ROUTES.inbox} component={InboxPage} />
-        <RoleRoute route={ROUTES.inboxList} component={InboxListPage} />
+        <WithRole roles={ROUTES.issueForEvent.roles}>
+          <RoleRoute route={ROUTES.issueForEvent} component={IssueForEventPage} />
+        </WithRole>
+
+        <WithRole roles={ROUTES.issueForUser.roles}>
+          <RoleRoute route={ROUTES.issueForUser} component={IssueForUserPage} />
+        </WithRole>
+
+        <WithRole roles={ROUTES.events.roles}>
+          <RoleRoute route={ROUTES.events} component={EventsPage} />
+        </WithRole>
+
+        <WithRole roles={ROUTES.minters.roles}>
+          <RoleRoute route={ROUTES.minters} component={MintersPage} />
+        </WithRole>
+
+        <WithRole roles={ROUTES.burn.roles}>
+          <RoleRoute route={ROUTES.burn} component={BurnPage} />
+        </WithRole>
+
+        <WithRole roles={ROUTES.addressManagement.roles}>
+          <RoleRoute route={ROUTES.addressManagement} component={AddressManagementPage} />
+        </WithRole>
+
+        <WithRole roles={ROUTES.transactions.roles}>
+          <RoleRoute route={ROUTES.transactions} component={TransactionsPage} />
+        </WithRole>
+
+        <WithRole roles={ROUTES.inbox.roles}>
+          <RoleRoute route={ROUTES.inbox} component={InboxPage} />
+        </WithRole>
+
+        <WithRole roles={ROUTES.inboxList.roles}>
+          <RoleRoute route={ROUTES.inboxList} component={InboxListPage} />
+        </WithRole>
 
         <Route
           exact
