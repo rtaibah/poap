@@ -242,7 +242,11 @@ const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
                   {event.id}
                 </div>
                 <div className={'col-md-4'}>
-                  <span>{event.name}</span>
+                  <span>
+                    <a href={event.event_url} target="_blank" rel="noopener noreferrer">
+                      {event.name}
+                    </a>
+                  </span>
                 </div>
                 <div className={'col-md-3'}>
                   <span>{event.start_date}</span>
