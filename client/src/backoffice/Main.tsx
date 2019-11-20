@@ -147,6 +147,26 @@ const NavigationMenu = withRouter(({ history }) => {
   );
 });
 
+const Landing = () => {
+  // TODO: Get user role (Backend WIP)
+  const userRole = 'eventAdmin';
+
+  if (userRole === ROLES.super) return <div>Choose an option from the right side menu</div>;
+
+  return (
+    <div className={'cards-container'}>
+      <Link to={ROUTES.events.path} className={'card card-link'}>
+        <h3>Manage Events</h3>
+        <img className={'icon'} src={Calendar} alt={'Manage Events'} />
+      </Link>
+      <Link to={ROUTES.qr.path} className={'card card-link'}>
+        <h3>Manage QR Codes</h3>
+        <img className={'icon'} src={Qr} alt={'Manage QR Codes'} />
+      </Link>
+    </div>
+  );
+};
+
 export const BackOffice: React.FC = () => (
   <>
     <NavigationMenu />
@@ -201,22 +221,7 @@ export const BackOffice: React.FC = () => (
           <RoleRoute route={ROUTES.inboxList} component={InboxListPage} />
         </WithRole>
 
-        <Route
-          exact
-          path={ROUTES.admin}
-          render={() => (
-            <div className={'cards-container'}>
-              <Link to={ROUTES.events.path} className={'card card-link'}>
-                <h3>Manage Events</h3>
-                <img className={'icon'} src={Calendar} alt={'Manage Events'} />
-              </Link>
-              <Link to={ROUTES.qr.path} className={'card card-link'}>
-                <h3>Manage QR Codes</h3>
-                <img className={'icon'} src={Qr} alt={'Manage QR Codes'} />
-              </Link>
-            </div>
-          )}
-        />
+        <Route exact path={ROUTES.admin} render={Landing} />
       </div>
     </main>
   </>
