@@ -153,7 +153,7 @@ const InboxListPage: FC = () => {
               <label htmlFor={`everyone`}>Sent to everyone</label>
             </div>
             <div className="filter-option select">
-              <div>
+              <div className="ellipsis">
                 <input
                   type={'radio'}
                   id={`event`}

@@ -206,12 +206,16 @@
     }
 
     .row {
-      .ellipsis {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
+      .status {
+        .status-icon {
+          right: 10px;
 
+          @media (max-width: $bp-mw) {
+            position: absolute;
+            top: -55px;
+          }
+        }
+      }
       .description {
         display: flex;
         align-items: center;
@@ -262,6 +266,7 @@
 
       .filter {
         flex-direction: column;
+        margin: 10px 20px 16px 0;
 
         > .filter-option {
           display: flex;
@@ -299,6 +304,56 @@
 
           input {
             margin-bottom: 2px;
+            cursor: pointer;
+          }
+        }
+
+        > label {
+          cursor: default;
+          margin-bottom: 24px;
+        }
+      }
+    }
+
+    &.qr {
+      @media (max-width: $bp-mw) {
+        flex-direction: column;
+      }
+
+      .filter {
+        flex-direction: column;
+        margin: 10px 20px 16px 0;
+
+        .filter-group {
+          display: flex;
+          flex-direction: row;
+          height: 50px;
+
+          @media (max-width: $bp-mw) {
+            height: 100px;
+            align-items: flex-start;
+          }
+
+          .filter-option {
+            display: flex;
+            align-items: center;
+
+            &:first-child {
+              margin-right: 40px;
+            }
+
+            input {
+              margin-bottom: 2px;
+              cursor: pointer;
+            }
+
+            select {
+              max-width: auto;
+            }
+
+            label {
+              margin-bottom: 0;
+            }
           }
         }
 
@@ -312,6 +367,7 @@
     .filter {
       display: flex;
       margin: 10px 20px 10px 0;
+
       label {
         text-transform: capitalize;
         cursor: pointer;
@@ -389,6 +445,12 @@
 
   &.addresses {
   }
+}
+
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .price-gas-modal-form {

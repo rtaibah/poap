@@ -109,6 +109,8 @@ export interface QrCode {
 export interface PaginatedQrCodes {
   limit: number;
   offset: number;
+  total: number;
+  codes: QrCode[];
 }
 
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
@@ -341,13 +343,19 @@ export function getNotifications(
   type?: string,
   event_id?: number
 ): Promise<PaginatedNotifications> {
-  const params = queryString.stringify({ limit, offset, type, event_id });
+  const params = queryString.stringify({ limit, offset, type, event_id }, { sort: false });
   return secureFetch(`${API_BASE}/notifications?${params}`);
 }
 
-export function getQrCodes(limit?: number, offset?: number): Promise<PaginatedQrCodes> {
-  const params = queryString.stringify({ limit, offset });
+export function getQrCodes(
+  limit?: number,
+  offset?: number,
+  status?: boolean,
+  event_id?: number
+): Promise<PaginatedQrCodes> {
+  const params = queryString.stringify({ limit, offset, status, event_id }, { sort: false });
   return secureFetch(`${API_BASE}/qr?${params}`);
+  // return secureFetch(`http://www.mocky.io/v2/5dd6a592320000e269888c21`);
 }
 
 export function getTransactions(
