@@ -45,7 +45,7 @@ import {
   getAllEventIds
 } from './eth/helpers';
 
-import { Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification } from './types';
+import { Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
@@ -948,6 +948,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        // consumes: ["multipart/form-data"],
         description: 'Endpoint to create new events',
         tags: ['Events', ],
         body: {
@@ -1014,7 +1015,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Signer address is not valid');
       }
 
-      const newEvent = {
+      let newEvent: Omit<PoapEvent, 'id'> = {
         fancy_id: req.body.fancy_id,
         name: req.body.name,
         description: req.body.description,
@@ -1027,7 +1028,7 @@ export default async function routes(fastify: FastifyInstance) {
         image_url: req.body.image_url,
         signer: signer_parsed_address,
         signer_ip: req.body.signer_ip,
-      };
+      }    
 
       const event = await createEvent(newEvent);
       if (event == null) {

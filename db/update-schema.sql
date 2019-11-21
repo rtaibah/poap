@@ -70,3 +70,8 @@ CREATE TABLE notifications (
     "created_date" timestamp with time zone not null default now()
     CONSTRAINT chk_type CHECK (type IN ('inbox', 'push'))
 );
+
+CREATE TABLE event_host (
+    "id" SERIAL PRIMARY KEY,
+    "user_id" varchar(256) UNIQUE
+)

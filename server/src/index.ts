@@ -3,6 +3,7 @@ import fastifyHelmet from 'fastify-helmet';
 import fastifyCors from 'fastify-cors';
 import fastifyRateLimit from 'fastify-rate-limit';
 import fastifySwagger from 'fastify-swagger';
+import fastifyMultipart from 'fastify-multipart';
 // @ts-ignore
 import fastifyCompress from 'fastify-compress';
 
@@ -32,8 +33,15 @@ fastify.register(fastifyRateLimit, {
 
 fastify.register(fastifyCors, {});
 fastify.register(fastifyCompress, {});
+fastify.register(fastifyMultipart, {
+  addToBody: true,
+  sharedSchemaId: 'MultipartFileType', // Optional shared schema id
+  onFile: (fieldName:any, stream:any, filename:any, encoding:any, mimetype:any, body:any) => {
+    stream.resume()
+  },
+});
 
-const env = getEnv()
+const env = getEnv();
 
 fastify.register(fastifySwagger, {
   swagger: {
