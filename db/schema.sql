@@ -93,5 +93,6 @@ CREATE TABLE notifications (
 
 CREATE TABLE event_host (
     "id" SERIAL PRIMARY KEY,
-    "user_id" varchar(256) UNIQUE
+    "user_id" varchar(256) UNIQUE,
+    "is_active" boolean default true
 )
