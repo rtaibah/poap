@@ -90,6 +90,8 @@ const ROUTES = {
   },
 };
 
+const IMAGE_SUPPORTED_FORMATS = ['image/jpg', 'image/png'];
+
 const TX_STATUS = {
   failed: 'failed',
   passed: 'passed',

@@ -52,7 +52,9 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   if (claim) {
     body = <ClaimForm enabledWeb3={web3} claim={claim} checkClaim={fetchClaim} />;
     title = claim.event.name;
-    image = claim.event.image_url;
+    if (typeof claim.event.image_url === 'string') {
+      image = claim.event.image_url;
+    }
     if (claim.tx_status) {
       if (claim.tx_status === TX_STATUS.pending) {
         body = <ClaimPending claim={claim} checkClaim={fetchClaim} />;

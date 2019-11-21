@@ -55,13 +55,46 @@ input[type='search'] {
   border-radius: 0 !important;
 }
 
+div {
+  .DayPickerInput {
+    margin-right: 5px;
+    width: 100%;
+
+    input {
+      width: 100%;
+      padding: 12px;
+      box-shadow: none;
+      border: 2px solid $color-invert;
+      background: $color-invert;
+      transition: right 0.2s ease-out;
+      border-radius: 10px !important;
+      margin: 0 auto 16px;
+      @include x-rem(font-size, 13px);
+      height: 50px;
+    }
+  }
+}
+
+.date-picker-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+
+  span {
+    margin-bottom: 10px;
+  }
+}
+
 input[type='text'],
 input[type='password'],
 input[type='tel'],
+input[type='textarea'],
 input[type='email'],
-input[type='color'] {
+input[type='color'],
+input[type='file'] {
   width: 100%;
-  max-width: 500px;
   padding: 12px;
   box-shadow: none;
   border: 2px solid $color-invert;
@@ -93,6 +126,23 @@ input[type='color'] {
   &.error {
     border: 2px solid #e13c5d;
   }
+}
+
+.image-edit-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 15px 0 20px;
+}
+
+.image-edit {
+  height: 200px;
+}
+
+input[type='textarea'] {
+  height: 100px;
+  word-wrap: break-word;
 }
 
 .text-error {

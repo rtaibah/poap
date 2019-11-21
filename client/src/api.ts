@@ -312,15 +312,15 @@ export async function mintUserToManyEvents(
   });
 }
 
-export async function updateEvent(event: PoapEvent) {
-  return secureFetchNoResponse(`${API_BASE}/events/${event.fancy_id}`, {
+export async function updateEvent(event: FormData) {
+  return secureFetchNoResponse(`${API_BASE}/events/${event}`, {
     method: 'PUT',
     body: JSON.stringify(event),
     headers: { 'Content-Type': 'application/json' },
   });
 }
 
-export async function createEvent(event: PoapEvent) {
+export async function createEvent(event: FormData) {
   return secureFetchNoResponse(`${API_BASE}/events`, {
     method: 'POST',
     body: JSON.stringify(event),

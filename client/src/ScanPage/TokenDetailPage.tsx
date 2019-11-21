@@ -18,11 +18,9 @@ type TokenPageState = {
   token: null | TokenInfo;
 };
 
-export const TokenDetailPage: React.FC<
-  RouteComponentProps<{
-    tokenId: string;
-  }>
-> = ({ location, match }) => {
+export const TokenDetailPage: React.FC<RouteComponentProps<{
+  tokenId: string;
+}>> = ({ location, match }) => {
   useBodyClassName('poap-app event-page');
   const [token, setToken] = useState<null | TokenInfo>(null);
   useEffect(() => {
@@ -56,7 +54,9 @@ export const TokenDetailPage: React.FC<
             <b>{token.event.start_date}</b>
           </p>
           <div className="logo-event" data-aos="fade-up">
-            <img src={token.event.image_url} alt="Event" />
+            {typeof token.event.image_url === 'string' && (
+              <img src={token.event.image_url} alt="Event" />
+            )}
           </div>
         </div>
       </div>

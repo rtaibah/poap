@@ -115,7 +115,9 @@ export class AddressTokensPage extends React.Component<
                     className="event-circle"
                     data-aos="fade-up"
                   >
-                    <img src={t.event.image_url} alt={t.event.name} />
+                    {typeof t.event.image_url === 'string' && (
+                      <img src={t.event.image_url} alt={t.event.name} />
+                    )}
                   </Link>
                 ))}
               </div>
