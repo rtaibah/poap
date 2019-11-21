@@ -57,6 +57,7 @@ export interface PoapEvent {
   year: number;
   start_date: string;
   end_date: string;
+  event_host_id: number;
 }
 
 export interface PoapSetting {
@@ -149,6 +150,11 @@ export interface Notification {
   event_id: number;
   event: PoapEvent | null;
   created_date: Date;
+}
+
+export interface eventHost {
+  id: number;
+  user_id: string;
 }
 
 export interface UnlockTask extends Task{

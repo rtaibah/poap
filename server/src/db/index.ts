@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services, Notification, NotificationType } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services, Notification, NotificationType, eventHost } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -107,12 +107,14 @@ export async function getEventByFancyId(fancyid: string): Promise<null | PoapEve
 
 export async function updateEvent(
   fancyId: string,
+  event_host_id: string,
   changes: Pick<PoapEvent, 'signer' | 'signer_ip' | 'event_url' | 'image_url'>
 ): Promise<boolean> {
   const res = await db.result(
-    'update events set signer=${signer}, signer_ip=${signer_ip}, event_url=${event_url}, image_url=${image_url} where fancy_id = ${fancy_id}',
+    'update events set signer=${signer}, signer_ip=${signer_ip}, event_url=${event_url}, image_url=${image_url} where fancy_id = ${fancy_id} and event_host_id = ${event_host_id}',
     {
       fancy_id: fancyId,
+      event_host_id: event_host_id,
       ...changes,
     }
   );
@@ -312,4 +314,9 @@ export async function createNotification(data: any): Promise<null | Notification
   );
 
   return notification;
+}
+
+export async function getEventHost(user_id: string): Promise<null | eventHost> {
+  const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE user_id=${user_id} AND is_active = true', {user_id});
+  return res;
 }

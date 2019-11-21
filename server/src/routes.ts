@@ -24,7 +24,8 @@ import {
   getTaskCreator,
   getNotifications,
   getTotalNotifications,
-  createNotification
+  createNotification,
+  getEventHost
 } from './db';
 
 import {
@@ -943,18 +944,23 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  async function validate_file(req: any) {
+    const image = {...req.body.image};
+    req.body.image = '@image';
+    req.body[Symbol.for('image')] = image;
+  }
+
   fastify.post(
     '/events',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, validate_file],
       schema: {
-        // consumes: ["multipart/form-data"],
+        // consumes: ['multipart/form-data'],
         description: 'Endpoint to create new events',
         tags: ['Events', ],
         body: {
           type: 'object',
           required: [
-            'fancy_id',
             'name',
             'description',
             'city',
@@ -963,12 +969,11 @@ export default async function routes(fastify: FastifyInstance) {
             'end_date',
             'year',
             'event_url',
-            'image_url',
+            'image',
             'signer',
             'signer_ip',
           ],
           properties: {
-            fancy_id: { type: 'string' },
             name: { type: 'string' },
             description: { type: 'string' },
             city: { type: 'string' },
@@ -977,7 +982,7 @@ export default async function routes(fastify: FastifyInstance) {
             end_date: { type: 'string' },
             year: { type: 'integer' },
             event_url: { type: 'string' },
-            image_url: { type: 'string' },
+            image: { type: 'string', format: 'binary' },
             signer: { type: 'string' },
             signer_ip: { type: 'string' },
           },
@@ -998,6 +1003,7 @@ export default async function routes(fastify: FastifyInstance) {
               image_url: { type: 'string' },
               signer: { type: 'string' },
               signer_ip: { type: 'string' },
+              event_host_id: { type: 'number' },
               id: { type: 'number' }
             },
           }
@@ -1009,14 +1015,31 @@ export default async function routes(fastify: FastifyInstance) {
         ]
       },
     },
-    async (req, res) => {
+    async (req:any, res) => {
       const signer_parsed_address = await checkAddress(req.body.signer);
       if (!signer_parsed_address) {
         return new createError.BadRequest('Signer address is not valid');
       }
 
+      const parsed_fancy_id = req.body.name.trim().replace(/\s+/g, '-').toLowerCase() + '-' + req.body.year;
+
+      const user_id = req.user.sub;
+      const eventHost = await getEventHost(user_id);
+      if (!eventHost) {
+        return new createError.NotFound('You are not registered as an event host');
+      }
+
+      const image = req.body[Symbol.for('image')][0];
+      if (!image) {
+        return new createError.BadRequest('You have to send an image');
+      }
+
+      if(image.mimetype != 'image/png'){
+        return new createError.BadRequest('Image mimetype must be image/png');
+      }
+
       let newEvent: Omit<PoapEvent, 'id'> = {
-        fancy_id: req.body.fancy_id,
+        fancy_id: parsed_fancy_id,
         name: req.body.name,
         description: req.body.description,
         city: req.body.city,
@@ -1025,10 +1048,11 @@ export default async function routes(fastify: FastifyInstance) {
         end_date: req.body.end_date,
         year: req.body.year,
         event_url: req.body.event_url,
-        image_url: req.body.image_url,
+        image_url: '',
         signer: signer_parsed_address,
         signer_ip: req.body.signer_ip,
-      }    
+        event_host_id: eventHost.id
+      }
 
       const event = await createEvent(newEvent);
       if (event == null) {
@@ -1041,7 +1065,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/events/:fancyid',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, validate_file],
       schema: {
         description: 'Endpoint to modify several atributes of selected event',
         tags: ['Events', ],
@@ -1050,12 +1074,12 @@ export default async function routes(fastify: FastifyInstance) {
         },
         body: {
           type: 'object',
-          required: ['signer', 'signer_ip', 'event_url', 'image_url'],
+          required: ['signer', 'signer_ip', 'event_url', 'image'],
           properties: {
             signer: { type: 'string' },
             signer_ip: { type: 'string' },
             event_url: { type: 'string' },
-            image_url: { type: 'string' },
+            image: { type: 'string', format: 'binary' }
           },
         },
         response: {
@@ -1068,17 +1092,32 @@ export default async function routes(fastify: FastifyInstance) {
         ]
       },
     },
-    async (req, res) => {
+    async (req: any, res) => {
       const signer_parsed_address = await checkAddress(req.body.signer);
       if (!signer_parsed_address) {
         return new createError.BadRequest('Signer address is not valid');
       }
 
-      const isOk = await updateEvent(req.params.fancyid, {
+      const user_id = req.user.sub;
+      const eventHost = await getEventHost(user_id);
+      if (!eventHost) {
+        return new createError.NotFound('You are not registered as an event host');
+      }
+
+      const image = req.body[Symbol.for('image')][0];
+      if (!image) {
+        return new createError.BadRequest('You have to send an image');
+      }
+
+      if(image.mimetype != 'image/png'){
+        return new createError.BadRequest('Image mimetype must be image/png');
+      }
+
+      const isOk = await updateEvent(req.params.fancyid, eventHost.user_id, {
         signer: signer_parsed_address,
         signer_ip: req.body.signer_ip,
         event_url: req.body.event_url,
-        image_url: req.body.image_url,
+        image_url: '',
       });
       if (!isOk) {
         return new createError.NotFound('Invalid event');

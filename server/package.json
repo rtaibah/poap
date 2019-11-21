@@ -19,6 +19,7 @@
     "node": ">=10.15.0"
   },
   "dependencies": {
+    "@types/busboy": "^0.2.3",
     "@types/concat-stream": "^1.6.0",
     "@types/dotenv": "^6.1.1",
     "@types/http-errors": "^1.6.1",
