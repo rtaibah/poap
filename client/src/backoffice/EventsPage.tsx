@@ -4,6 +4,7 @@ import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import 'react-day-picker/lib/style.css';
+import { format } from 'date-fns';
 
 // libraries
 import ReactPaginate from 'react-paginate';
@@ -41,20 +42,8 @@ const EditEventForm: React.FC<RouteComponentProps<{
 
   useEffect(() => {
     const fn = async () => {
-      // if (location.state) {
-      //   setEvent(location.state);
-      // } else {
       const event = await getEvent(match.params.eventId);
-      if (event) {
-        if (event.signer == null) {
-          event.signer = '';
-        }
-        if (event.signer_ip == null) {
-          event.signer_ip = '';
-        }
-      }
       setEvent(event);
-      // }
     };
     fn();
   }, [location, match]);
@@ -67,6 +56,8 @@ const EditEventForm: React.FC<RouteComponentProps<{
 };
 
 const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
+  const startingDate = new Date('1 Jan 1800');
+  const endingDate = new Date('1 Jan 2500');
   const values = useMemo(() => {
     if (event) {
       return {
@@ -75,18 +66,17 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
     } else {
       const now = new Date();
       const year = now.getFullYear();
-      const day = now.getDate() < 10 ? `0${now.getDate()}` : now.getDate().toString();
-      const month = now.getMonth() < 10 ? `0${now.getMonth()}` : now.getMonth().toString();
       return {
         name: '',
         year,
         id: 0,
         description: '',
-        start_date: `${year}-${month}-${day}`,
-        end_date: `${year}-${month}-${day}`,
+        start_date: startingDate,
+        end_date: endingDate,
         city: '',
+        country: '',
         event_url: '',
-        image_url: '',
+        image: '',
         isFile: true,
       };
     }
@@ -96,7 +86,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
     e.preventDefault();
     const file = e.target.files && e.target.files[0];
 
-    setFieldValue('image_url', file);
+    setFieldValue('image', file);
   };
 
   const handleDayClick = (
@@ -107,19 +97,30 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
     setFieldValue(dayToSetup, e);
   };
 
+  useEffect(() => console.table(values), [values]);
+
   return (
     <div className={'bk-container'}>
       <Formik
         initialValues={values}
+        validateOnBlur={false}
+        validateOnChange={false}
         validationSchema={PoapEventSchema}
         onSubmit={async (values, actions) => {
           try {
             actions.setSubmitting(true);
+            const valuesWithFormattedDates = {
+              ...values,
+              start_date: format(new Date(values.start_date), 'MM-dd-yyyy'),
+              end_date: format(new Date(values.end_date), 'MM-dd-yyyy'),
+            };
             const formData = new FormData();
-            Object.entries(values).forEach(([key, value]) => {
+            Object.entries(valuesWithFormattedDates).forEach(([key, value]) => {
               formData.append(key, typeof value === 'number' ? value.toString() : value);
             });
-            // await (create ? createEvent(formData!) : updateEvent(formData!));
+            await (create
+              ? createEvent(formData!)
+              : event && updateEvent(formData!, event.fancy_id));
           } finally {
             actions.setSubmitting(false);
           }
@@ -140,41 +141,46 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 <EventField disabled={!create} title="ID" name="id" />
               </>
             )}
-
             <EventField disabled={!create} title="Description" type="textarea" name="description" />
-
             <div className="bk-group">
               <EventField disabled={!create} title="City" name="city" />
               <EventField disabled={!create} title="Country" name="country" />
             </div>
-
             <div className="bk-group">
               <DayPickerContainer
                 text="Start Date:"
                 dayToSetup="start_date"
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
+                disabledDays={
+                  new Date(values.end_date) !== new Date(endingDate)
+                    ? { from: new Date(values.end_date), to: new Date(endingDate) }
+                    : undefined
+                }
               />
               <DayPickerContainer
                 text="End Date:"
                 dayToSetup="end_date"
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
+                disabledDays={
+                  values.start_date !== startingDate
+                    ? { from: startingDate, to: new Date(values.start_date) }
+                    : undefined
+                }
               />
             </div>
-
             <EventField title="Website" name="event_url" />
-            {event && typeof event.image_url === 'string' ? (
+            <input
+              type="file"
+              onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue)}
+            />
+            {event && typeof event.image === 'string' && (
               <div className={'image-edit-container'}>
-                <img className={'image-edit'} src={event.image_url} />
+                <img className={'image-edit'} src={event.image} />
               </div>
-            ) : (
-              <input
-                type="file"
-                onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue)}
-              />
             )}
-            <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={true} />
+            <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={dirty && isValid} />
           </Form>
         )}
       </Formik>
@@ -187,17 +193,27 @@ type DatePickerContainerProps = {
   dayToSetup: 'start_date' | 'end_date';
   handleDayClick: Function;
   setFieldValue: Function;
+  disabledDays: RangeModifier | undefined;
 };
+
+export interface RangeModifier {
+  from: Date;
+  to: Date;
+}
 
 const DayPickerContainer = ({
   text,
   dayToSetup,
   handleDayClick,
   setFieldValue,
+  disabledDays,
 }: DatePickerContainerProps) => (
   <div className="date-picker-container">
     <span>{text}</span>
-    <DayPickerInput onDayChange={e => handleDayClick(e, dayToSetup, setFieldValue)} />
+    <DayPickerInput
+      dayPickerProps={{ disabledDays: disabledDays }}
+      onDayChange={(day: Date) => handleDayClick(day, dayToSetup, setFieldValue)}
+    />
   </div>
 );
 

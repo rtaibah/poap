@@ -40,8 +40,9 @@ const PoapEventSchema = yup.object().shape({
   start_date: yup.date(),
   end_date: yup.date(),
   city: yup.string(),
+  country: yup.string(),
   event_url: yup.string().url(),
-  image_url: yup
+  image: yup
     .mixed()
     .when('isFile', {
       is: value => value,

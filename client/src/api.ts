@@ -19,7 +19,7 @@ export interface PoapEvent {
   city: string;
   country: string;
   event_url: string;
-  image_url: string;
+  image: string;
   year: number;
   start_date: string;
   end_date: string;
@@ -186,7 +186,9 @@ export function getTokenInfo(tokenId: string): Promise<TokenInfo> {
 }
 
 export async function getEvents(): Promise<PoapEvent[]> {
-  return fetchJson(`${API_BASE}/events`);
+  const user = await authClient.user;
+  const userId = user.sub;
+  return fetchJson(`${API_BASE}/events?user_id=${userId}`);
 }
 
 export async function getEvent(fancyId: string): Promise<null | PoapEvent> {
@@ -312,19 +314,17 @@ export async function mintUserToManyEvents(
   });
 }
 
-export async function updateEvent(event: FormData) {
-  return secureFetchNoResponse(`${API_BASE}/events/${event}`, {
+export async function updateEvent(event: FormData, fancyId: string) {
+  return secureFetchNoResponse(`${API_BASE}/events/${fancyId}`, {
     method: 'PUT',
-    body: JSON.stringify(event),
-    headers: { 'Content-Type': 'application/json' },
+    body: event,
   });
 }
 
 export async function createEvent(event: FormData) {
   return secureFetchNoResponse(`${API_BASE}/events`, {
     method: 'POST',
-    body: JSON.stringify(event),
-    headers: { 'Content-Type': 'application/json' },
+    body: event,
   });
 }
 

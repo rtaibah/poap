@@ -7,6 +7,7 @@ const BASE_URI = `${window.location.protocol}//${window.location.host}`;
 export class AuthService {
   private client!: Auth0Client;
   private _isAuthenticated: boolean = false;
+  public user!: Promise<User>;
 
   isAuthenticated() {
     return this._isAuthenticated;
@@ -20,6 +21,7 @@ export class AuthService {
       audience: process.env.REACT_APP_AUTH0_AUDIENCE || '',
     });
     this._isAuthenticated = await this.client.isAuthenticated();
+    this.user = await this.client.getUser();
   }
 
   async login(onSuccessPath = '/') {
@@ -49,6 +51,7 @@ export class AuthService {
 
   async getAPIToken() {
     const token = await this.client.getTokenSilently();
+    console.log(this.user);
     return token;
   }
 
@@ -58,7 +61,7 @@ export class AuthService {
 }
 
 export const authClient = new AuthService();
-
+console.log(authClient);
 export const AuthContext: React.Context<AuthService> = React.createContext<any>(undefined);
 
 export const AuthProvider = AuthContext.Provider;
@@ -72,3 +75,14 @@ export function withAuth<P>(
     );
   };
 }
+
+type User = {
+  email: string;
+  email_verified: boolean;
+  name: string;
+  nickname: string;
+  picture: string;
+  sub: string;
+  updated_at: string;
+  'https://poap.xyz/roles': string[];
+};

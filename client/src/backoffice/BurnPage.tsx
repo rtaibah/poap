@@ -95,11 +95,11 @@ const BurnToken: FC<RouteComponentProps> = props => {
 
       {loadingTokenInfo && <Loading />}
 
-      {token && typeof token.event.image_url === 'string' && (
+      {token && typeof token.event.image === 'string' && (
         <div className="card">
           <div className="content">
             <div>
-              <img src={token.event.image_url} alt={token.event.description} className="avatar" />
+              <img src={token.event.image} alt={token.event.description} className="avatar" />
             </div>
             <div>
               <h3 className="title">{token.event.name}</h3>
