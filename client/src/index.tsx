@@ -1,4 +1,5 @@
 import React from 'react';
+import { ToastProvider } from 'react-toast-notifications';
 import ReactDOM from 'react-dom';
 import App from './App';
 import { authClient } from './auth';
@@ -12,7 +13,12 @@ async function main() {
   AOS.init({
     once: true,
   });
-  ReactDOM.render(<App auth={authClient} />, document.getElementById('root'));
+  ReactDOM.render(
+    <ToastProvider>
+      <App auth={authClient} />
+    </ToastProvider>,
+    document.getElementById('root')
+  );
 }
 
 main().catch(err => {

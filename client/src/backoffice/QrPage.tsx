@@ -1,4 +1,5 @@
 import React, { FC, useState, useEffect, ChangeEvent } from 'react';
+import { useToasts } from 'react-toast-notifications';
 
 /* Libraries */
 import ReactPaginate from 'react-paginate';
@@ -24,14 +25,14 @@ type PaginateAction = {
   selected: number;
 };
 
-export interface QrCode {
+export type QrCode = {
   id: number;
   qr_hash: string;
   claimed: boolean;
   tx_hash: string;
   event_id: number;
   event: PoapEvent;
-}
+};
 
 const QrPage: FC = () => {
   const [page, setPage] = useState<number>(0);
@@ -41,6 +42,8 @@ const QrPage: FC = () => {
   const [claimStatus, setClaimStatus] = useState<string[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<number | undefined>(undefined);
   const [events, setEvents] = useState<PoapEvent[]>([]);
+
+  const { addToast } = useToasts();
 
   useEffect(() => {
     fetchEvents();
@@ -74,15 +77,19 @@ const QrPage: FC = () => {
       setQrCodes(response.codes);
       setTotal(response.total);
     } catch (e) {
-      console.log(e);
+      addToast(e.message, {
+        appearance: 'error',
+        autoDismiss: true,
+      });
     } finally {
       setIsFetchingQrCodes(false);
     }
   };
 
   const handleCheckbox = (value: Value) => {
-    if (!claimStatus.includes(value)) return setClaimStatus([...claimStatus, value]);
-    setClaimStatus([...claimStatus].filter(val => val !== value));
+    if (!claimStatus.includes(value))
+      return setClaimStatus(prevClaimStatus => [...prevClaimStatus, value]);
+    setClaimStatus(prevClaimStatus => [...prevClaimStatus].filter(val => val !== value));
   };
 
   const handleSelect = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -178,7 +185,11 @@ const QrPage: FC = () => {
 
                 <div className={'col-md-2 center status'}>
                   <span className={'visible-sm'}>Status: </span>
-                  <img src={qr.claimed ? checked : error} className={'status-icon'} alt={''} />
+                  <img
+                    src={qr.claimed ? checked : error}
+                    alt={qr.event && qr.event.name ? `${qr.event.name} status` : 'qr status'}
+                    className={'status-icon'}
+                  />
                 </div>
 
                 <div className={'col-md-2'}>

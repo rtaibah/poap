@@ -54,7 +54,11 @@ const RoleLink: React.FC<{ route: RouteProps; handleClick: () => void }> = ({
   return null;
 };
 
-const WithRole: React.FC<{ roles: string[] }> = ({ roles, children }) => {
+type RoleProps = {
+  roles: string[];
+};
+
+const WithRole: React.FC<RoleProps> = (wrappedComponent: React.ComponentType<RoleProps>) => {
   // TODO: Get user role (Backend WIP)
   const userRole = 'super';
 

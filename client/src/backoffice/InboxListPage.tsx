@@ -1,4 +1,5 @@
 import React, { FC, useState, useEffect, ChangeEvent } from 'react';
+import { useToasts } from 'react-toast-notifications';
 
 /* Libraries */
 import ReactModal from 'react-modal';
@@ -35,6 +36,8 @@ const InboxListPage: FC = () => {
   const [isFetchingNotifications, setIsFetchingNotifications] = useState<null | boolean>(null);
   const [notifications, setNotifications] = useState<null | Notification[]>(null);
   const [events, setEvents] = useState<PoapEvent[]>([]);
+
+  const { addToast } = useToasts();
 
   useEffect(() => {
     fetchEvents();
@@ -86,7 +89,10 @@ const InboxListPage: FC = () => {
       setNotifications(response.notifications);
       setTotal(response.total);
     } catch (e) {
-      console.log(e);
+      addToast(e.message, {
+        appearance: 'error',
+        autoDismiss: true,
+      });
     } finally {
       setIsFetchingNotifications(false);
     }
@@ -197,6 +203,7 @@ const InboxListPage: FC = () => {
         {isFetchingNotifications && <Loading />}
         {notifications &&
           !isFetchingNotifications &&
+          notifications &&
           notifications.map((notification, i) => {
             return (
               <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={notification.id}>
@@ -217,7 +224,9 @@ const InboxListPage: FC = () => {
 
                 <div className={'col-md-4 ellipsis'}>
                   <span className={'visible-sm'}>Event: </span>
-                  {notification.event.name}
+                  {notification.event && notification.event.name
+                    ? notification.event.name
+                    : 'No name'}
                 </div>
 
                 <div className={'col-md-1 description'}>
