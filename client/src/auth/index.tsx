@@ -61,7 +61,7 @@ export class AuthService {
 }
 
 export const authClient = new AuthService();
-console.log(authClient);
+
 export const AuthContext: React.Context<AuthService> = React.createContext<any>(undefined);
 
 export const AuthProvider = AuthContext.Provider;

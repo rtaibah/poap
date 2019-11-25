@@ -5,6 +5,7 @@ import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import 'react-day-picker/lib/style.css';
 import { format } from 'date-fns';
+import { useToasts } from 'react-toast-notifications';
 
 // libraries
 import ReactPaginate from 'react-paginate';
@@ -55,30 +56,50 @@ const EditEventForm: React.FC<RouteComponentProps<{
   return <EventForm event={event} />;
 };
 
+type EventEditValues = {
+  name: string;
+  year: number;
+  id: number;
+  description: string;
+  start_date: string;
+  end_date: string;
+  city: string;
+  country: string;
+  event_url: string;
+  image: Blob;
+  isFile: boolean;
+};
+
 const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
-  const startingDate = new Date('1 Jan 1800');
-  const endingDate = new Date('1 Jan 2500');
-  const values = useMemo(() => {
+  const startingDate = new Date('1 Jan 1900');
+  const endingDate = new Date('1 Jan 2200');
+  const dateFormatter = (day: Date | number) => format(day, 'MM-dd-yyyy');
+
+  const { addToast } = useToasts();
+
+  const initialValues = useMemo(() => {
     if (event) {
       return {
         ...event,
+        isFile: false,
       };
     } else {
       const now = new Date();
       const year = now.getFullYear();
-      return {
+      const values: EventEditValues = {
         name: '',
         year,
         id: 0,
         description: '',
-        start_date: startingDate,
-        end_date: endingDate,
+        start_date: '',
+        end_date: '',
         city: '',
         country: '',
         event_url: '',
-        image: '',
+        image: new Blob(),
         isFile: true,
       };
+      return values;
     }
   }, [event]);
 
@@ -90,43 +111,42 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
   };
 
   const handleDayClick = (
-    e: React.MouseEvent<HTMLInputElement>,
+    day: Date,
     dayToSetup: 'start_date' | 'end_date',
     setFieldValue: Function
-  ) => {
-    setFieldValue(dayToSetup, e);
-  };
-
-  useEffect(() => console.table(values), [values]);
+  ) => setFieldValue(dayToSetup, dateFormatter(day));
 
   return (
     <div className={'bk-container'}>
       <Formik
-        initialValues={values}
+        initialValues={initialValues}
         validateOnBlur={false}
         validateOnChange={false}
         validationSchema={PoapEventSchema}
-        onSubmit={async (values, actions) => {
+        onSubmit={async (submittedValues, actions) => {
           try {
             actions.setSubmitting(true);
-            const valuesWithFormattedDates = {
-              ...values,
-              start_date: format(new Date(values.start_date), 'MM-dd-yyyy'),
-              end_date: format(new Date(values.end_date), 'MM-dd-yyyy'),
-            };
             const formData = new FormData();
-            Object.entries(valuesWithFormattedDates).forEach(([key, value]) => {
+
+            const { isFile, ...othersKeys } = submittedValues;
+
+            Object.entries(othersKeys).forEach(([key, value]) => {
               formData.append(key, typeof value === 'number' ? value.toString() : value);
             });
+
             await (create
               ? createEvent(formData!)
               : event && updateEvent(formData!, event.fancy_id));
-          } finally {
+          } catch (err) {
             actions.setSubmitting(false);
+            addToast(err.message, {
+              appearance: 'error',
+              autoDismiss: true,
+            });
           }
         }}
       >
-        {({ isSubmitting, isValid, dirty, setFieldValue }) => (
+        {({ values, errors, isSubmitting, setFieldValue }) => (
           <Form>
             {create ? (
               <>
@@ -153,9 +173,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
                 disabledDays={
-                  new Date(values.end_date) !== new Date(endingDate)
-                    ? { from: new Date(values.end_date), to: new Date(endingDate) }
-                    : undefined
+                  values.end_date ? { from: new Date(values.end_date), to: endingDate } : undefined
                 }
               />
               <DayPickerContainer
@@ -164,23 +182,26 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
                 disabledDays={
-                  values.start_date !== startingDate
+                  values.start_date
                     ? { from: startingDate, to: new Date(values.start_date) }
                     : undefined
                 }
               />
             </div>
             <EventField title="Website" name="event_url" />
-            <input
-              type="file"
-              onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue)}
+
+            <ImageContainer
+              text="Upload Image:"
+              handleFileChange={handleFileChange}
+              setFieldValue={setFieldValue}
+              errors={errors}
             />
             {event && typeof event.image === 'string' && (
               <div className={'image-edit-container'}>
                 <img className={'image-edit'} src={event.image} />
               </div>
             )}
-            <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={dirty && isValid} />
+            <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={true} />
           </Form>
         )}
       </Formik>
@@ -195,7 +216,6 @@ type DatePickerContainerProps = {
   setFieldValue: Function;
   disabledDays: RangeModifier | undefined;
 };
-
 export interface RangeModifier {
   from: Date;
   to: Date;
@@ -214,6 +234,25 @@ const DayPickerContainer = ({
       dayPickerProps={{ disabledDays: disabledDays }}
       onDayChange={(day: Date) => handleDayClick(day, dayToSetup, setFieldValue)}
     />
+  </div>
+);
+
+type ImageContainerProps = {
+  text: string;
+  handleFileChange: Function;
+  setFieldValue: Function;
+  errors: any;
+};
+
+const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: ImageContainerProps) => (
+  <div className="date-picker-container">
+    <span>{text}</span>
+    <input
+      type="file"
+      className={classNames(Boolean(errors.image) && 'error')}
+      onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue)}
+    />
+    <ErrorMessage name="image" component="p" className="bk-error" />
   </div>
 );
 

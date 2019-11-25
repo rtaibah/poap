@@ -29,7 +29,7 @@ const fileSchema = yup
   );
 
 const PoapEventSchema = yup.object().shape({
-  name: yup.string(),
+  name: yup.string().required(),
   year: yup
     .number()
     .required()

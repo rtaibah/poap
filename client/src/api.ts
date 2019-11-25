@@ -133,7 +133,6 @@ async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> 
   if (res.ok) {
     return await res.json();
   } else {
-    console.error(res);
     throw new Error(`Error with request statusCode: ${res.status}`);
   }
 }
@@ -148,7 +147,9 @@ async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Pr
     },
   });
   if (!res.ok) {
-    throw new Error(`Request Failed => statusCode: ${res.status} msg: ${res.statusText}`);
+    const data = await res.json();
+    if (data && data.message) throw new Error(data.message);
+    throw new Error(`Request failed => statusCode: ${res.status} msg: ${res.statusText}`);
   }
 }
 
