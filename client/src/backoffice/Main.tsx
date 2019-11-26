@@ -54,18 +54,25 @@ const RoleLink: React.FC<{ route: RouteProps; handleClick: () => void }> = ({
   return null;
 };
 
-type RoleProps = {
+type Roles = {
   roles: string[];
 };
 
-const WithRole: React.FC<RoleProps> = (wrappedComponent: React.ComponentType<RoleProps>) => {
-  // TODO: Get user role (Backend WIP)
-  const userRole = 'super';
+const withRole: React.FC<Props> = (WrappedComponent: React.ComponentType<Props>) => {
+  const hocComponent = (props: Roles & Props) => {
+    // TODO: Get user role (Backend WIP)
+    const userRole = 'super';
 
-  if (!roles.includes(userRole)) return null;
+    if (!props.roles.includes(userRole)) return null;
 
-  return <>{children}</>;
+    return <WrappedComponent {...props} />;
+  };
+
+  return hocComponent;
 };
+
+const LabelWithRole = withRole(Label);
+const RoleLinkWithRole = withRole(RoleLink);
 
 const NavigationMenu = withRouter(({ history }) => {
   const auth = useContext(AuthContext);
@@ -84,51 +91,50 @@ const NavigationMenu = withRouter(({ history }) => {
 
   return (
     <Menu isOpen={isOpen} onStateChange={state => setIsOpen(state.isOpen)} right disableAutoFocus>
-      <WithRole roles={LABELS.issueBadges.roles}>
-        <Label label={LABELS.issueBadges} />
-      </WithRole>
+      <LabelWithRole roles={LABELS.issueBadges.roles} label={LABELS.issueBadges} />
 
-      <WithRole roles={ROUTES.issueForEvent.roles}>
-        <RoleLink route={ROUTES.issueForEvent} handleClick={closeMenu} />
-      </WithRole>
-      <WithRole roles={ROUTES.issueForUser.roles}>
-        <RoleLink route={ROUTES.issueForUser} handleClick={closeMenu} />
-      </WithRole>
+      <RoleLinkWithRole
+        roles={ROUTES.issueForEvent.roles}
+        route={ROUTES.issueForEvent}
+        handleClick={closeMenu}
+      />
 
-      <WithRole roles={ROUTES.inbox.roles}>
-        <Label label={LABELS.inbox} />
-      </WithRole>
+      <RoleLinkWithRole
+        roles={ROUTES.issueForUser.roles}
+        route={ROUTES.issueForUser}
+        handleClick={closeMenu}
+      />
+      <LabelWithRole roles={ROUTES.inbox.roles} label={LABELS.inbox} />
 
-      <WithRole roles={ROUTES.inbox.roles}>
-        <RoleLink route={ROUTES.inbox} handleClick={closeMenu} />
-      </WithRole>
-      <WithRole roles={ROUTES.inboxList.roles}>
-        <RoleLink route={ROUTES.inboxList} handleClick={closeMenu} />
-      </WithRole>
+      <RoleLinkWithRole roles={ROUTES.inbox.roles} route={ROUTES.inbox} handleClick={closeMenu} />
 
-      <WithRole roles={LABELS.otherTasks.roles}>
-        <Label label={LABELS.otherTasks} />
-      </WithRole>
+      <RoleLinkWithRole
+        roles={ROUTES.inboxList.roles}
+        route={ROUTES.inboxList}
+        handleClick={closeMenu}
+      />
 
-      <WithRole roles={LABELS.quickLinks.roles}>
-        <Label label={LABELS.quickLinks} />
-      </WithRole>
+      <LabelWithRole roles={LABELS.otherTasks.roles} label={LABELS.otherTasks} />
 
-      <WithRole roles={ROUTES.addressManagement.roles}>
-        <RoleLink route={ROUTES.addressManagement} handleClick={closeMenu} />
-      </WithRole>
-      <WithRole roles={ROUTES.events.roles}>
-        <RoleLink route={ROUTES.events} handleClick={closeMenu} />
-      </WithRole>
-      <WithRole roles={ROUTES.qr.roles}>
-        <RoleLink route={ROUTES.qr} handleClick={closeMenu} />
-      </WithRole>
-      <WithRole roles={ROUTES.burn.roles}>
-        <RoleLink route={ROUTES.burn} handleClick={closeMenu} />
-      </WithRole>
-      <WithRole roles={ROUTES.transactions.roles}>
-        <RoleLink route={ROUTES.transactions} handleClick={closeMenu} />
-      </WithRole>
+      <LabelWithRole roles={LABELS.quickLinks.roles} label={LABELS.quickLinks} />
+
+      <RoleLinkWithRole
+        roles={ROUTES.addressManagement.roles}
+        route={ROUTES.addressManagement}
+        handleClick={closeMenu}
+      />
+
+      <RoleLinkWithRole roles={ROUTES.events.roles} route={ROUTES.events} handleClick={closeMenu} />
+
+      <RoleLinkWithRole roles={ROUTES.qr.roles} route={ROUTES.qr} handleClick={closeMenu} />
+
+      <RoleLinkWithRole roles={ROUTES.burn.roles} route={ROUTES.burn} handleClick={closeMenu} />
+
+      <RoleLinkWithRole
+        roles={ROUTES.transactions.roles}
+        route={ROUTES.transactions}
+        handleClick={closeMenu}
+      />
 
       <a
         className="bm-item"
