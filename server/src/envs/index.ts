@@ -16,6 +16,7 @@ export interface EnvVariables {
   auth0AppName: string;
   auth0Kid: string;
   auth0Audience: string;
+  googleStorageBucket: string;
 }
 
 export interface PoapHelpers {
@@ -81,5 +82,6 @@ export default function getEnv(): EnvVariables {
     auth0AppName: ensureEnvVariable('AUTH0_APP_NAME'),
     auth0Kid: ensureEnvVariable('AUTH0_KID'),
     auth0Audience: ensureEnvVariable('AUTH0_AUDIENCE'),
+    googleStorageBucket: ensureEnvVariable('GOOGLE_STORAGE_BUCKET'),
   };
 }

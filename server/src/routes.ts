@@ -25,7 +25,15 @@ import {
   getNotifications,
   getTotalNotifications,
   createNotification,
-  getEventHost
+  getEventHost,
+  getUserEvents,
+  getRangeClaimedQr,
+  updateEventOnQrRange,
+  getEventHostQrRolls,
+  getRangeNotOwnedQr,
+  getQrRoll,
+  getTotalQrClaims,
+  getPaginatedQrClaims,
 } from './db';
 
 import {
@@ -50,8 +58,9 @@ import { Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, N
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
+import { listFiles } from './utils';
 
-function sleep(ms: number){
+function sleep(ms: number) {
   return new Promise(resolve=>{
       setTimeout(resolve,ms)
   })
@@ -62,8 +71,7 @@ function buildMetadataJson(tokenUrl: string, ev: PoapEvent) {
     description: ev.description,
     external_url: tokenUrl,
     home_url: tokenUrl,
-    image: ev.image_url,
-    image_url: ev.image_url,
+    image: ev.image,
     name: ev.name,
     year: ev.year,
     tags: ['poap', 'event'],
@@ -128,25 +136,24 @@ export default async function routes(fastify: FastifyInstance) {
           200: { 
             type: 'object',
             properties: {
-              "description": { type: 'string' },
-              "external_url": { type: 'string' },
-              "home_url": { type: 'string' },
-              "image": { type: 'string' },
-              "image_url": { type: 'string' },
-              "name": { type: 'string' },
-              "year": { type: 'number' },
-              "tags":  { type: 'array', items: { type: 'string' }},
-              "attributes": { 
+              description: { type: 'string' },
+              external_url: { type: 'string' },
+              home_url: { type: 'string' },
+              image: { type: 'string' },
+              name: { type: 'string' },
+              year: { type: 'number' },
+              tags:  { type: 'array', items: { type: 'string' }},
+              attributes: { 
                 type: 'array',
                 items: { 
                   type: 'object',
                   properties: {
-                    "trait_type": { type: 'string' },
-                    "value": { type: 'string' }
+                    trait_type: { type: 'string' },
+                    value: { type: 'string' }
                   }
                 }
               },
-              "properties": { 
+              properties: { 
                 type: 'array',
                 items: { 
                   type: 'number',
@@ -273,11 +280,9 @@ export default async function routes(fastify: FastifyInstance) {
                   properties: {
                     id: { type: 'number'},
                     fancy_id: { type: 'string'},
-                    signer_ip: { type: 'string'},
-                    signer: { type: 'string'},
                     name: { type: 'string'},
                     event_url: { type: 'string'},
-                    image_url: { type: 'string'},
+                    image: { type: 'string'},
                     country: { type: 'string'},
                     city: { type: 'string'},
                     description: { type: 'string'},
@@ -461,7 +466,7 @@ export default async function routes(fastify: FastifyInstance) {
                   signer: { type: 'string'},
                   name: { type: 'string'},
                   event_url: { type: 'string'},
-                  image_url: { type: 'string'},
+                  image: { type: 'string'},
                   country: { type: 'string'},
                   city: { type: 'string'},
                   description: { type: 'string'},
@@ -549,7 +554,7 @@ export default async function routes(fastify: FastifyInstance) {
                   signer: { type: 'string'},
                   name: { type: 'string'},
                   event_url: { type: 'string'},
-                  image_url: { type: 'string'},
+                  image: { type: 'string'},
                   country: { type: 'string'},
                   city: { type: 'string'},
                   description: { type: 'string'},
@@ -700,7 +705,7 @@ export default async function routes(fastify: FastifyInstance) {
                   signer: { type: 'string'},
                   name: { type: 'string'},
                   event_url: { type: 'string'},
-                  image_url: { type: 'string'},
+                  image: { type: 'string'},
                   country: { type: 'string'},
                   city: { type: 'string'},
                   description: { type: 'string'},
@@ -870,6 +875,9 @@ export default async function routes(fastify: FastifyInstance) {
       schema: {
         description: 'Endpoint to get all events',
         tags: ['Events', ],
+        querystring: {
+          user_id: { type: 'string' },
+        },
         response: {
           200: {
             type: 'array',
@@ -878,11 +886,9 @@ export default async function routes(fastify: FastifyInstance) {
               properties: {
                 id: { type: 'number' },
                 fancy_id: { type: 'string' },
-                signer_ip: { type: 'string' },
-                signer: { type: 'string' },
                 name: { type: 'string' },
                 event_url: { type: 'string' },
-                image_url: { type: 'string' },
+                image: { type: 'string' },
                 country: { type: 'string' },
                 city: { type: 'string' },
                 description: { type: 'string' },
@@ -897,11 +903,21 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const events = await getEvents();
+      let events = []
+      const user_id = req.query.user_id || null;
+      if(user_id) {
+        const eventHost = await getEventHost(user_id);
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
+        events = await getUserEvents(eventHost.id);
+      } else {
+        events = await getEvents();
+      }
+
       return events;
     }
   );
-
 
   fastify.get(
     '/events/:fancyid',
@@ -918,11 +934,9 @@ export default async function routes(fastify: FastifyInstance) {
             properties: {
               id: { type: 'number' },
               fancy_id: { type: 'string' },
-              signer_ip: { type: 'string' },
-              signer: { type: 'string' },
               name: { type: 'string' },
               event_url: { type: 'string' },
-              image_url: { type: 'string' },
+              image: { type: 'string' },
               country: { type: 'string' },
               city: { type: 'string' },
               description: { type: 'string' },
@@ -955,7 +969,6 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate, validate_file],
       schema: {
-        // consumes: ['multipart/form-data'],
         description: 'Endpoint to create new events',
         tags: ['Events', ],
         body: {
@@ -969,9 +982,7 @@ export default async function routes(fastify: FastifyInstance) {
             'end_date',
             'year',
             'event_url',
-            'image',
-            'signer',
-            'signer_ip',
+            'image'
           ],
           properties: {
             name: { type: 'string' },
@@ -983,14 +994,13 @@ export default async function routes(fastify: FastifyInstance) {
             year: { type: 'integer' },
             event_url: { type: 'string' },
             image: { type: 'string', format: 'binary' },
-            signer: { type: 'string' },
-            signer_ip: { type: 'string' },
           },
         },
         response: {
           200: { 
             type: 'object',
             properties: {
+              id: { type: 'number' },
               fancy_id: { type: 'string' },
               name: { type: 'string' },
               description: { type: 'string' },
@@ -1000,11 +1010,8 @@ export default async function routes(fastify: FastifyInstance) {
               end_date: { type: 'string' },
               year: { type: 'number' },
               event_url: { type: 'string' },
-              image_url: { type: 'string' },
-              signer: { type: 'string' },
-              signer_ip: { type: 'string' },
+              image: { type: 'string' },
               event_host_id: { type: 'number' },
-              id: { type: 'number' }
             },
           }
         },
@@ -1016,11 +1023,6 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req:any, res) => {
-      const signer_parsed_address = await checkAddress(req.body.signer);
-      if (!signer_parsed_address) {
-        return new createError.BadRequest('Signer address is not valid');
-      }
-
       const parsed_fancy_id = req.body.name.trim().replace(/\s+/g, '-').toLowerCase() + '-' + req.body.year;
 
       const user_id = req.user.sub;
@@ -1038,6 +1040,15 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Image mimetype must be image/png');
       }
 
+      const exists_event = await getEventByFancyId(parsed_fancy_id);
+      if (exists_event) {
+        return new createError.BadRequest('Event with this fancy id already exists');
+      }
+
+      console.log(image);
+      // await uploadFile(image)
+      await listFiles();
+
       let newEvent: Omit<PoapEvent, 'id'> = {
         fancy_id: parsed_fancy_id,
         name: req.body.name,
@@ -1048,9 +1059,7 @@ export default async function routes(fastify: FastifyInstance) {
         end_date: req.body.end_date,
         year: req.body.year,
         event_url: req.body.event_url,
-        image_url: '',
-        signer: signer_parsed_address,
-        signer_ip: req.body.signer_ip,
+        image: '',
         event_host_id: eventHost.id
       }
 
@@ -1074,10 +1083,8 @@ export default async function routes(fastify: FastifyInstance) {
         },
         body: {
           type: 'object',
-          required: ['signer', 'signer_ip', 'event_url', 'image'],
+          required: ['event_url', ],
           properties: {
-            signer: { type: 'string' },
-            signer_ip: { type: 'string' },
             event_url: { type: 'string' },
             image: { type: 'string', format: 'binary' }
           },
@@ -1093,11 +1100,6 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req: any, res) => {
-      const signer_parsed_address = await checkAddress(req.body.signer);
-      if (!signer_parsed_address) {
-        return new createError.BadRequest('Signer address is not valid');
-      }
-
       const user_id = req.user.sub;
       const eventHost = await getEventHost(user_id);
       if (!eventHost) {
@@ -1105,19 +1107,15 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       const image = req.body[Symbol.for('image')][0];
-      if (!image) {
-        return new createError.BadRequest('You have to send an image');
+      if (image) {
+        if(image.mimetype != 'image/png'){
+          return new createError.BadRequest('Image mimetype must be image/png');
+        }
       }
 
-      if(image.mimetype != 'image/png'){
-        return new createError.BadRequest('Image mimetype must be image/png');
-      }
-
-      const isOk = await updateEvent(req.params.fancyid, eventHost.user_id, {
-        signer: signer_parsed_address,
-        signer_ip: req.body.signer_ip,
+      const isOk = await updateEvent(req.params.fancyid, eventHost.id, {
         event_url: req.body.event_url,
-        image_url: '',
+        image: '',
       });
       if (!isOk) {
         return new createError.NotFound('Invalid event');
@@ -1419,7 +1417,7 @@ export default async function routes(fastify: FastifyInstance) {
                         city: { type: 'string'},
                         country: { type: 'string'},
                         event_url: { type: 'string'},
-                        image_url: { type: 'string'},
+                        image: { type: 'string'},
                         year: { type: 'number'},
                         start_date: { type: 'string'},
                         end_date: { type: 'string'},
@@ -1526,7 +1524,7 @@ export default async function routes(fastify: FastifyInstance) {
                   city: { type: 'string'},
                   country: { type: 'string'},
                   event_url: { type: 'string'},
-                  image_url: { type: 'string'},
+                  image: { type: 'string'},
                   year: { type: 'number'},
                   start_date: { type: 'string'},
                   end_date: { type: 'string'},
@@ -1581,6 +1579,152 @@ export default async function routes(fastify: FastifyInstance) {
       return notification
     }
   );
+
+  fastify.get(
+    '/qr-claims',
+    {
+      preValidation: [fastify.authenticate],
+      schema: {
+        description: 'List paginated qr codes, you can filter by event_id, qr_roll_id, claimed',
+        tags: ['Qr-claims', ],
+        querystring: {
+          limit: { type: 'number' },
+          offset: { type: 'number' },
+          event_id: { type: 'number' },
+          qr_roll_id: { type: 'number' },
+          claimed: { type: 'string' },
+        },
+
+      },
+    },
+    async (req: any, res) => {
+      const limit = req.query.limit || 10;
+      const offset = req.query.offset || 0;
+      const eventId = req.query.event_id || null;
+      const qrRollId = req.query.qr_roll_id || null;
+      const claimed = req.query.claimed || null;
+      
+      const user_id = req.user.sub;
+      const eventHost = await getEventHost(user_id);
+      if (!eventHost) {
+        return new createError.NotFound('You are not registered as an event host');
+      }
+
+      const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
+      if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
+        return new createError.NotFound('You dont have any QrRoll asigned');
+      }
+
+      if(eventId) {
+        const event = await getEvent(eventId);
+        if (!event) {
+          return new createError.BadRequest('event does not exist');
+        }
+      }
+
+      if(qrRollId) {
+        const qrRoll = await getQrRoll(qrRollId);
+        if (!qrRoll) {
+          return new createError.BadRequest('Qr Roll does not exist');
+        }
+      }
+
+      const qrClaims = await getPaginatedQrClaims(limit, offset, eventId, qrRollId, claimed);
+      const totalQrClaims = await getTotalQrClaims(eventId, qrRollId, claimed) || 0;
+
+      return {
+        limit: limit,
+        offset: offset,
+        total: totalQrClaims,
+        qr_claims: qrClaims,
+      };
+    }
+  );
+
+  fastify.put(
+    '/qr-claims',
+    {
+      preValidation: [fastify.authenticate, ],
+      schema: {
+        description: 'Endpoint to assign event to several qr from a range of numeric_id',
+        tags: ['Qr-claims', ],
+        body: {
+          type: 'object',
+          required: ['numeric_id_min', 'numeric_id_max', 'event_id'],
+          properties: {
+            numeric_id_min: { type: 'number' },
+            numeric_id_max: { type: 'number' },
+            event_id: { type: 'number' },
+          },
+        },
+        response: {
+          204: { type: 'string'},
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req: any, res) => {
+      const numericIdMin = parseInt(req.body.numeric_id_min);
+      const numericIdMax = parseInt(req.body.numeric_id_max);
+      const eventId = parseInt(req.body.event_id);
+
+      const user_id = req.user.sub;
+      const eventHost = await getEventHost(user_id);
+      if (!eventHost) {
+        return new createError.NotFound('You are not registered as an event host');
+      }
+
+      const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
+      if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
+        return new createError.NotFound('You dont have any QrRoll asigned');
+      }
+
+      const event = await getEvent(eventId);
+      if (!event) {
+        return new createError.BadRequest('event does not exist');
+      }
+
+      if(event.event_host_id != eventHost.id) {
+        return new createError.BadRequest('You cant assign an event that does not belongs to you');
+      }
+
+      if (numericIdMin >= numericIdMax) {
+        return new createError.BadRequest('numeric_id_min is greater or equal than numeric_id_max');
+      }
+
+      if (numericIdMin <= 0 || numericIdMax <= 0) {
+        return new createError.BadRequest('numeric_id must be greater than 0');
+      }
+
+      const claimedQrs = await getRangeClaimedQr(numericIdMax, numericIdMin);
+      if (claimedQrs && claimedQrs[0]) {
+        let ids = [];
+        for (let claimedQr of claimedQrs) {
+          ids.push(claimedQr.qr_hash)
+        }
+        return new createError.BadRequest('this qr ids are already claimed: [ ' + ids.toString() + ' ]');
+      }
+
+      const notOwnedQrs = await getRangeNotOwnedQr(numericIdMax, numericIdMin, eventHostQrRolls);
+      if (notOwnedQrs && notOwnedQrs[0]) {
+        let ids = [];
+        for (let notOwnedQr of notOwnedQrs) {
+          ids.push(notOwnedQr.qr_hash)
+        }
+        return new createError.BadRequest('this qr ids arent in your rols: [ ' + ids.toString() + ' ]');
+      }
+
+      await updateEventOnQrRange(numericIdMax, numericIdMin, eventId);
+
+      res.status(204);
+      return;
+    }
+  );
+
 
   //********************************************************************
   // SWAGGER

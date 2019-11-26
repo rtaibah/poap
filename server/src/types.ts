@@ -46,14 +46,12 @@ export interface TokenInfo {
 export interface PoapEvent {
   id: number;
   fancy_id: string;
-  signer: Address;
-  signer_ip: string;
   name: string;
   description: string;
   city: string;
   country: string;
   event_url: string;
-  image_url: string;
+  image: string;
   year: number;
   start_date: string;
   end_date: string;
@@ -155,6 +153,12 @@ export interface Notification {
 export interface eventHost {
   id: number;
   user_id: string;
+}
+
+export interface qrRoll {
+  id: number;
+  event_host_id: number;
+  is_active: boolean;
 }
 
 export interface UnlockTask extends Task{

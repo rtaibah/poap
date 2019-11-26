@@ -395,7 +395,7 @@ export async function getTokenImg(tokenId: string | number): Promise<null | stri
     return 'https://www.poap.xyz/events/badges/POAP.png'
   }
 
-  return event.image_url
+  return event.image
 }
 
 export async function verifyClaim(claim: Claim): Promise<string | boolean> {
@@ -420,12 +420,6 @@ export async function verifyClaim(claim: Claim): Promise<string | boolean> {
 
   const proofMessage = JSON.stringify([claim.claimId, claim.eventId, claim.claimer]);
   Logger.info({ proofMessage }, 'proofMessage');
-  const signerAddress = verifyMessage(proofMessage, claim.proof);
-
-  if (signerAddress !== event.signer) {
-    console.log('invalid signer signature');
-    return false;
-  }
 
   return true;
 }

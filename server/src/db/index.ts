@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services, Notification, NotificationType, eventHost } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services, Notification, NotificationType, eventHost, qrRoll } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -18,6 +18,12 @@ function replaceDates(event: PoapEvent): PoapEvent {
 
 export async function getEvents(): Promise<PoapEvent[]> {
   const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events ORDER BY start_date DESC');
+
+  return res.map(replaceDates);
+}
+
+export async function getUserEvents(event_host_id: number): Promise<PoapEvent[]> {
+  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events WHERE event_host_id  = $1 ORDER BY start_date DESC', [event_host_id]);
 
   return res.map(replaceDates);
 }
@@ -107,11 +113,11 @@ export async function getEventByFancyId(fancyid: string): Promise<null | PoapEve
 
 export async function updateEvent(
   fancyId: string,
-  event_host_id: string,
-  changes: Pick<PoapEvent, 'signer' | 'signer_ip' | 'event_url' | 'image_url'>
+  event_host_id: number,
+  changes: Pick<PoapEvent, 'event_url' | 'image'>
 ): Promise<boolean> {
   const res = await db.result(
-    'update events set signer=${signer}, signer_ip=${signer_ip}, event_url=${event_url}, image_url=${image_url} where fancy_id = ${fancy_id} and event_host_id = ${event_host_id}',
+    'update events set event_url=${event_url}, image=${image} where fancy_id = ${fancy_id} and event_host_id = ${event_host_id}',
     {
       fancy_id: fancyId,
       event_host_id: event_host_id,
@@ -173,44 +179,44 @@ export async function updateTransactionStatus(hash: string, status: TransactionS
   return res.rowCount === 1;
 }
 
-export async function getQrClaim(qr_hash: string): Promise<null | ClaimQR> {
-  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash=${qr_hash} AND is_active = true', {qr_hash});
+export async function getQrClaim(qrHash: string): Promise<null | ClaimQR> {
+  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash=${qrHash} AND is_active = true', {qrHash});
   return res;
 }
 
-export async function checkDualQrClaim(event_id: number, address: string): Promise<boolean> {
-  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE event_id = ${event_id} AND beneficiary = ${address} AND is_active = true', {
-    event_id,
+export async function checkDualQrClaim(eventId: number, address: string): Promise<boolean> {
+  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE event_id = ${eventId} AND beneficiary = ${address} AND is_active = true', {
+    eventId,
     address
   });
   return res === null;
 }
 
-export async function adQrClaim(qr_hash: string): Promise<null | ClaimQR> {
-  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash = $1 AND is_active = true', [qr_hash]);
+export async function adQrClaim(qrHash: string): Promise<null | ClaimQR> {
+  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash = $1 AND is_active = true', [qrHash]);
   return res;
 }
 
-export async function claimQrClaim(qr_hash: string) {
-  const res = await db.result('update qr_claims set claimed=true, claimed_date=current_timestamp where qr_hash = $1', [qr_hash]);
+export async function claimQrClaim(qrHash: string) {
+  const res = await db.result('update qr_claims set claimed=true, claimed_date=current_timestamp where qr_hash = $1', [qrHash]);
   return res.rowCount === 1;
 }
 
-export async function unclaimQrClaim(qr_hash: string) {
-  const res = await db.result('update qr_claims set claimed=false, claimed_date=null where qr_hash = $1', [qr_hash]);
+export async function unclaimQrClaim(qrHash: string) {
+  const res = await db.result('update qr_claims set claimed=false, claimed_date=null where qr_hash = $1', [qrHash]);
   return res.rowCount === 1;
 }
 
-export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: ContractTransaction) {
+export async function updateQrClaim(qrHash: string, beneficiary:string, tx: ContractTransaction) {
   const tx_hash = tx.hash
   const signer = tx.from
 
-  const res = await db.result('update qr_claims set tx_hash=${tx_hash}, beneficiary=${beneficiary}, signer=${signer} where qr_hash = ${qr_hash}',
+  const res = await db.result('update qr_claims set tx_hash=${tx_hash}, beneficiary=${beneficiary}, signer=${signer} where qr_hash = ${qrHash}',
   {
     tx_hash,
     beneficiary,
     signer,
-    qr_hash
+    qrHash
   });
   return res.rowCount === 1;
 }
@@ -316,7 +322,107 @@ export async function createNotification(data: any): Promise<null | Notification
   return notification;
 }
 
-export async function getEventHost(user_id: string): Promise<null | eventHost> {
-  const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE user_id=${user_id} AND is_active = true', {user_id});
+export async function getEventHost(userId: string): Promise<null | eventHost> {
+  const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE user_id=${userId} AND is_active = true', {userId});
   return res;
+}
+
+export async function getRangeClaimedQr(numericIdMax: number, numericIdMin: number): Promise<null | ClaimQR[]> {
+  const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE numeric_id<=${numericIdMax} AND numeric_id>=${numericIdMin} AND is_active = true AND claimed = true', {
+    numericIdMax,
+    numericIdMin
+  });
+
+  return res;
+}
+
+export async function getRangeNotOwnedQr(numericIdMax: number, numericIdMin: number, eventHostQrRolls: qrRoll[]): Promise<null | ClaimQR[]> {
+  let qrRollIds = [];
+  for (let qrRoll of eventHostQrRolls) {
+    qrRollIds.push(qrRoll.id)
+  }
+
+  console.log(qrRollIds);
+
+  const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_roll_id NOT IN (${qrRollIds:csv}) AND numeric_id<=${numericIdMax} AND numeric_id>=${numericIdMin} AND is_active = true', {
+    numericIdMax,
+    numericIdMin,
+    qrRollIds
+  });
+
+  return res;
+}
+
+export async function updateEventOnQrRange(numericIdMax: number, numericIdMin: number, eventId: number){
+  await db.result('UPDATE qr_claims SET event_id=${eventId} where numeric_id<=${numericIdMax} AND numeric_id>=${numericIdMin}', {
+    numericIdMax,
+    numericIdMin,
+    eventId
+  });
+}
+
+export async function getEventHostQrRolls(eventHostId: number): Promise<null | qrRoll[]> {
+  const hostId = eventHostId.toString();
+  const res = await db.manyOrNone<qrRoll>('SELECT * FROM qr_roll WHERE event_host_id = ${hostId} AND is_active = true', {
+    hostId
+  });
+
+  return res;
+}
+
+export async function getQrRoll(qrRollId: string): Promise<null | eventHost> {
+  const res = await db.oneOrNone<eventHost>('SELECT * FROM qr_roll WHERE id=${qrRollId} AND is_active = true', {qrRollId});
+  return res;
+}
+
+
+
+export async function getPaginatedQrClaims(limit: number, offset: number, eventId:number, qrRollId:number, claimed:string|null): Promise<ClaimQR[]> {
+  let query = 'SELECT * FROM qr_claims WHERE is_active = true '
+
+  if(eventId) {
+    query = query + `AND event_id = ${eventId} `
+  }
+
+  if(qrRollId) {
+    query = query + `AND qr_roll_id = ${qrRollId} `
+  }
+
+  if(claimed == 'true') {
+    query = query + 'AND claimed = true '
+  }
+
+  if(claimed == 'false') {
+    query = query + 'AND claimed = false '
+  }
+
+  query = query + 'ORDER BY created_date DESC LIMIT ${limit} OFFSET ${offset}';
+
+  const res = await db.manyOrNone<ClaimQR>(query, {limit, offset});
+  return res
+}
+
+export async function getTotalQrClaims(eventId:number, qrRollId:number, claimed:string|null): Promise<number> {
+  let query = 'SELECT * FROM qr_claims WHERE is_active = true '
+
+  if(eventId) {
+    query = query + `AND event_id = ${eventId} `
+  }
+
+  if(qrRollId) {
+    query = query + `AND qr_roll_id = ${qrRollId} `
+  }
+
+  if(claimed == 'true') {
+    query = query + `AND claimed = true `
+  }
+
+  if(claimed == 'false') {
+    query = query + `AND claimed = false `
+  }
+
+  query = query + 'ORDER BY created_date DESC'
+
+  const res = await db.result(query);
+  return res.rowCount;
 }

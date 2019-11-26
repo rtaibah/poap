@@ -15,6 +15,7 @@ import transactionsMonitorCron  from './plugins/tx-monitor';
 import taskMonitorCron  from './plugins/task-monitor';
 import dotenv from 'dotenv';
 import * as admin from "firebase-admin";
+//import * as storage from '@google-cloud/storage';
 import getEnv from './envs';
 
 dotenv.config();
@@ -38,7 +39,39 @@ fastify.register(fastifyMultipart, {
   addToBody: true,
   sharedSchemaId: 'MultipartFileType', // Optional shared schema id
   onFile: (fieldName:any, stream:any, filename:any, encoding:any, mimetype:any, body:any) => {
-    stream.resume()
+    // stream.resume()
+    // .on('end', () => {
+    //   console.log('Reached the end, but did not read anything.');
+    // });
+    // const env = getEnv();
+    // const googleStorageClient = new storage.Storage();
+
+    // const bucket = googleStorageClient.bucket(env.googleStorageBucket);
+    // const blob = bucket.file(filename);
+  
+    // const blob_stream = blob.createWriteStream({
+    //   resumable: true,
+    //   contentType: mimetype,
+    //   predefinedAcl: 'publicRead',
+    // });
+  
+    // blob_stream.on('error', err => {
+    //   console.log(err);
+    // });
+  
+    // blob_stream.on('finish', () => {
+    //   console.log(`https://storage.googleapis.com/${bucket.name}/${blob.name}`);
+    // });
+  
+    // blob_stream.end(stream);
+
+    stream.on('readable', () => {
+      let chunk;
+      while (null !== (chunk = stream.read())) {
+        console.log(`Received ${chunk.length} bytes of data.`);
+      }
+    });
+
   },
 });
 
