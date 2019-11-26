@@ -1,67 +1,31 @@
 {
-  "name": "client",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@types/react-day-picker": "^5.3.0",
-    "@types/react-modal": "^3.8.3",
-    "@types/react-paginate": "^6.2.1",
-    "aos": "^2.3.4",
-    "auth0-js": "^9.11.2",
-    "classnames": "^2.2.6",
-    "dlv": "^1.1.3",
-    "ethers": "^4.0.33",
-    "firebase-tools": "^7.2.0",
-    "formik": "^1.5.8",
-    "node-sass": "^4.12.0",
-    "query-string": "^6.8.3",
-    "react": "^16.8.6",
-    "react-burger-menu": "^2.6.10",
-    "react-day-picker": "^7.4.0",
-    "react-dom": "^16.8.6",
-    "react-modal": "^3.10.1",
-    "react-paginate": "^6.3.0",
-    "react-router-dom": "^5.0.1",
-    "react-scripts": "3.0.1",
-    "react-share": "^3.0.0",
-    "typescript": "3.5.3",
-    "yup": "^0.27.0"
-  },
+  "name": "poap2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "deploy": "yarn build && yarn firebase deploy"
+    "ganache": "ganache-cli --port 9545 --deterministic --noVMErrorsOnRPCResponse",
+    "contracts:build": "./scripts/build-contracts.sh",
+    "db:reset": "./scripts/resetdb.sh dev && ./scripts/resetdb.sh test && yarn db:populate",
+    "db:populate": "psql -h localhost -U poap poap_dev < ./db/data-dump.sql",
+    "contracts:deploy:dev": "./scripts/deploy-ganache.sh",
+    "contracts:migrate:dev": "(cd server; ts-node src/migrate.ts writecontract)",
+    "start:client": "(cd client; yarn start)",
+    "start:server": "(cd server; yarn start:dev)",
+    "contracts:dev": "delay 3 && npm run contracts:deploy:dev",
+    "ganache:dev": "npm-run-all -p ganache contracts:dev",
+    "dev": "npm-run-all -p ganache:dev start:client start:server"
   },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
+  "private": true,
+  "author": "Mariano Cortesi <mcortesi@gmail.com>",
+  "license": "ISC",
   "devDependencies": {
-    "@auth0/auth0-spa-js": "^1.1.1",
-    "@types/aos": "^3.0.1",
-    "@types/auth0-js": "^9.10.2",
-    "@types/classnames": "^2.2.9",
-    "@types/dlv": "^1.1.1",
-    "@types/jest": "24.0.15",
-    "@types/node": "12.6.8",
-    "@types/react": "16.9.11",
-    "@types/react-burger-menu": "^2.2.5",
-    "@types/react-dom": "16.8.5",
-    "@types/react-router-dom": "^4.3.4",
-    "@types/react-share": "^2.1.1",
-    "@types/yup": "^0.26.24"
-  }
+    "@types/http-errors": "^1.6.1",
+    "delay-cli": "^1.1.0",
+    "npm-run-all": "^4.1.5",
+    "ts-node": "^8.1.0",
+    "typechain": "^0.3.14",
+    "typescript": "^3.4.5"
+  },
+  "dependencies": {}
 }

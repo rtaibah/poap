@@ -70,6 +70,10 @@ type EventEditValues = {
   isFile: boolean;
 };
 
+type DatePickerDay = 'start_date' | 'end_date';
+
+type SetFieldValue = (field: string, value: any) => void;
+
 const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
   const startingDate = new Date('1 Jan 1900');
   const endingDate = new Date('1 Jan 2200');
@@ -103,18 +107,21 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
     }
   }, [event]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFieldValue: Function) => {
-    e.preventDefault();
-    const file = e.target.files && e.target.files[0];
+  const handleFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setFieldValue: SetFieldValue
+  ) => {
+    event.preventDefault();
+    const { files } = event.target;
 
-    setFieldValue('image', file);
+    if (!files || !files.length) return;
+
+    const firstFile = files[0];
+    setFieldValue('image', firstFile);
   };
 
-  const handleDayClick = (
-    day: Date,
-    dayToSetup: 'start_date' | 'end_date',
-    setFieldValue: Function
-  ) => setFieldValue(dayToSetup, dateFormatter(day));
+  const handleDayClick = (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) =>
+    setFieldValue(dayToSetup, dateFormatter(day));
 
   return (
     <div className={'bk-container'}>
@@ -211,9 +218,9 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
 
 type DatePickerContainerProps = {
   text: string;
-  dayToSetup: 'start_date' | 'end_date';
-  handleDayClick: Function;
-  setFieldValue: Function;
+  dayToSetup: DatePickerDay;
+  handleDayClick: (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) => void;
+  setFieldValue: SetFieldValue;
   disabledDays: RangeModifier | undefined;
 };
 export interface RangeModifier {
@@ -227,15 +234,19 @@ const DayPickerContainer = ({
   handleDayClick,
   setFieldValue,
   disabledDays,
-}: DatePickerContainerProps) => (
-  <div className="date-picker-container">
-    <span>{text}</span>
-    <DayPickerInput
-      dayPickerProps={{ disabledDays: disabledDays }}
-      onDayChange={(day: Date) => handleDayClick(day, dayToSetup, setFieldValue)}
-    />
-  </div>
-);
+}: DatePickerContainerProps) => {
+  const handleDayChange = (day: Date) => handleDayClick(day, dayToSetup, setFieldValue);
+
+  return (
+    <div className="date-picker-container">
+      <span>{text}</span>
+      <DayPickerInput
+        dayPickerProps={{ disabledDays: disabledDays }}
+        onDayChange={handleDayChange}
+      />
+    </div>
+  );
+};
 
 type ImageContainerProps = {
   text: string;
@@ -279,8 +290,8 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
           )}
           {type !== 'textarea' && (
             <input
-              type={type || 'text'}
               {...field}
+              type={type || 'text'}
               disabled={disabled}
               className={classNames(!!form.errors[name] && 'error')}
             />

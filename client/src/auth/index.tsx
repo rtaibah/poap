@@ -51,7 +51,6 @@ export class AuthService {
 
   async getAPIToken() {
     const token = await this.client.getTokenSilently();
-    console.log(this.user);
     return token;
   }
 
