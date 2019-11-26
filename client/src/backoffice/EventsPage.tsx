@@ -176,6 +176,13 @@ const EventList: React.FC = () => {
   const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
   const [criteria, setCriteria] = useState<string>('');
 
+  const handleNameChange = (e: any): void => {
+    console.log(e);
+    const { value } = e.target;
+
+    setCriteria(value.toLowerCase());
+  };
+
   return (
     <div className={'bk-container'}>
       <h2>Events</h2>
@@ -184,11 +191,7 @@ const EventList: React.FC = () => {
           Create New
         </button>
       </Link>
-      <input
-        type="text"
-        placeholder="Search by name"
-        onChange={e => setCriteria(e.target.value.toLowerCase())}
-      />
+      <input type="text" placeholder="Search by name" onChange={handleNameChange} />
       {fetchingEvents && <Loading />}
 
       {(fetchEventsError || events === null) && <div>There was a problem fetching events</div>}
@@ -209,7 +212,6 @@ type EventTableProps = {
 
 const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
   const total = events.length;
-  const pageRange = 10;
   const [page, setPage] = useState<number>(1);
 
   const handlePageChange = (obj: PaginateAction) => {
@@ -217,7 +219,7 @@ const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
   };
 
   const eventsToShowManager = (events: PoapEvent[]): PoapEvent[] =>
-    events.slice(page * pageRange, page * pageRange + pageRange);
+    events.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   const handleCriteriaFilter = (event: PoapEvent): boolean =>
     event.name.toLowerCase().includes(criteria);
@@ -264,7 +266,7 @@ const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
           <ReactPaginate
             pageCount={Math.ceil(total / PAGE_SIZE)}
             marginPagesDisplayed={2}
-            pageRangeDisplayed={pageRange}
+            pageRangeDisplayed={PAGE_SIZE}
             activeClassName={'active'}
             onPageChange={handlePageChange}
           />
