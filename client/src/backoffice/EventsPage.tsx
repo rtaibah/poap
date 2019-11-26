@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, ReactElement } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, Switch, Route, RouteComponentProps } from 'react-router-dom';
 import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
@@ -176,8 +176,7 @@ const EventList: React.FC = () => {
   const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
   const [criteria, setCriteria] = useState<string>('');
 
-  const handleNameChange = (e: any): void => {
-    console.log(e);
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { value } = e.target;
 
     setCriteria(value.toLowerCase());
@@ -257,7 +256,7 @@ const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
                   <span>{event.end_date}</span>
                 </div>
                 <div className={'col-md-1 center logo-image-container'}>
-                  <img className={'logo-image'} src={event.image_url} />
+                  <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
                 </div>
               </div>
             ))}
