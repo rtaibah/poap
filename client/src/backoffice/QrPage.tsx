@@ -51,11 +51,11 @@ const QrPage: FC = () => {
 
   useEffect(() => {
     fetchQrCodes();
-  }, [page]);
+  }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     page !== 0 ? setPage(0) : fetchQrCodes();
-  }, [selectedEvent, claimStatus]);
+  }, [selectedEvent, claimStatus]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchEvents = async () => {
     const events = await getEvents();

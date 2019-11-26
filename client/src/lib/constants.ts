@@ -96,8 +96,6 @@ const TX_STATUS = {
   pending: 'pending',
 };
 
-const ETHERSCAN_URL = 'https://etherscan.io';
-
 const etherscanLinks = {
   tx: (hash: string): string => `https://etherscan.io/tx/${hash}`,
   address: (address: string): string => `https://etherscan.io/address/${address}`,

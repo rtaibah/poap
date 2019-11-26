@@ -58,8 +58,10 @@ type Roles = {
   roles: string[];
 };
 
-const withRole: React.FC<Props> = (WrappedComponent: React.ComponentType<Props>) => {
-  const hocComponent = (props: Roles & Props) => {
+const withRole = <T extends Object>(
+  WrappedComponent: React.ComponentType<T>
+): React.FC<T & Roles> => {
+  return (props: Roles & T) => {
     // TODO: Get user role (Backend WIP)
     const userRole = 'super';
 
@@ -67,8 +69,6 @@ const withRole: React.FC<Props> = (WrappedComponent: React.ComponentType<Props>)
 
     return <WrappedComponent {...props} />;
   };
-
-  return hocComponent;
 };
 
 const LabelWithRole = withRole(Label);
@@ -87,7 +87,7 @@ const NavigationMenu = withRouter(({ history }) => {
 
     const { pathname } = history.location;
     if (pathname === '/admin' || pathname === '/admin/') setIsOpen(true);
-  }, []);
+  }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   return (
     <Menu isOpen={isOpen} onStateChange={state => setIsOpen(state.isOpen)} right disableAutoFocus>
@@ -170,14 +170,16 @@ const Landing = () => {
   );
 };
 
-const CheckRole: React.FC<{ roles: string[] }> = ({ roles, children }) => {
-  // TODO: Get user role (Backend WIP)
-  const userRole = 'super';
-
-  if (!roles.includes(userRole)) return null;
-
-  return <>{children}</>;
-};
+const IssueForEventPageWithRole = withRole(IssueForEventPage);
+const IssueForUserPageWithRole = withRole(IssueForUserPage);
+const EventsPageWithRole = withRole(EventsPage);
+const QrPageWithRole = withRole(QrPage);
+const InboxListPageWithRole = withRole(InboxListPage);
+const TransactionsPageWithRole = withRole(TransactionsPage);
+const MintersPageWithRole = withRole(MintersPage);
+const BurnPageWithRole = withRole(BurnPage);
+const InboxPageWithRole = withRole(InboxPage);
+const AddressManagementPageWithRole = withRole(AddressManagementPage);
 
 export const BackOffice: React.FC = () => (
   <>
@@ -203,101 +205,61 @@ export const BackOffice: React.FC = () => (
           <Route
             exact
             path={ROUTES.issueForEvent.path}
-            render={() => (
-              <CheckRole roles={ROUTES.issueForEvent.roles}>
-                <IssueForEventPage />
-              </CheckRole>
-            )}
+            render={() => <IssueForEventPageWithRole roles={ROUTES.issueForEvent.roles} />}
           />
 
           <Route
             exact
             path={ROUTES.issueForUser.path}
-            render={() => (
-              <CheckRole roles={ROUTES.issueForUser.roles}>
-                <IssueForUserPage />
-              </CheckRole>
-            )}
+            render={() => <IssueForUserPageWithRole roles={ROUTES.issueForUser.roles} />}
           />
 
           <Route
             exact
             path={ROUTES.events.path}
-            render={() => (
-              <CheckRole roles={ROUTES.events.roles}>
-                <EventsPage />
-              </CheckRole>
-            )}
+            render={() => <EventsPageWithRole roles={ROUTES.events.roles} />}
           />
 
           <Route
             exact
             path={ROUTES.minters.path}
-            render={() => (
-              <CheckRole roles={ROUTES.minters.roles}>
-                <MintersPage />
-              </CheckRole>
-            )}
+            render={() => <MintersPageWithRole roles={ROUTES.minters.roles} />}
           />
 
           <Route
             exact
             path={ROUTES.burn.path}
-            render={() => (
-              <CheckRole roles={ROUTES.burn.roles}>
-                <BurnPage />
-              </CheckRole>
-            )}
+            render={() => <BurnPageWithRole roles={ROUTES.burn.roles} />}
           />
 
           <Route
             exact
             path={ROUTES.addressManagement.path}
-            render={() => (
-              <CheckRole roles={ROUTES.addressManagement.roles}>
-                <AddressManagementPage />
-              </CheckRole>
-            )}
+            render={() => <AddressManagementPageWithRole roles={ROUTES.addressManagement.roles} />}
           />
 
           <Route
             exact
             path={ROUTES.transactions.path}
-            render={() => (
-              <CheckRole roles={ROUTES.transactions.roles}>
-                <TransactionsPage />
-              </CheckRole>
-            )}
+            render={() => <TransactionsPageWithRole roles={ROUTES.transactions.roles} />}
           />
 
           <Route
             exact
             path={ROUTES.inbox.path}
-            render={() => (
-              <CheckRole roles={ROUTES.inbox.roles}>
-                <InboxPage />
-              </CheckRole>
-            )}
+            render={() => <InboxPageWithRole roles={ROUTES.inbox.roles} />}
           />
 
           <Route
             exact
             path={ROUTES.inboxList.path}
-            render={() => (
-              <CheckRole roles={ROUTES.inboxList.roles}>
-                <InboxListPage />
-              </CheckRole>
-            )}
+            render={() => <InboxListPageWithRole roles={ROUTES.inboxList.roles} />}
           />
 
           <Route
             exact
             path={ROUTES.qr.path}
-            render={() => (
-              <CheckRole roles={ROUTES.qr.roles}>
-                <QrPage />
-              </CheckRole>
-            )}
+            render={() => <QrPageWithRole roles={ROUTES.qr.roles} />}
           />
 
           <Route exact path={'*'} render={() => <Redirect to="/admin" />} />

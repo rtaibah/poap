@@ -41,7 +41,7 @@ const TransactionsPage: FC = () => {
 
   useEffect(() => {
     fetchTransactions();
-  }, [page, statusList]);
+  }, [page, statusList]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const txStatus = {
     [TX_STATUS.pending]: clock,

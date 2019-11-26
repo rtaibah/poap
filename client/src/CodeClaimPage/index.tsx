@@ -32,14 +32,14 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   useEffect(() => {
     hasWeb3().then(setWeb3);
     if (hash) fetchClaim(hash);
-  }, []);
+  }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchClaim = (hash: string) => {
     setIsClaimLoading(true);
     getClaimHash(hash.toLowerCase())
       .then(claim => {
-          setClaim(claim);
-          setClaimError(false);
+        setClaim(claim);
+        setClaimError(false);
       })
       .catch(error => {
         console.error(error);
@@ -55,24 +55,26 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
     image = claim.event.image_url;
     if (claim.tx_status) {
       if (claim.tx_status === TX_STATUS.pending) {
-        body = <ClaimPending claim={claim} checkClaim={fetchClaim} />
+        body = <ClaimPending claim={claim} checkClaim={fetchClaim} />;
       }
       if (claim.tx_status === TX_STATUS.passed) {
-        body = <ClaimFinished claim={claim} />
+        body = <ClaimFinished claim={claim} />;
       }
     }
   }
 
   if (hash && !claim && !claimError) {
-    body = <ClaimLoading />
+    body = <ClaimLoading />;
   }
 
   return (
     <div className={'code-claim-page'}>
-      <ClaimHeader title={title} image={image} claimed={!!(claim && claim.tx_status === TX_STATUS.passed)} />
-      <div className={'claim-body'}>
-        {body}
-      </div>
+      <ClaimHeader
+        title={title}
+        image={image}
+        claimed={!!(claim && claim.tx_status === TX_STATUS.passed)}
+      />
+      <div className={'claim-body'}>{body}</div>
       <ClaimFooter />
     </div>
   );

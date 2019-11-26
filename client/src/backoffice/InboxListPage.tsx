@@ -45,7 +45,7 @@ const InboxListPage: FC = () => {
 
   useEffect(() => {
     page !== 0 ? setPage(0) : fetchNotifications();
-  }, [notificationType]);
+  }, [notificationType]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     setShouldResetPage(true);
@@ -59,11 +59,11 @@ const InboxListPage: FC = () => {
     setSelectedEvent(undefined);
 
     page !== 0 ? setPage(0) : fetchNotifications();
-  }, [shouldResetPage]);
+  }, [shouldResetPage]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     fetchNotifications();
-  }, [page]);
+  }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchEvents = async () => {
     const events = await getEvents();
