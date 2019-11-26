@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@types/react-modal": "^3.8.3",
-    "@types/react-paginate": "^6.2.1",
     "aos": "^2.3.4",
     "auth0-js": "^9.11.2",
     "classnames": "^2.2.6",
@@ -60,6 +58,8 @@
     "@types/react": "16.9.11",
     "@types/react-burger-menu": "^2.2.5",
     "@types/react-dom": "16.8.5",
+    "@types/react-modal": "^3.10.0",
+    "@types/react-paginate": "^6.2.1",
     "@types/react-router-dom": "^4.3.4",
     "@types/react-share": "^2.1.1",
     "@types/react-toast-notifications": "^2.0.0",
