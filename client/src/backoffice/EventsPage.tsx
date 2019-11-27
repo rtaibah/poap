@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
-import { Link, Switch, Route, RouteComponentProps } from 'react-router-dom';
+import { Link, Route, RouteComponentProps } from 'react-router-dom';
 import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
@@ -17,26 +17,17 @@ import { Loading } from '../components/Loading';
 /* Helpers */
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
-import { getEvents, PoapEvent, getEvent, updateEvent, createEvent } from '../api';
+import { getEventsForSpecificUser, PoapEvent, getEvent, updateEvent, createEvent } from '../api';
 import { ROUTES } from '../lib/constants';
-
-export const EventsPage: React.FC = () => {
-  return (
-    <Switch>
-      <Route exact path={ROUTES.events.path} component={EventList} />
-      <Route exact path={ROUTES.eventsNew.path} component={CreateEventForm} />
-      <Route exact path={ROUTES.event.path} component={EditEventForm} />
-    </Switch>
-  );
-};
 
 const PAGE_SIZE = 10;
 
-const CreateEventForm: React.FC = () => {
+export const CreateEventForm: React.FC = () => {
+  console.log('create event form');
   return <EventForm create />;
 };
 
-const EditEventForm: React.FC<RouteComponentProps<{
+export const EditEventForm: React.FC<RouteComponentProps<{
   eventId: string;
 }>> = ({ location, match }) => {
   const [event, setEvent] = useState<null | PoapEvent>(null);
@@ -303,8 +294,8 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
   );
 };
 
-const EventList: React.FC = () => {
-  const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
+export const EventList: React.FC = () => {
+  const [events, fetchingEvents, fetchEventsError] = useAsync(getEventsForSpecificUser);
   const [criteria, setCriteria] = useState<string>('');
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -324,9 +315,9 @@ const EventList: React.FC = () => {
       <input type="text" placeholder="Search by name" onChange={handleNameChange} />
       {fetchingEvents && <Loading />}
 
-      {(fetchEventsError || events === null) && <div>There was a problem fetching events</div>}
+      {fetchEventsError && <div>There was a problem fetching events</div>}
 
-      {events !== null && <EventTable criteria={criteria} events={events} />}
+      {events && <EventTable criteria={criteria} events={events} />}
     </div>
   );
 };
@@ -348,8 +339,10 @@ const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
     setPage(obj.selected);
   };
 
-  const eventsToShowManager = (events: PoapEvent[]): PoapEvent[] =>
-    events.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const eventsToShowManager = (events: PoapEvent[]): PoapEvent[] => {
+    if (events.length <= 10) return events;
+    return events.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  };
 
   const handleCriteriaFilter = (event: PoapEvent): boolean =>
     event.name.toLowerCase().includes(criteria);
@@ -387,21 +380,33 @@ const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
                   <span>{event.end_date}</span>
                 </div>
                 <div className={'col-md-1 center logo-image-container'}>
-                  <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
+                  <img alt={event.image} className={'logo-image'} src={event.image} />
                 </div>
               </div>
             ))}
         </div>
         <div className={'pagination'}>
-          <ReactPaginate
-            pageCount={Math.ceil(total / PAGE_SIZE)}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={PAGE_SIZE}
-            activeClassName={'active'}
-            onPageChange={handlePageChange}
-          />
+          {events && events.length > 10 && (
+            <ReactPaginate
+              pageCount={Math.ceil(total / PAGE_SIZE)}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={PAGE_SIZE}
+              activeClassName={'active'}
+              onPageChange={handlePageChange}
+            />
+          )}
         </div>
       </div>
     </div>
   );
 };
+
+// export const EventsPage: React.FC<RouteComponentProps> = () => {
+//   return (
+//     <div>
+//       <Route exact path={ROUTES.eventsList.path} component={EventList} />
+//       <Route exact path={ROUTES.eventsNew.path} component={CreateEventForm} />
+//       <Route exact path={ROUTES.event.path} component={EditEventForm} />
+//     </div>
+//   );
+// };

@@ -153,13 +153,13 @@ const TransactionsPage: FC = () => {
                 <div className={'col-md-3'}>
                   <span className={'visible-sm'}>Tx: </span>
                   <a href={etherscanLinks.tx(tx.tx_hash)} target={'_blank'}>
-                    {reduceAddress(tx.tx_hash)}
+                    {tx.tx_hash && reduceAddress(tx.tx_hash)}
                   </a>
                 </div>
                 <div className={'col-md-3'}>
                   <span className={'visible-sm'}>Signer: </span>
                   <a href={etherscanLinks.address(tx.signer)} target={'_blank'}>
-                    {reduceAddress(tx.signer)}
+                    {tx.signer && reduceAddress(tx.signer)}
                   </a>
                 </div>
                 <div className={'col-md-2 capitalize'}>

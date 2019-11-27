@@ -9,7 +9,7 @@ import PoapLogo from '../images/POAP.svg';
 import { ROUTES, ROLES, LABELS } from '../lib/constants';
 /* Components */
 import { AuthContext } from '../auth';
-import { EventsPage } from './EventsPage';
+// import { EventsPage } from './EventsPage';
 import { BurnPage } from './BurnPage';
 import { IssueForEventPage, IssueForUserPage } from './IssuePage';
 import { AddressManagementPage } from './AddressManagementPage';
@@ -17,6 +17,7 @@ import { TransactionsPage } from './TransactionsPage';
 import { InboxPage } from './InboxPage';
 import { InboxListPage } from './InboxListPage';
 import { QrPage } from './QrPage';
+import { EventList, CreateEventForm, EditEventForm } from './EventsPage';
 import Calendar from '../images/calendar.svg';
 import Qr from '../images/qr-code.svg';
 
@@ -58,7 +59,7 @@ type Roles = {
   roles: string[];
 };
 
-const withRole = <T extends Object>(
+export const withRole = <T extends Object>(
   WrappedComponent: React.ComponentType<T>
 ): React.FC<T & Roles> => {
   return (props: Roles & T) => {
@@ -172,7 +173,7 @@ const Landing = () => {
 
 const IssueForEventPageWithRole = withRole(IssueForEventPage);
 const IssueForUserPageWithRole = withRole(IssueForUserPage);
-const EventsPageWithRole = withRole(EventsPage);
+// const EventsPageWithRole = withRole(EventsPage);
 const QrPageWithRole = withRole(QrPage);
 const InboxListPageWithRole = withRole(InboxListPage);
 const TransactionsPageWithRole = withRole(TransactionsPage);
@@ -214,11 +215,13 @@ export const BackOffice: React.FC = () => (
             render={() => <IssueForUserPageWithRole roles={ROUTES.issueForUser.roles} />}
           />
 
-          <Route
-            exact
-            path={ROUTES.events.path}
-            render={() => <EventsPageWithRole roles={ROUTES.events.roles} />}
-          />
+          {/* <Route exact path={ROUTES.events.path} component={EventsPage} /> */}
+
+          <Route exact path={ROUTES.events.path} component={EventList} />
+
+          <Route exact path={ROUTES.eventsNew.path} component={CreateEventForm} />
+
+          <Route exact path={ROUTES.event.path} component={EditEventForm} />
 
           <Route
             exact
@@ -262,7 +265,7 @@ export const BackOffice: React.FC = () => (
             render={() => <QrPageWithRole roles={ROUTES.qr.roles} />}
           />
 
-          <Route exact path={'*'} render={() => <Redirect to="/admin" />} />
+          {/* <Route exact path={'*'} render={() => <Redirect to="/admin" />} /> */}
         </Switch>
       </div>
     </main>

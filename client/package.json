@@ -18,7 +18,7 @@
     "react-dom": "^16.8.6",
     "react-modal": "^3.10.1",
     "react-paginate": "^6.3.0",
-    "react-router-dom": "^5.0.1",
+    "react-router-dom": "^5.1.2",
     "react-scripts": "3.0.1",
     "react-share": "^3.0.0",
     "react-toast-notifications": "^2.4.0",

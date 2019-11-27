@@ -46,6 +46,10 @@ const ROUTES = {
     roles: [ROLES.super, ROLES.eventAdmin],
     title: 'Manage Events',
   },
+  eventsList: {
+    path: '/admin/events/list',
+    roles: [ROLES.super, ROLES.eventAdmin],
+  },
   eventsNew: {
     path: '/admin/events/new',
     roles: [ROLES.super, ROLES.eventAdmin],
@@ -103,4 +107,4 @@ const etherscanLinks = {
   address: (address: string): string => `https://etherscan.io/address/${address}`,
 };
 
-export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS };
+export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS };

@@ -4,13 +4,13 @@ import { useToasts } from 'react-toast-notifications';
 /* Libraries */
 import ReactPaginate from 'react-paginate';
 import ReactModal from 'react-modal';
-import { withFormik, Formik } from 'formik';
+import { Formik } from 'formik';
 
 /* Components */
 import { Loading } from '../components/Loading';
 
 /* Helpers */
-import { QrCode, getQrCodes, getEvents, PoapEvent } from '../api';
+import { QrCode, getQrCodes, getEventsForSpecificUser, PoapEvent } from '../api';
 import { reduceAddress } from '../lib/helpers';
 import { etherscanLinks } from '../lib/constants';
 
@@ -65,7 +65,7 @@ const QrPage: FC = () => {
   }, [selectedEvent, claimStatus]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchEvents = async () => {
-    const events = await getEvents();
+    const events = await getEventsForSpecificUser();
     setEvents(events);
   };
 
@@ -81,7 +81,7 @@ const QrPage: FC = () => {
     try {
       const response = await getQrCodes(PAGE_SIZE, page * PAGE_SIZE, status, event_id);
       if (!response) return;
-      setQrCodes(response.codes);
+      setQrCodes(response.qr_claims);
       setTotal(response.total);
     } catch (e) {
       addToast(e.message, {
@@ -128,6 +128,7 @@ const QrPage: FC = () => {
     handleUpdateClick('selection', false);
   };
 
+  useEffect(() => console.log(qrCodes), [qrCodes]);
   return (
     <div className={'admin-table qr'}>
       <h2>QR Codes</h2>
@@ -143,7 +144,9 @@ const QrPage: FC = () => {
                 </option>
                 {events &&
                   events.map(event => {
-                    const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                    const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
+                      event.year
+                    }`;
                     return (
                       <option key={event.id} value={event.id}>
                         {label}
@@ -194,7 +197,7 @@ const QrPage: FC = () => {
             shouldCloseOnOverlayClick={true}
             shouldCloseOnEsc={true}
           >
-            <UpdateByRangeModalWithFormik />
+            <UpdateByRangeModal events={events} />
           </ReactModal>
 
           <ReactModal
@@ -232,12 +235,20 @@ const QrPage: FC = () => {
 
                 <div className={'col-md-2'}>
                   <span className={'visible-sm'}>QR Hash</span>
-                  {qr.qr_hash}
+                  {qr.tx_hash}
                 </div>
 
                 <div className={'col-md-5 ellipsis'}>
                   <span className={'visible-sm'}>Event: </span>
-                  {qr.event === null ? '-' : qr.event.name}
+                  {(!qr.event || !qr.event.name) && <span>-</span>}
+
+                  {qr.event && qr.event.event_url && qr.event.name && (
+                    <a href={qr.event.event_url} target="_blank" rel="noopener noreferrer">
+                      {qr.event.name}
+                    </a>
+                  )}
+
+                  {qr.event && qr.event.name && <span>{qr.event.name}</span>}
                 </div>
 
                 <div className={'col-md-2 center status'}>
@@ -252,7 +263,7 @@ const QrPage: FC = () => {
                 <div className={'col-md-2'}>
                   <span className={'visible-sm'}>Tx Hash: </span>
                   <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
-                    {reduceAddress(qr.tx_hash)}
+                    {qr.tx_hash && reduceAddress(qr.tx_hash)}
                   </a>
                 </div>
               </div>
@@ -286,40 +297,45 @@ type ByRangeModalValues = {
 };
 
 type UpdateByRangeModalProps = {
-  values: ByRangeModalValues;
+  events: PoapEvent[];
 };
 
-const UpdateByRangeModal: React.FC<UpdateByRangeModalProps> = ({ values }) => {
+const UpdateByRangeModal: React.FC<UpdateByRangeModalProps> = ({ events }) => {
   const handleSubmit = () => {
     console.log('submit');
   };
 
   return (
-    <Formik initialValues={values} onSubmit={handleSubmit}>
+    <Formik
+      initialValues={{
+        from: null,
+        to: null,
+        event: null,
+        selected: false,
+      }}
+      onSubmit={handleSubmit}
+    >
       <div className={'update-modal-container'}>
         <input type="text" placeholder="From" />
         <input type="text" placeholder="To" />
         <select>
-          <option>1</option>
-          <option>1</option>
+          {events &&
+            events.map(event => {
+              const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
+                event.year
+              }`;
+              return (
+                <option key={event.id} value={event.id}>
+                  {label}
+                </option>
+              );
+            })}
         </select>
         <input type="checkbox" className={'by-range-modal'} />
       </div>
     </Formik>
   );
 };
-
-const UpdateByRangeModalWithFormik = withFormik({
-  displayName: 'UpdateByRangeModalForm',
-  mapPropsToValues: (): ByRangeModalValues => ({
-    from: null,
-    to: null,
-    event: null,
-    selected: false,
-  }),
-  validationSchema: UpdateByRangeModalWithFormikSchema,
-  handleSubmit: () => false,
-})(UpdateByRangeModal);
 
 const UpdateSelectionModal: React.FC = () => (
   <div>

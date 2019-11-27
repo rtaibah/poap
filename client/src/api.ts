@@ -98,11 +98,17 @@ export interface PaginatedNotifications {
 }
 
 export type QrCode = {
-  id: number;
-  qr_hash: string;
+  beneficiary: string;
   claimed: boolean;
-  tx_hash: string;
+  claimed_date: string;
+  created_date: string;
   event_id: number;
+  id: number;
+  is_active: boolean;
+  numeric_id: number;
+  qr_hash: string;
+  qr_roll_id: number;
+  tx_hash: string;
   event: PoapEvent;
 };
 
@@ -110,7 +116,7 @@ export type PaginatedQrCodes = {
   limit: number;
   offset: number;
   total: number;
-  codes: QrCode[];
+  qr_claims: QrCode[];
 };
 
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
@@ -118,7 +124,8 @@ export type ENSQueryResult = { valid: false } | { valid: true; address: string }
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
 
 // let API_BASE = 'https://api.poap.xyz';
-let API_BASE = 'http://10.0.0.146:8080';
+// let API_BASE = 'http://10.0.0.146:8080';
+let API_BASE = 'https://development-dot-poapapp.appspot.com';
 
 // if (process.env.NODE_ENV === 'development') {
 //   if (process.env.REACT_APP_API_ROOT) {
@@ -187,6 +194,10 @@ export function getTokenInfo(tokenId: string): Promise<TokenInfo> {
 }
 
 export async function getEvents(): Promise<PoapEvent[]> {
+  return fetchJson(`${API_BASE}/events`);
+}
+
+export async function getEventsForSpecificUser(): Promise<PoapEvent[]> {
   const user = await authClient.user;
   const userId = user.sub;
   return fetchJson(`${API_BASE}/events?user_id=${userId}`);
@@ -330,7 +341,7 @@ export async function createEvent(event: FormData) {
 }
 
 export async function getSigners(): Promise<AdminAddress[]> {
-  return fetchJson(`${API_BASE}/signers`);
+  return secureFetch(`${API_BASE}/signers`);
 }
 
 export function setSigner(id: number, gasPrice: string): Promise<any> {
@@ -357,9 +368,7 @@ export async function getQrCodes(
   status?: boolean,
   event_id?: number
 ): Promise<PaginatedQrCodes> {
-  const user = await authClient.user;
-  const userId = user.sub;
-  const params = queryString.stringify({ limit, offset, status, event_id, userId }, { sort: false });
+  const params = queryString.stringify({ limit, offset, status, event_id }, { sort: false });
   return secureFetch(`${API_BASE}/qr-claims?${params}`);
 }
 
