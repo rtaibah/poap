@@ -54,11 +54,11 @@ import {
   getAllEventIds
 } from './eth/helpers';
 
-import { Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification } from './types';
+import { Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
-import { listFiles } from './utils';
+import { uploadFile } from './plugins/google-storage-utils';
 
 function sleep(ms: number) {
   return new Promise(resolve=>{
@@ -1045,9 +1045,11 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Event with this fancy id already exists');
       }
 
-      console.log(image);
-      // await uploadFile(image)
-      await listFiles();
+      const filename = parsed_fancy_id + '-' + eventHost.id + '-logo.png'
+      const google_image_url = await uploadFile(filename, image.mimetype, image.data);
+      if (!google_image_url) {
+        return new createError.InternalServerError('Error uploading image');
+      }
 
       let newEvent: Omit<PoapEvent, 'id'> = {
         fancy_id: parsed_fancy_id,
@@ -1059,7 +1061,7 @@ export default async function routes(fastify: FastifyInstance) {
         end_date: req.body.end_date,
         year: req.body.year,
         event_url: req.body.event_url,
-        image: '',
+        image: google_image_url,
         event_host_id: eventHost.id
       }
 
@@ -1132,7 +1134,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/transactions',
     {
-      preValidation: [fastify.authenticate, fastify.isAdmin],
+      preValidation: [fastify.authenticate,], // fastify.isAdmin
       schema: {
         description: 'Paginates endpoint of transactions, you can filter by status',
         tags: ['Transactions', ],
@@ -1154,24 +1156,14 @@ export default async function routes(fastify: FastifyInstance) {
                   type: 'object',
                   properties: {
                     id: { type: 'number'},
-                    title: { type: 'string'},
-                    description: { type: 'string'},
-                    type: { type: 'string'},
-                    event_id: { type: 'number'},
-                    event: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'number' },
-                        tx_hash: { type: 'string' },
-                        nonce: { type: 'number' },
-                        signer: { type: 'string' },
-                        operation: { type: 'string' },
-                        arguments: { type: 'string' },
-                        status: { type: 'string' },
-                        gas_price: { type: 'string' },
-                        created_date: { type: 'string' }
-                      }
-                    },
+                    tx_hash: { type: 'string'},
+                    nonce: { type: 'number'},
+                    signer: { type: 'string'},
+                    operation: { type: 'string'},
+                    arguments: { type: 'string'},
+                    status: { type: 'string'},
+                    gas_price: { type: 'string'},
+                    created_date: { type: 'string'}
                   }
                 }
               },
@@ -1201,6 +1193,8 @@ export default async function routes(fastify: FastifyInstance) {
       if (!transactions) {
         return new createError.NotFound('Transactions not found');
       }
+      console.log(transactions);
+
       return {
         limit: limit,
         offset: offset,
@@ -1629,8 +1623,19 @@ export default async function routes(fastify: FastifyInstance) {
         }
       }
 
-      const qrClaims = await getPaginatedQrClaims(limit, offset, eventId, qrRollId, claimed);
+      let qrClaims = await getPaginatedQrClaims(limit, offset, eventId, qrRollId, claimed);
       const totalQrClaims = await getTotalQrClaims(eventId, qrRollId, claimed) || 0;
+
+      const allEvents = await getEvents();
+
+      let indexedEvents: { [id: number] : PoapEvent; } = {}
+      for (let event of allEvents) {
+        indexedEvents[event.id] = event;
+      }
+
+      qrClaims = qrClaims.map((qrclaim: ClaimQR) => {
+        return {...qrclaim, event:indexedEvents[qrclaim.event_id]};
+      });
 
       return {
         limit: limit,

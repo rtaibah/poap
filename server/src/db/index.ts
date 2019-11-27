@@ -31,8 +31,8 @@ export async function getUserEvents(event_host_id: number): Promise<PoapEvent[]>
 export async function getTransactions(limit: number, offset: number, statusList: string[]): Promise<Transaction[]> {
   let query = "SELECT * FROM server_transactions WHERE status IN (${statusList:csv}) ORDER BY created_date DESC" +
     " LIMIT ${limit} OFFSET ${offset}";
-  const res = await db.result(query, {statusList, limit, offset});
-  return res.rows
+  const res = await db.manyOrNone<Transaction>(query, {statusList, limit, offset});
+  return res
 }
 
 export async function getTotalTransactions(statusList: string[]): Promise<number> {
