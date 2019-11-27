@@ -91,6 +91,13 @@ const InboxFormSchema = yup.object().shape({
   selectedEventId: yup.number().nullable(),
   notificationType: yup.string().required(),
 });
+const UpdateByRangeModalWithFormikSchema = yup.object().shape({
+  title: yup.string().required(),
+  description: yup.string().required(),
+  recipientFilter: yup.string().required(),
+  selectedEventId: yup.number().nullable(),
+  notificationType: yup.string().required(),
+});
 
 export {
   AddressSchema,
@@ -101,4 +108,5 @@ export {
   IssueForEventFormValueSchema,
   IssueForUserFormValueSchema,
   InboxFormSchema,
+  UpdateByRangeModalWithFormikSchema,
 };

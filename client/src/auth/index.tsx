@@ -59,6 +59,17 @@ export class AuthService {
   }
 }
 
+type User = {
+  email: string;
+  email_verified: boolean;
+  name: string;
+  nickname: string;
+  picture: string;
+  sub: string;
+  updated_at: string;
+  'https://poap.xyz/roles': string[];
+};
+
 export const authClient = new AuthService();
 
 export const AuthContext: React.Context<AuthService> = React.createContext<any>(undefined);

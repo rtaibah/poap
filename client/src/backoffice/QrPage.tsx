@@ -3,6 +3,8 @@ import { useToasts } from 'react-toast-notifications';
 
 /* Libraries */
 import ReactPaginate from 'react-paginate';
+import ReactModal from 'react-modal';
+import { withFormik, Formik } from 'formik';
 
 /* Components */
 import { Loading } from '../components/Loading';
@@ -18,6 +20,9 @@ import error from '../images/error.svg';
 
 /* Typings */
 import { Value } from '../types';
+
+// shemas
+import { UpdateByRangeModalWithFormikSchema } from '../lib/schemas';
 
 const PAGE_SIZE = 10;
 
@@ -42,6 +47,8 @@ const QrPage: FC = () => {
   const [claimStatus, setClaimStatus] = useState<string[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<number | undefined>(undefined);
   const [events, setEvents] = useState<PoapEvent[]>([]);
+  const [isUpdateByRangeModalOpen, setIsUpdateByRangeModalOpen] = useState<boolean>(false);
+  const [isUpdateSelectionModalOpen, setIsUpdateSelectionModalOpen] = useState<boolean>(false);
 
   const { addToast } = useToasts();
 
@@ -100,13 +107,34 @@ const QrPage: FC = () => {
     setPage(obj.selected);
   };
 
+  const handleUpdateClick = (modal: 'byRange' | 'selection', action: boolean): void => {
+    if (modal === 'byRange') setIsUpdateByRangeModalOpen(action);
+    if (modal === 'selection') setIsUpdateSelectionModalOpen(action);
+  };
+
+  const handleUpdateByRangeClick = (): void => {
+    handleUpdateClick('byRange', true);
+  };
+
+  const handleUpdateSelectionClick = (): void => {
+    handleUpdateClick('selection', true);
+  };
+
+  const handleByRangeModalRequestClose = (): void => {
+    handleUpdateClick('byRange', false);
+  };
+
+  const handleSelectionModalRequestClose = (): void => {
+    handleUpdateClick('selection', false);
+  };
+
   return (
     <div className={'admin-table qr'}>
       <h2>QR Codes</h2>
       <div>
         <h4>Filters</h4>
         <div className={'filters qr'}>
-          <div className={'filter col-md-6'}>
+          <div className={'filter col-md-5'}>
             <label>Event: </label>
             <div className="filter-option">
               <select onChange={handleSelect}>
@@ -126,7 +154,7 @@ const QrPage: FC = () => {
             </div>
           </div>
 
-          <div className={'filter col-md-6'}>
+          <div className={'filter col-md-4'}>
             <label>Status: </label>
             <div className={'filter-group'}>
               <div className="filter-option">
@@ -149,6 +177,35 @@ const QrPage: FC = () => {
               </div>
             </div>
           </div>
+
+          <div className={'action-button-container col-md-4'}>
+            <button className={'action-button'} onClick={handleUpdateByRangeClick}>
+              Update by range
+            </button>
+            <button className={'action-button'} onClick={handleUpdateSelectionClick}>
+              Update selection
+            </button>
+          </div>
+
+          <ReactModal
+            isOpen={isUpdateByRangeModalOpen}
+            onRequestClose={handleByRangeModalRequestClose}
+            shouldFocusAfterRender={true}
+            shouldCloseOnOverlayClick={true}
+            shouldCloseOnEsc={true}
+          >
+            <UpdateByRangeModalWithFormik />
+          </ReactModal>
+
+          <ReactModal
+            isOpen={isUpdateSelectionModalOpen}
+            onRequestClose={handleSelectionModalRequestClose}
+            shouldFocusAfterRender={true}
+            shouldCloseOnOverlayClick={true}
+            shouldCloseOnEsc={true}
+          >
+            <UpdateSelectionModal />
+          </ReactModal>
         </div>
       </div>
       <div className={'row table-header visible-md'}>
@@ -220,5 +277,54 @@ const QrPage: FC = () => {
     </div>
   );
 };
+
+type ByRangeModalValues = {
+  from: number | null;
+  to: number | null;
+  event: PoapEvent | null;
+  selected: boolean;
+};
+
+type UpdateByRangeModalProps = {
+  values: ByRangeModalValues;
+};
+
+const UpdateByRangeModal: React.FC<UpdateByRangeModalProps> = ({ values }) => {
+  const handleSubmit = () => {
+    console.log('submit');
+  };
+
+  return (
+    <Formik initialValues={values} onSubmit={handleSubmit}>
+      <div className={'update-modal-container'}>
+        <input type="text" placeholder="From" />
+        <input type="text" placeholder="To" />
+        <select>
+          <option>1</option>
+          <option>1</option>
+        </select>
+        <input type="checkbox" className={'by-range-modal'} />
+      </div>
+    </Formik>
+  );
+};
+
+const UpdateByRangeModalWithFormik = withFormik({
+  displayName: 'UpdateByRangeModalForm',
+  mapPropsToValues: (): ByRangeModalValues => ({
+    from: null,
+    to: null,
+    event: null,
+    selected: false,
+  }),
+  validationSchema: UpdateByRangeModalWithFormikSchema,
+  handleSubmit: () => false,
+})(UpdateByRangeModal);
+
+const UpdateSelectionModal: React.FC = () => (
+  <div>
+    <span>UpdateSelectionModal</span>
+  </div>
+);
 
 export { QrPage };

@@ -336,7 +336,7 @@
 
         .filter-group {
           display: flex;
-          flex-direction: row;
+          flex-direction: column;
           height: 50px;
 
           @media (max-width: $bp-mw) {
@@ -349,7 +349,7 @@
             align-items: center;
 
             &:first-child {
-              margin-right: 40px;
+              margin-bottom: 10px;
             }
 
             input {
@@ -370,6 +370,22 @@
         > label {
           cursor: default;
           margin-bottom: 24px;
+        }
+      }
+
+      .action-button-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+
+        .action-button {
+          cursor: pointer;
+          background-color: $color-primary;
+          color: white;
+          height: 40px;
+          border-radius: 4px;
+          width: 250px;
+          margin-bottom: 17px;
         }
       }
     }

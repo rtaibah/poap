@@ -160,6 +160,12 @@ input[type='radio'] {
   background: none;
 }
 
+input[type='checkbox'] {
+  &.by-range-modal {
+    margin-left: 12px;
+  }
+}
+
 input[type='color'] {
   -webkit-appearance: none;
   border: none;
@@ -224,7 +230,7 @@ input[type='submit'] {
 
 select {
   width: 100%;
-  max-width: 350px;
+  max-width: 500px;
   padding: 12px;
   box-shadow: none;
   border: 2px solid $color-invert;
