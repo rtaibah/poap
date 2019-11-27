@@ -5,7 +5,7 @@ CREATE TABLE events (
   "signer" varchar,
   "name" varchar(256) not null,
   "event_url" varchar,
-  "image_url" varchar,
+  "image" varchar,
   "country" varchar(256),
   "city" varchar(256),
   "description" varchar,
@@ -55,6 +55,8 @@ CREATE TABLE qr_claims (
   "claimed" boolean default false,
   "claimed_date" timestamp with time zone,
   "created_date" timestamp with time zone not null default now(),
+  "qr_roll_id": integer,
+  "numeric_id": integer,
   "is_active" boolean default true
 );
 
@@ -96,3 +98,9 @@ CREATE TABLE event_host (
     "user_id" varchar(256) UNIQUE,
     "is_active" boolean default true
 )
+
+CREATE TABLE qr_roll (
+    "id" SERIAL PRIMARY KEY,
+    "event_host_id" varchar(256) UNIQUE,
+    "is_active" boolean default true
+);
