@@ -71,7 +71,7 @@ function buildMetadataJson(tokenUrl: string, ev: PoapEvent) {
     description: ev.description,
     external_url: tokenUrl,
     home_url: tokenUrl,
-    image: ev.image,
+    image_url: ev.image_url,
     name: ev.name,
     year: ev.year,
     tags: ['poap', 'event'],
@@ -139,7 +139,7 @@ export default async function routes(fastify: FastifyInstance) {
               description: { type: 'string' },
               external_url: { type: 'string' },
               home_url: { type: 'string' },
-              image: { type: 'string' },
+              image_url: { type: 'string' },
               name: { type: 'string' },
               year: { type: 'number' },
               tags:  { type: 'array', items: { type: 'string' }},
@@ -282,7 +282,7 @@ export default async function routes(fastify: FastifyInstance) {
                     fancy_id: { type: 'string'},
                     name: { type: 'string'},
                     event_url: { type: 'string'},
-                    image: { type: 'string'},
+                    image_url: { type: 'string'},
                     country: { type: 'string'},
                     city: { type: 'string'},
                     description: { type: 'string'},
@@ -466,7 +466,7 @@ export default async function routes(fastify: FastifyInstance) {
                   signer: { type: 'string'},
                   name: { type: 'string'},
                   event_url: { type: 'string'},
-                  image: { type: 'string'},
+                  image_url: { type: 'string'},
                   country: { type: 'string'},
                   city: { type: 'string'},
                   description: { type: 'string'},
@@ -554,7 +554,7 @@ export default async function routes(fastify: FastifyInstance) {
                   signer: { type: 'string'},
                   name: { type: 'string'},
                   event_url: { type: 'string'},
-                  image: { type: 'string'},
+                  image_url: { type: 'string'},
                   country: { type: 'string'},
                   city: { type: 'string'},
                   description: { type: 'string'},
@@ -705,7 +705,7 @@ export default async function routes(fastify: FastifyInstance) {
                   signer: { type: 'string'},
                   name: { type: 'string'},
                   event_url: { type: 'string'},
-                  image: { type: 'string'},
+                  image_url: { type: 'string'},
                   country: { type: 'string'},
                   city: { type: 'string'},
                   description: { type: 'string'},
@@ -888,7 +888,7 @@ export default async function routes(fastify: FastifyInstance) {
                 fancy_id: { type: 'string' },
                 name: { type: 'string' },
                 event_url: { type: 'string' },
-                image: { type: 'string' },
+                image_url: { type: 'string' },
                 country: { type: 'string' },
                 city: { type: 'string' },
                 description: { type: 'string' },
@@ -936,7 +936,7 @@ export default async function routes(fastify: FastifyInstance) {
               fancy_id: { type: 'string' },
               name: { type: 'string' },
               event_url: { type: 'string' },
-              image: { type: 'string' },
+              image_url: { type: 'string' },
               country: { type: 'string' },
               city: { type: 'string' },
               description: { type: 'string' },
@@ -1010,7 +1010,7 @@ export default async function routes(fastify: FastifyInstance) {
               end_date: { type: 'string' },
               year: { type: 'number' },
               event_url: { type: 'string' },
-              image: { type: 'string' },
+              image_url: { type: 'string' },
               event_host_id: { type: 'number' },
             },
           }
@@ -1061,7 +1061,7 @@ export default async function routes(fastify: FastifyInstance) {
         end_date: req.body.end_date,
         year: req.body.year,
         event_url: req.body.event_url,
-        image: google_image_url,
+        image_url: google_image_url,
         event_host_id: eventHost.id
       }
 
@@ -1108,16 +1108,27 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.NotFound('You are not registered as an event host');
       }
 
+      const event = await getEventByFancyId(req.params.fancyid );
+      if (!event) {
+        return new createError.NotFound('Invalid Event');
+      }
+
       const image = req.body[Symbol.for('image')][0];
+      let google_image_url:null|string = null;
       if (image) {
         if(image.mimetype != 'image/png'){
           return new createError.BadRequest('Image mimetype must be image/png');
+        }
+        const filename = req.params.fancyid + '-' + eventHost.id + '-logo.png'
+        google_image_url = await uploadFile(filename, image.mimetype, image.data);
+        if (!google_image_url) {
+          return new createError.InternalServerError('Error uploading image');
         }
       }
 
       const isOk = await updateEvent(req.params.fancyid, eventHost.id, {
         event_url: req.body.event_url,
-        image: '',
+        image_url: ((google_image_url === null) ? event.image_url : google_image_url)
       });
       if (!isOk) {
         return new createError.NotFound('Invalid event');
@@ -1411,7 +1422,7 @@ export default async function routes(fastify: FastifyInstance) {
                         city: { type: 'string'},
                         country: { type: 'string'},
                         event_url: { type: 'string'},
-                        image: { type: 'string'},
+                        image_url: { type: 'string'},
                         year: { type: 'number'},
                         start_date: { type: 'string'},
                         end_date: { type: 'string'},
@@ -1518,7 +1529,7 @@ export default async function routes(fastify: FastifyInstance) {
                   city: { type: 'string'},
                   country: { type: 'string'},
                   event_url: { type: 'string'},
-                  image: { type: 'string'},
+                  image_url: { type: 'string'},
                   year: { type: 'number'},
                   start_date: { type: 'string'},
                   end_date: { type: 'string'},

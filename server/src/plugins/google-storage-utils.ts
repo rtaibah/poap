@@ -2,8 +2,13 @@
 import * as storage from '@google-cloud/storage';
 import getEnv from '../envs';
 
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export async function uploadFile(gcsFileName: string, mimetype:string, in_memory_file:any): Promise<string | null> {
     const env = getEnv();
+    let finished = false;
     const googleStorageClient = new storage.Storage();
     const bucketName = env.googleStorageBucket;
     const bucket = googleStorageClient.bucket(bucketName);
@@ -22,11 +27,14 @@ export async function uploadFile(gcsFileName: string, mimetype:string, in_memory
     });
   
     blob.on('finish', () => {
-      console.log(`https://storage.googleapis.com/${bucket.name}/${gcsFileName}`);
-      return true
+      finished = true;
     });
 
     blob.end(in_memory_file);
+
+    while(finished===false){
+      await sleep(200);
+    }
 
     return `https://storage.googleapis.com/${bucket.name}/${gcsFileName}`
 

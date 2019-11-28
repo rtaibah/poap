@@ -395,7 +395,7 @@ export async function getTokenImg(tokenId: string | number): Promise<null | stri
     return 'https://www.poap.xyz/events/badges/POAP.png'
   }
 
-  return event.image
+  return event.image_url
 }
 
 export async function verifyClaim(claim: Claim): Promise<string | boolean> {

@@ -114,10 +114,10 @@ export async function getEventByFancyId(fancyid: string): Promise<null | PoapEve
 export async function updateEvent(
   fancyId: string,
   event_host_id: number,
-  changes: Pick<PoapEvent, 'event_url' | 'image'>
+  changes: Pick<PoapEvent, 'event_url' | 'image_url'>
 ): Promise<boolean> {
   const res = await db.result(
-    'update events set event_url=${event_url}, image=${image} where fancy_id = ${fancy_id} and event_host_id = ${event_host_id}',
+    'update events set event_url=${event_url}, image_url=${image_url} where fancy_id = ${fancy_id} and event_host_id = ${event_host_id}',
     {
       fancy_id: fancyId,
       event_host_id: event_host_id,
