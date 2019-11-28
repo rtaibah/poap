@@ -5,7 +5,7 @@ CREATE TABLE events (
   "signer" varchar,
   "name" varchar(256) not null,
   "event_url" varchar,
-  "image" varchar,
+  "image_url" varchar,
   "country" varchar(256),
   "city" varchar(256),
   "description" varchar,
@@ -49,7 +49,7 @@ CREATE TABLE qr_claims (
   "id" SERIAL PRIMARY KEY,
   "qr_hash" varchar(256) UNIQUE not null,
   "tx_hash" varchar(256) UNIQUE,
-  "event_id" integer not null,
+  "event_id" integer,
   "beneficiary" varchar(256),
   "signer" varchar(256),
   "claimed" boolean default false,
@@ -104,3 +104,5 @@ CREATE TABLE qr_roll (
     "event_host_id" varchar(256) UNIQUE,
     "is_active" boolean default true
 );
+
+alter table qr_claims alter column event_id drop not null;
