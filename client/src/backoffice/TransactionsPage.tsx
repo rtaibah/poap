@@ -171,7 +171,7 @@ const TransactionsPage: FC = () => {
                 </div>
                 <div className={'col-md-2 center'}>
                   <span className={'visible-sm'}>Gas Price (GWei): </span>
-                  {convertToGWEI(tx.gas_price)}
+                  {tx.gas_price && convertToGWEI(tx.gas_price)}
                   {tx.status === TX_STATUS.pending && (
                     <img
                       src={gas}

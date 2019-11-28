@@ -47,10 +47,14 @@ const QrPage: FC = () => {
   const [claimStatus, setClaimStatus] = useState<string[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<number | undefined>(undefined);
   const [events, setEvents] = useState<PoapEvent[]>([]);
-  const [isUpdateByRangeModalOpen, setIsUpdateByRangeModalOpen] = useState<boolean>(false);
-  const [isUpdateSelectionModalOpen, setIsUpdateSelectionModalOpen] = useState<boolean>(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
+  const [selectedQrs, setSelectedQrs] = useState<string[]>([]);
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState<boolean>(false);
+  const [isRefetchConfirmed, setIsRefetchConfirmed] = useState<boolean>(false);
 
   const { addToast } = useToasts();
+
+  useEffect(() => console.log(isRefetchConfirmed), [isRefetchConfirmed]);
 
   useEffect(() => {
     fetchEvents();
@@ -61,8 +65,17 @@ const QrPage: FC = () => {
   }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    page !== 0 ? setPage(0) : fetchQrCodes();
+    page === 0 ? fetchQrCodes() : setPage(0);
   }, [selectedEvent, claimStatus]); /* eslint-disable-line react-hooks/exhaustive-deps */
+
+  useEffect(() => {
+    (isRefetchConfirmed || selectedQrs.length < 1) && fetchQrCodes();
+    setIsRefetchConfirmed(false);
+  }, [selectedEvent, claimStatus, isRefetchConfirmed]);
+
+  useEffect(() => {
+    setSelectedQrs([]);
+  }, [isRefetchConfirmed]);
 
   const fetchEvents = async () => {
     const events = await getEventsForSpecificUser();
@@ -93,42 +106,59 @@ const QrPage: FC = () => {
     }
   };
 
-  const handleCheckbox = (value: Value) => {
-    if (!claimStatus.includes(value))
-      return setClaimStatus(prevClaimStatus => [...prevClaimStatus, value]);
-    setClaimStatus(prevClaimStatus => [...prevClaimStatus].filter(val => val !== value));
+  const triggerModalOnQrs = () => {
+    if (selectedQrs.length > 0) openConfirmationModal();
   };
 
-  const handleSelect = (e: ChangeEvent<HTMLSelectElement>) => {
-    setSelectedEvent(Number(e.target.value));
+  const setStatusCheckbox = (value: Value): void =>
+    !claimStatus.includes(value)
+      ? setClaimStatus(prevClaimStatus => [...prevClaimStatus, value])
+      : setClaimStatus(prevClaimStatus => [...prevClaimStatus].filter(val => val !== value));
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    const { value } = e.target;
+    const numbericValue = Number(value);
+
+    setSelectedEvent(numbericValue);
+
+    triggerModalOnQrs();
+  };
+
+  const handleInputModalOpening = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const { id } = e.target;
+
+    if (id === 'claimed') setStatusCheckbox('claimed');
+    if (id === 'unclaimed') setStatusCheckbox('unclaimed');
+
+    triggerModalOnQrs();
   };
 
   const handlePageChange = (obj: PaginateAction) => {
     setPage(obj.selected);
   };
 
-  const handleUpdateClick = (modal: 'byRange' | 'selection', action: boolean): void => {
-    if (modal === 'byRange') setIsUpdateByRangeModalOpen(action);
-    if (modal === 'selection') setIsUpdateSelectionModalOpen(action);
+  const handleQrCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const { id } = e.target;
+    const stringifiedId = String(id);
+
+    return selectedQrs.includes(stringifiedId)
+      ? setSelectedQrs(selectedQrs => selectedQrs.filter((qrId: string) => qrId !== stringifiedId))
+      : setSelectedQrs(selectedQrs => [...selectedQrs, stringifiedId]);
   };
 
-  const handleUpdateByRangeClick = (): void => {
-    handleUpdateClick('byRange', true);
+  const updateModal = (modal: 'update' | 'confirmation', action: boolean): void => {
+    if (modal === 'update') setIsUpdateModalOpen(action);
+    if (modal === 'confirmation') setIsConfirmationModalOpen(action);
   };
 
-  const handleUpdateSelectionClick = (): void => {
-    handleUpdateClick('selection', true);
-  };
+  const handleUpdateModalClick = (): void => updateModal('update', true);
 
-  const handleByRangeModalRequestClose = (): void => {
-    handleUpdateClick('byRange', false);
-  };
+  const openConfirmationModal = (): void => updateModal('confirmation', true);
 
-  const handleSelectionModalRequestClose = (): void => {
-    handleUpdateClick('selection', false);
-  };
+  const handleUpdateModalRequestClose = (): void => updateModal('update', false);
 
-  useEffect(() => console.log(qrCodes), [qrCodes]);
+  const handleConfirmationModalRequestClose = (): void => updateModal('confirmation', false);
+
   return (
     <div className={'admin-table qr'}>
       <h2>QR Codes</h2>
@@ -138,7 +168,7 @@ const QrPage: FC = () => {
           <div className={'filter col-md-5'}>
             <label>Event: </label>
             <div className="filter-option">
-              <select onChange={handleSelect}>
+              <select onChange={handleSelectChange}>
                 <option key={'initialValue'} value={-1}>
                   Select an option
                 </option>
@@ -164,7 +194,7 @@ const QrPage: FC = () => {
                 <input
                   type={'checkbox'}
                   id={`claimed`}
-                  onChange={() => handleCheckbox('claimed')}
+                  onChange={handleInputModalOpening}
                   checked={claimStatus.includes('claimed')}
                 />
                 <label htmlFor={`claimed`}>Claimed</label>
@@ -173,7 +203,7 @@ const QrPage: FC = () => {
                 <input
                   type={'checkbox'}
                   id={`unclaimed`}
-                  onChange={() => handleCheckbox('unclaimed')}
+                  onChange={handleInputModalOpening}
                   checked={claimStatus.includes('unclaimed')}
                 />
                 <label htmlFor={`unclaimed`}>Unclaimed</label>
@@ -182,39 +212,41 @@ const QrPage: FC = () => {
           </div>
 
           <div className={'action-button-container col-md-4'}>
-            <button className={'action-button'} onClick={handleUpdateByRangeClick}>
-              Update by range
-            </button>
-            <button className={'action-button'} onClick={handleUpdateSelectionClick}>
-              Update selection
+            <button className={'action-button'} onClick={handleUpdateModalClick}>
+              Update
             </button>
           </div>
 
           <ReactModal
-            isOpen={isUpdateByRangeModalOpen}
-            onRequestClose={handleByRangeModalRequestClose}
+            isOpen={isUpdateModalOpen}
+            onRequestClose={handleUpdateModalRequestClose}
             shouldFocusAfterRender={true}
             shouldCloseOnOverlayClick={true}
             shouldCloseOnEsc={true}
           >
-            <UpdateByRangeModal events={events} />
+            <UpdateModal events={events} />
           </ReactModal>
 
           <ReactModal
-            isOpen={isUpdateSelectionModalOpen}
-            onRequestClose={handleSelectionModalRequestClose}
+            isOpen={isConfirmationModalOpen}
+            onRequestClose={handleConfirmationModalRequestClose}
             shouldFocusAfterRender={true}
             shouldCloseOnOverlayClick={true}
             shouldCloseOnEsc={true}
           >
-            <UpdateSelectionModal />
+            <ConfirmationModal
+              handleConfirmationModalRequestClose={handleConfirmationModalRequestClose}
+              setIsRefetchConfirmed={setIsRefetchConfirmed}
+            />
+            {/* <ConfirmationModal handleSelect={handleSelect} handleCheckbox={handleCheckbox} /> */}
           </ReactModal>
         </div>
       </div>
       <div className={'row table-header visible-md'}>
+        <div className={'col-md-1 center'}>-</div>
         <div className={'col-md-1 center'}>#</div>
         <div className={'col-md-2'}>QR Hash</div>
-        <div className={'col-md-5'}>Event</div>
+        <div className={'col-md-4'}>Event</div>
         <div className={'col-md-2 center'}>Status</div>
         <div className={'col-md-2'}>Tx Hash</div>
       </div>
@@ -229,16 +261,25 @@ const QrPage: FC = () => {
             return (
               <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={qr.id}>
                 <div className={'col-md-1 center'}>
+                  <input
+                    type="checkbox"
+                    onChange={handleQrCheckboxChange}
+                    checked={selectedQrs.includes(String(qr.id))}
+                    id={String(qr.id)}
+                  />
+                </div>
+
+                <div className={'col-md-1 center'}>
                   <span className={'visible-sm'}>#</span>
                   {qr.id}
                 </div>
 
                 <div className={'col-md-2'}>
                   <span className={'visible-sm'}>QR Hash</span>
-                  {qr.tx_hash}
+                  {qr.qr_hash}
                 </div>
 
-                <div className={'col-md-5 ellipsis'}>
+                <div className={'col-md-4 elipsis'}>
                   <span className={'visible-sm'}>Event: </span>
                   {(!qr.event || !qr.event.name) && <span>-</span>}
 
@@ -289,18 +330,11 @@ const QrPage: FC = () => {
   );
 };
 
-type ByRangeModalValues = {
-  from: number | null;
-  to: number | null;
-  event: PoapEvent | null;
-  selected: boolean;
-};
-
 type UpdateByRangeModalProps = {
   events: PoapEvent[];
 };
 
-const UpdateByRangeModal: React.FC<UpdateByRangeModalProps> = ({ events }) => {
+const UpdateModal: React.FC<UpdateByRangeModalProps> = ({ events }) => {
   const handleSubmit = () => {
     console.log('submit');
   };
@@ -337,10 +371,30 @@ const UpdateByRangeModal: React.FC<UpdateByRangeModalProps> = ({ events }) => {
   );
 };
 
-const UpdateSelectionModal: React.FC = () => (
-  <div>
-    <span>UpdateSelectionModal</span>
-  </div>
-);
+type ConfirmationModalProps = {
+  handleConfirmationModalRequestClose: Function;
+  setIsRefetchConfirmed: Function;
+};
+
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
+  handleConfirmationModalRequestClose,
+  setIsRefetchConfirmed,
+}) => {
+  const handleCancelButton = (e: React.MouseEvent<HTMLButtonElement>): void =>
+    handleConfirmationModalRequestClose();
+
+  const handleConfirmButton = (e: React.MouseEvent<HTMLButtonElement>): void => {
+    setIsRefetchConfirmed(true);
+    handleConfirmationModalRequestClose();
+  };
+
+  return (
+    <div>
+      <span>You are about to change a filter but you have a selection of QRs alredy done</span>
+      <button onClick={handleCancelButton}>Cancel</button>
+      <button onClick={handleConfirmButton}>Confirm</button>
+    </div>
+  );
+};
 
 export { QrPage };
