@@ -34,6 +34,10 @@ import {
   getQrRoll,
   getTotalQrClaims,
   getPaginatedQrClaims,
+  getQrRolls,
+  getClaimedQrsList,
+  getNotOwnedQrList,
+  updateQrClaims,
 } from './db';
 
 import {
@@ -54,11 +58,12 @@ import {
   getAllEventIds
 } from './eth/helpers';
 
-import { Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR } from './types';
+import { Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole, qrRoll } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
+import { getUserRoles } from './plugins/groups-decorator';
 
 function sleep(ms: number) {
   return new Promise(resolve=>{
@@ -1204,7 +1209,6 @@ export default async function routes(fastify: FastifyInstance) {
       if (!transactions) {
         return new createError.NotFound('Transactions not found');
       }
-      console.log(transactions);
 
       return {
         limit: limit,
@@ -1586,7 +1590,7 @@ export default async function routes(fastify: FastifyInstance) {
   );
 
   fastify.get(
-    '/qr-claims',
+    '/qr-code',
     {
       preValidation: [fastify.authenticate],
       schema: {
@@ -1610,12 +1614,18 @@ export default async function routes(fastify: FastifyInstance) {
       const claimed = req.query.claimed || null;
       
       const user_id = req.user.sub;
-      const eventHost = await getEventHost(user_id);
-      if (!eventHost) {
-        return new createError.NotFound('You are not registered as an event host');
+      let eventHostQrRolls:null | qrRoll[]
+
+      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        const eventHost = await getEventHost(user_id);
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
+        eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
+      } else {
+        eventHostQrRolls = await getQrRolls();
       }
 
-      const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
       if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
         return new createError.NotFound('You dont have any QrRoll asigned');
       }
@@ -1658,7 +1668,7 @@ export default async function routes(fastify: FastifyInstance) {
   );
 
   fastify.put(
-    '/qr-claims',
+    '/qr-code/range-assing',
     {
       preValidation: [fastify.authenticate, ],
       schema: {
@@ -1666,7 +1676,7 @@ export default async function routes(fastify: FastifyInstance) {
         tags: ['Qr-claims', ],
         body: {
           type: 'object',
-          required: ['numeric_id_min', 'numeric_id_max', 'event_id'],
+          required: ['numeric_id_min', 'numeric_id_max'],
           properties: {
             numeric_id_min: { type: 'number' },
             numeric_id_max: { type: 'number' },
@@ -1686,7 +1696,7 @@ export default async function routes(fastify: FastifyInstance) {
     async (req: any, res) => {
       const numericIdMin = parseInt(req.body.numeric_id_min);
       const numericIdMax = parseInt(req.body.numeric_id_max);
-      const eventId = parseInt(req.body.event_id);
+      let eventId = req.body.event_id || null;
 
       const user_id = req.user.sub;
       const eventHost = await getEventHost(user_id);
@@ -1694,18 +1704,17 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.NotFound('You are not registered as an event host');
       }
 
-      const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
-      if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
-        return new createError.NotFound('You dont have any QrRoll asigned');
-      }
-
-      const event = await getEvent(eventId);
-      if (!event) {
-        return new createError.BadRequest('event does not exist');
-      }
-
-      if(event.event_host_id != eventHost.id) {
-        return new createError.BadRequest('You cant assign an event that does not belongs to you');
+      if(eventId) {
+        eventId = parseInt(eventId)
+        const event = await getEvent(eventId);
+        if (!event) {
+          return new createError.BadRequest('event does not exist');
+        }
+        if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+          if(event.event_host_id != eventHost.id) {
+            return new createError.BadRequest('You cant assign an event that does not belongs to you');
+          }
+        }
       }
 
       if (numericIdMin >= numericIdMax) {
@@ -1725,13 +1734,20 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('this qr ids are already claimed: [ ' + ids.toString() + ' ]');
       }
 
-      const notOwnedQrs = await getRangeNotOwnedQr(numericIdMax, numericIdMin, eventHostQrRolls);
-      if (notOwnedQrs && notOwnedQrs[0]) {
-        let ids = [];
-        for (let notOwnedQr of notOwnedQrs) {
-          ids.push(notOwnedQr.qr_hash)
+      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
+        if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
+          return new createError.NotFound('You dont have any QrRoll asigned');
         }
-        return new createError.BadRequest('this qr ids arent in your rols: [ ' + ids.toString() + ' ]');
+
+        const notOwnedQrs = await getRangeNotOwnedQr(numericIdMax, numericIdMin, eventHostQrRolls);
+        if (notOwnedQrs && notOwnedQrs[0]) {
+          let ids = [];
+          for (let notOwnedQr of notOwnedQrs) {
+            ids.push(notOwnedQr.qr_hash)
+          }
+          return new createError.BadRequest('this qr ids arent in your rols: [ ' + ids.toString() + ' ]');
+        }
       }
 
       await updateEventOnQrRange(numericIdMax, numericIdMin, eventId);
@@ -1741,6 +1757,82 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  fastify.put(
+    '/qr-code/update',
+    {
+      preValidation: [fastify.authenticate, ],
+      schema: {
+        description: 'Endpoint to assign event to several qr from a range of numeric_id',
+        tags: ['Qr-claims', ],
+        body: {
+          type: 'object',
+          required: ['qr_code_ids', 'event_id'],
+          properties: {
+            event_ids: { type: 'array', items: { type: 'number' }},
+            event_id: { type: 'number' },
+          },
+        },
+        response: {
+          204: { type: 'string'},
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req: any, res) => {
+      const qrCodeIds:number[] = req.body.qr_code_ids;
+      const eventId = parseInt(req.body.event_id);
+
+      const user_id = req.user.sub;
+      const eventHost = await getEventHost(user_id);
+      if (!eventHost) {
+        return new createError.NotFound('You are not registered as an event host');
+      }
+
+      const event = await getEvent(eventId);
+      if (!event) {
+        return new createError.BadRequest('event does not exist');
+      }
+      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        if(event.event_host_id != eventHost.id) {
+          return new createError.BadRequest('You cant assign an event that does not belongs to you');
+        }
+      }
+
+      const claimedQrs = await getClaimedQrsList(qrCodeIds);
+      if (claimedQrs && claimedQrs[0]) {
+        let ids = [];
+        for (let claimedQr of claimedQrs) {
+          ids.push(claimedQr.qr_hash)
+        }
+        return new createError.BadRequest('this qr ids are already claimed: [ ' + ids.toString() + ' ]');
+      }
+
+      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
+        if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
+          return new createError.NotFound('You dont have any QrRoll asigned');
+        }
+
+        const notOwnedQrs = await getNotOwnedQrList(qrCodeIds, eventHostQrRolls);
+        if (notOwnedQrs && notOwnedQrs[0]) {
+          let ids = [];
+          for (let notOwnedQr of notOwnedQrs) {
+            ids.push(notOwnedQr.qr_hash)
+          }
+          return new createError.BadRequest('this qr ids arent in your rols: [ ' + ids.toString() + ' ]');
+        }
+      }
+
+      await updateQrClaims(qrCodeIds, eventId);
+
+      res.status(204);
+      return;
+    }
+  );
 
   //********************************************************************
   // SWAGGER

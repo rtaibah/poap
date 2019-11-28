@@ -161,6 +161,17 @@ export interface qrRoll {
   is_active: boolean;
 }
 
+export interface auth0USer {
+  'https://poap.xyz/roles': string[],
+  iss: number;
+  sub: number;
+  aud: string[],
+  iat: number;
+  exp: number;
+  azp: string;
+  scope: string;
+}
+
 export interface UnlockTask extends Task{
   task_data: {
     accountAddress: Address,

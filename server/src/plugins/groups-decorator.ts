@@ -1,7 +1,7 @@
 import fp from 'fastify-plugin';
 import { FastifyReply, FastifyInstance } from 'fastify';
 import { IncomingMessage, ServerResponse, Server } from 'http';
-import { UserRole } from '../types';
+import { UserRole, auth0USer } from '../types';
 
 export class jwtIncomingMessage extends IncomingMessage {
   user?: {
@@ -14,6 +14,10 @@ export class jwtIncomingMessage extends IncomingMessage {
     azp: string;
     scope: string;
   }
+}
+
+export function getUserRoles(user: auth0USer | any){
+  return user['https://poap.xyz/roles']
 }
 
 declare module 'fastify' {
@@ -29,7 +33,7 @@ export default fp((fastify: FastifyInstance<Server, IncomingMessage, ServerRespo
           if(!request.user) {
             reply.send('Invalid user');
           }
-          if (request.user && request.user['https://poap.xyz/roles'].indexOf(UserRole.administrator) == -1) {
+          if (request.user && getUserRoles(request.user).indexOf(UserRole.administrator) == -1) {
             reply.send('User is not allowed');
           }
         } catch (err) {

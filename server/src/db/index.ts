@@ -336,17 +336,37 @@ export async function getRangeClaimedQr(numericIdMax: number, numericIdMin: numb
   return res;
 }
 
+export async function getClaimedQrsList(qrCodeIds: number[]): Promise<null | ClaimQR[]> {
+  const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE id IN (${qrCodeIds:csv}) AND is_active = true AND claimed = true', {
+    qrCodeIds
+  });
+
+  return res;
+}
+
 export async function getRangeNotOwnedQr(numericIdMax: number, numericIdMin: number, eventHostQrRolls: qrRoll[]): Promise<null | ClaimQR[]> {
   let qrRollIds = [];
   for (let qrRoll of eventHostQrRolls) {
     qrRollIds.push(qrRoll.id)
   }
 
-  console.log(qrRollIds);
-
   const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_roll_id NOT IN (${qrRollIds:csv}) AND numeric_id<=${numericIdMax} AND numeric_id>=${numericIdMin} AND is_active = true', {
     numericIdMax,
     numericIdMin,
+    qrRollIds
+  });
+
+  return res;
+}
+
+export async function getNotOwnedQrList(numericIdMax: number[], eventHostQrRolls: qrRoll[]): Promise<null | ClaimQR[]> {
+  let qrRollIds = [];
+  for (let qrRoll of eventHostQrRolls) {
+    qrRollIds.push(qrRoll.id)
+  }
+
+  const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_roll_id NOT IN (${qrRollIds:csv}) AND id IN (${numericIdMax:csv}) AND is_active = true', {
+    numericIdMax,
     qrRollIds
   });
 
@@ -361,12 +381,24 @@ export async function updateEventOnQrRange(numericIdMax: number, numericIdMin: n
   });
 }
 
+export async function updateQrClaims(qrCodeIds:number[], eventId: number){
+  await db.result('UPDATE qr_claims SET event_id=${eventId} where id IN (${qrCodeIds:csv})', {
+    qrCodeIds,
+    eventId
+  });
+}
+
 export async function getEventHostQrRolls(eventHostId: number): Promise<null | qrRoll[]> {
   const hostId = eventHostId.toString();
   const res = await db.manyOrNone<qrRoll>('SELECT * FROM qr_roll WHERE event_host_id = ${hostId} AND is_active = true', {
     hostId
   });
 
+  return res;
+}
+
+export async function getQrRolls(): Promise<null | qrRoll[]> {
+  const res = await db.manyOrNone<qrRoll>('SELECT * FROM qr_roll WHERE AND is_active = true');
   return res;
 }
 
