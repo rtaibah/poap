@@ -23,18 +23,6 @@ export async function migrateEventImagesToGoogle(){
           image_url: google_image_url
         });
       }
-
-      // http.request(, function(response) {
-      //   var data = new stream.Transform();
-
-      //   response.on('data', function(chunk) {
-      //     data.push(chunk);
-      //   });
-
-      //   response.on('end', async function() {
-          
-      //   });
-      // }).end();
     }
   }
 
