@@ -372,6 +372,22 @@ export async function getQrCodes(
   return secureFetch(`${API_BASE}/qr-code?${params}`);
 }
 
+export async function qrCodesRangeAssign(
+  from: number,
+  to: number,
+  event: number | null
+): Promise<void> {
+  return secureFetchNoResponse(`${API_BASE}/qr-code/range-assign`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      numeric_id_min: from,
+      numeric_id_max: to,
+      event_id: event,
+    }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 export function getTransactions(
   limit: number,
   offset: number,
