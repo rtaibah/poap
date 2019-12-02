@@ -7,18 +7,27 @@ import 'react-day-picker/lib/style.css';
 import { format } from 'date-fns';
 import { useToasts } from 'react-toast-notifications';
 
+import { authClient } from '../auth';
+
 // libraries
 import ReactPaginate from 'react-paginate';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
 import { Loading } from '../components/Loading';
+import FilterButton from '../components/FilterButton';
 
 /* Helpers */
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
-import { getEventsForSpecificUser, PoapEvent, getEvent, updateEvent, createEvent } from '../api';
-import { ROUTES } from '../lib/constants';
+import {
+  getEventsForSpecificUser,
+  PoapEvent,
+  getEvent,
+  getEvents,
+  updateEvent,
+  createEvent,
+} from '../api';
 
 const PAGE_SIZE = 10;
 
@@ -230,7 +239,7 @@ const DayPickerContainer = ({
 
   return (
     <div className="date-picker-container">
-      <span>{text}</span>
+      <label>{text}</label>
       <DayPickerInput
         dayPickerProps={{ disabledDays: disabledDays }}
         onDayChange={handleDayChange}
@@ -248,7 +257,7 @@ type ImageContainerProps = {
 
 const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: ImageContainerProps) => (
   <div className="date-picker-container">
-    <span>{text}</span>
+    <label>{text}</label>
     <input
       type="file"
       className={classNames(Boolean(errors.image) && 'error')}
@@ -295,8 +304,12 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
 };
 
 export const EventList: React.FC = () => {
-  const [events, fetchingEvents, fetchEventsError] = useAsync(getEventsForSpecificUser);
   const [criteria, setCriteria] = useState<string>('');
+  const isAdmin = authClient.user['https://poap.xyz/roles'].includes('administrator');
+
+  const [events, fetchingEvents, fetchEventsError] = useAsync(
+    isAdmin ? getEvents : getEventsForSpecificUser
+  );
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { value } = e.target;
@@ -307,12 +320,12 @@ export const EventList: React.FC = () => {
   return (
     <div className={'bk-container'}>
       <h2>Events</h2>
-      <Link to="/admin/events/new">
-        <button className="bk-btn" style={{ margin: '30px 0px' }}>
-          Create New
-        </button>
-      </Link>
-      <input type="text" placeholder="Search by name" onChange={handleNameChange} />
+      <div className="event-top-bar-container">
+        <Link to="/admin/events/new">
+          <FilterButton text="Create New" />
+        </Link>
+        <input type="text" placeholder="Search by name" onChange={handleNameChange} />
+      </div>
       {fetchingEvents && <Loading />}
 
       {fetchEventsError && <div>There was a problem fetching events</div>}

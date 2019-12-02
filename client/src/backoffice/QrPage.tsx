@@ -8,11 +8,14 @@ import { Formik } from 'formik';
 
 /* Components */
 import { Loading } from '../components/Loading';
+import FilterSelect from '../components/FilterSelect';
+import FilterButton from '../components/FilterButton';
 
 /* Helpers */
-import { QrCode, getQrCodes, getEventsForSpecificUser, PoapEvent } from '../api';
+import { QrCode, getQrCodes, getEventsForSpecificUser, PoapEvent, getEvents } from '../api';
 import { reduceAddress } from '../lib/helpers';
 import { etherscanLinks } from '../lib/constants';
+import { authClient } from '../auth';
 
 /* Assets */
 import checked from '../images/checked.svg';
@@ -25,6 +28,8 @@ import { Value } from '../types';
 import { UpdateByRangeModalWithFormikSchema } from '../lib/schemas';
 
 const PAGE_SIZE = 10;
+
+const status = ['claimed', 'unclaimed'];
 
 type PaginateAction = {
   selected: number;
@@ -44,7 +49,7 @@ const QrPage: FC = () => {
   const [total, setTotal] = useState<number>(0);
   const [isFetchingQrCodes, setIsFetchingQrCodes] = useState<null | boolean>(null);
   const [qrCodes, setQrCodes] = useState<null | QrCode[]>(null);
-  const [claimStatus, setClaimStatus] = useState<string[]>([]);
+  const [claimStatus, setClaimStatus] = useState<string>('');
   const [selectedEvent, setSelectedEvent] = useState<number | undefined>(undefined);
   const [events, setEvents] = useState<PoapEvent[]>([]);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
@@ -54,7 +59,8 @@ const QrPage: FC = () => {
 
   const { addToast } = useToasts();
 
-  useEffect(() => console.log(isRefetchConfirmed), [isRefetchConfirmed]);
+  //testuseeffect
+  useEffect(() => console.log(claimStatus), [claimStatus]);
 
   useEffect(() => {
     fetchEvents();
@@ -78,21 +84,26 @@ const QrPage: FC = () => {
   }, [isRefetchConfirmed]);
 
   const fetchEvents = async () => {
-    const events = await getEventsForSpecificUser();
+    const isAdmin = authClient.user['https://poap.xyz/roles'].includes('administrator');
+
+    const events = isAdmin ? await getEvents() : await getEventsForSpecificUser();
     setEvents(events);
   };
 
   const fetchQrCodes = async () => {
     setIsFetchingQrCodes(true);
 
-    let status = undefined;
-    if (claimStatus.length === 1) status = claimStatus[0] === 'claimed';
-
     let event_id = undefined;
     if (selectedEvent !== undefined) event_id = selectedEvent > -1 ? selectedEvent : undefined;
 
+    let _status = undefined;
+
+    if (claimStatus) {
+      _status = claimStatus === 'claimed' ? true : false;
+    }
+
     try {
-      const response = await getQrCodes(PAGE_SIZE, page * PAGE_SIZE, status, event_id);
+      const response = await getQrCodes(PAGE_SIZE, page * PAGE_SIZE, _status, event_id);
       if (!response) return;
       setQrCodes(response.qr_claims);
       setTotal(response.total);
@@ -110,10 +121,7 @@ const QrPage: FC = () => {
     if (selectedQrs.length > 0) openConfirmationModal();
   };
 
-  const setStatusCheckbox = (value: Value): void =>
-    !claimStatus.includes(value)
-      ? setClaimStatus(prevClaimStatus => [...prevClaimStatus, value])
-      : setClaimStatus(prevClaimStatus => [...prevClaimStatus].filter(val => val !== value));
+  const setStatusCheckbox = (value: Value | ''): void => setClaimStatus(value);
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     const { value } = e.target;
@@ -124,11 +132,14 @@ const QrPage: FC = () => {
     triggerModalOnQrs();
   };
 
-  const handleInputModalOpening = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const { id } = e.target;
+  const handleInputModalOpening = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ): void => {
+    const { value } = e.target;
 
-    if (id === 'claimed') setStatusCheckbox('claimed');
-    if (id === 'unclaimed') setStatusCheckbox('unclaimed');
+    if (value === '') setStatusCheckbox('');
+    if (value === 'claimed') setStatusCheckbox('claimed');
+    if (value === 'unclaimed') setStatusCheckbox('unclaimed');
 
     triggerModalOnQrs();
   };
@@ -162,35 +173,38 @@ const QrPage: FC = () => {
   return (
     <div className={'admin-table qr'}>
       <h2>QR Codes</h2>
-      <div>
-        <h4>Filters</h4>
-        <div className={'filters qr'}>
-          <div className={'filter col-md-5'}>
-            <label>Event: </label>
-            <div className="filter-option">
-              <select onChange={handleSelectChange}>
-                <option key={'initialValue'} value={-1}>
-                  Select an option
-                </option>
-                {events &&
-                  events.map(event => {
-                    const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
-                      event.year
-                    }`;
-                    return (
-                      <option key={event.id} value={event.id}>
-                        {label}
-                      </option>
-                    );
-                  })}
-              </select>
-            </div>
-          </div>
+      <div className={'filters-container qr'}>
+        <div className={'filter col-md-4'}>
+          <div className="filter-option">
+            <FilterSelect handleChange={handleSelectChange}>
+              <option key={'initialValue'} value={-1}>
+                Filter by event
+              </option>
+              {events &&
+                events.map(event => {
+                  const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
+                    event.year
+                  }`;
 
-          <div className={'filter col-md-4'}>
-            <label>Status: </label>
-            <div className={'filter-group'}>
-              <div className="filter-option">
+                  return (
+                    <option key={event.id} value={event.id}>
+                      {label}
+                    </option>
+                  );
+                })}
+            </FilterSelect>
+          </div>
+        </div>
+
+        <div className={'filter col-md-3'}>
+          <div className={'filter-group'}>
+            <FilterSelect handleChange={handleInputModalOpening}>
+              <option value="">Filter by status</option>
+              {status.map(status => (
+                <option value={status}>{status}</option>
+              ))}
+            </FilterSelect>
+            {/* <div className="filter-option">
                 <input
                   type={'checkbox'}
                   id={`claimed`}
@@ -207,40 +221,37 @@ const QrPage: FC = () => {
                   checked={claimStatus.includes('unclaimed')}
                 />
                 <label htmlFor={`unclaimed`}>Unclaimed</label>
-              </div>
-            </div>
+              </div> */}
           </div>
-
-          <div className={'action-button-container col-md-4'}>
-            <button className={'action-button'} onClick={handleUpdateModalClick}>
-              Update
-            </button>
-          </div>
-
-          <ReactModal
-            isOpen={isUpdateModalOpen}
-            onRequestClose={handleUpdateModalRequestClose}
-            shouldFocusAfterRender={true}
-            shouldCloseOnOverlayClick={true}
-            shouldCloseOnEsc={true}
-          >
-            <UpdateModal events={events} />
-          </ReactModal>
-
-          <ReactModal
-            isOpen={isConfirmationModalOpen}
-            onRequestClose={handleConfirmationModalRequestClose}
-            shouldFocusAfterRender={true}
-            shouldCloseOnOverlayClick={true}
-            shouldCloseOnEsc={true}
-          >
-            <ConfirmationModal
-              handleConfirmationModalRequestClose={handleConfirmationModalRequestClose}
-              setIsRefetchConfirmed={setIsRefetchConfirmed}
-            />
-            {/* <ConfirmationModal handleSelect={handleSelect} handleCheckbox={handleCheckbox} /> */}
-          </ReactModal>
         </div>
+
+        <div className={'action-button-container col-md-5'}>
+          <FilterButton text="Update" handleClick={handleUpdateModalClick} />
+        </div>
+
+        <ReactModal
+          isOpen={isUpdateModalOpen}
+          onRequestClose={handleUpdateModalRequestClose}
+          shouldFocusAfterRender={true}
+          shouldCloseOnOverlayClick={true}
+          shouldCloseOnEsc={true}
+        >
+          <UpdateModal events={events} />
+        </ReactModal>
+
+        <ReactModal
+          isOpen={isConfirmationModalOpen}
+          onRequestClose={handleConfirmationModalRequestClose}
+          shouldFocusAfterRender={true}
+          shouldCloseOnOverlayClick={true}
+          shouldCloseOnEsc={true}
+        >
+          <ConfirmationModal
+            handleConfirmationModalRequestClose={handleConfirmationModalRequestClose}
+            setIsRefetchConfirmed={setIsRefetchConfirmed}
+          />
+          {/* <ConfirmationModal handleSelect={handleSelect} handleCheckbox={handleCheckbox} /> */}
+        </ReactModal>
       </div>
       <div className={'row table-header visible-md'}>
         <div className={'col-md-1 center'}>-</div>

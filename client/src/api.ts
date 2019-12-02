@@ -124,8 +124,8 @@ export type ENSQueryResult = { valid: false } | { valid: true; address: string }
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
 
 // let API_BASE = 'https://api.poap.xyz';
-// let API_BASE = 'http://10.0.0.146:8080';
-let API_BASE = 'https://development-dot-poapapp.appspot.com';
+let API_BASE = 'http://10.0.0.146:8080';
+// let API_BASE = 'https://development-dot-poapapp.appspot.com';
 
 // if (process.env.NODE_ENV === 'development') {
 //   if (process.env.REACT_APP_API_ROOT) {
@@ -369,7 +369,7 @@ export async function getQrCodes(
   event_id?: number
 ): Promise<PaginatedQrCodes> {
   const params = queryString.stringify({ limit, offset, status, event_id }, { sort: false });
-  return secureFetch(`${API_BASE}/qr-claims?${params}`);
+  return secureFetch(`${API_BASE}/qr-code?${params}`);
 }
 
 export function getTransactions(

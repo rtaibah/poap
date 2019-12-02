@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 
-const FilterSelect: React.FC = ({ children }) => (
-  <select className="filter-select">{children}</select>
+type FilterSelectProps = {
+  handleChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+};
+
+const FilterSelect: React.FC<FilterSelectProps> = ({ children, handleChange }) => (
+  <select className="filter-base filter-select" onChange={handleChange}>
+    {children}
+  </select>
 );
 
 export default FilterSelect;

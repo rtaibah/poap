@@ -37,6 +37,7 @@
   > label {
     margin-bottom: 10px;
     display: block;
+    color: $color-primary;
   }
 
   input,
@@ -51,6 +52,12 @@
 
 .bk-group {
   display: flex;
+
+  label {
+    margin-bottom: 10px;
+    display: block;
+    color: $color-primary;
+  }
 
   > * {
     margin-right: 5px;
@@ -262,7 +269,7 @@
   .filters-container {
     display: flex;
     flex-direction: row;
-    margin-bottom: 40px;
+    margin-bottom: 35px;
 
     &.inbox {
       @media (max-width: $bp-mw) {
@@ -374,8 +381,8 @@
 
       .action-button-container {
         display: flex;
-        flex-direction: column;
         justify-content: flex-end;
+        align-items: center;
 
         .action-button {
           cursor: pointer;
@@ -512,33 +519,49 @@
   }
 }
 
-.filter-select {
-  height: 45px;
-  padding-left: 20px;
-  width: 102px;
-  background-color: white;
-  color: $color-primary;
+.filter-base {
+  height: 50px;
+  min-width: 130px;
   border: 2px solid $color-light-grey;
   border-radius: 4px;
   line-height: 14px;
+  cursor: pointer;
+  outline: unset;
+
+  &:active {
+    outline: solid;
+  }
+}
+
+.filter-select {
+  color: $color-primary;
+  padding-left: 20px;
+  background-color: white;
+  margin-right: 8px;
 }
 
 .filter-chip {
-  height: 45px;
-  width: 102px;
-  background-color: white;
   color: $color-primary;
-  border: 2px solid $color-light-grey;
-  border-radius: 4px;
-  line-height: 14px;
-  outline: unset;
+  background-color: white;
   margin-right: 8px;
-
-  :active {
-    outline: solid;
-  }
 
   &.active {
     background-color: $color-light-violet;
+  }
+}
+
+.filter-button {
+  color: white;
+  background-color: $color-primary;
+}
+
+.event-top-bar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 35px;
+
+  > * {
+    max-width: 250px;
   }
 }
