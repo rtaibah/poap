@@ -259,9 +259,10 @@
     }
   }
 
-  .filters {
+  .filters-container {
     display: flex;
     flex-direction: row;
+    margin-bottom: 40px;
 
     &.inbox {
       @media (max-width: $bp-mw) {
@@ -508,5 +509,36 @@
     padding: 10px 0;
     display: inline-block;
     cursor: pointer;
+  }
+}
+
+.filter-select {
+  height: 45px;
+  padding-left: 20px;
+  width: 102px;
+  background-color: white;
+  color: $color-primary;
+  border: 2px solid $color-light-grey;
+  border-radius: 4px;
+  line-height: 14px;
+}
+
+.filter-chip {
+  height: 45px;
+  width: 102px;
+  background-color: white;
+  color: $color-primary;
+  border: 2px solid $color-light-grey;
+  border-radius: 4px;
+  line-height: 14px;
+  outline: unset;
+  margin-right: 8px;
+
+  :active {
+    outline: solid;
+  }
+
+  &.active {
+    background-color: $color-light-violet;
   }
 }

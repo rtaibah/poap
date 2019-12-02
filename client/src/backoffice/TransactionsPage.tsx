@@ -19,6 +19,8 @@ import gas from '../images/gas-station.svg';
 import checked from '../images/checked.svg';
 import error from '../images/error.svg';
 import clock from '../images/clock.svg';
+import FilterSelect from '../components/FilterSelect';
+import FilterChip from '../components/FilterChip';
 
 const PAGE_SIZE = 10;
 
@@ -38,6 +40,9 @@ const TransactionsPage: FC = () => {
   const [selectedTx, setSelectedTx] = useState<null | Transaction>(null);
   const [isFetchingTx, setIsFetchingTx] = useState<null | boolean>(null);
   const [transactions, setTransactions] = useState<null | Transaction[]>(null);
+  const [isFailedSelected, setIsFailedSelected] = useState<boolean>(false);
+  const [isPassedSelected, setIsPassedSelected] = useState<boolean>(false);
+  const [isPendingSelected, setIsPendingSelected] = useState<boolean>(false);
 
   useEffect(() => {
     fetchTransactions();
@@ -88,14 +93,16 @@ const TransactionsPage: FC = () => {
   };
 
   const handleFilterToggle = (status: string) => {
-    let newStatusList = [...statusList];
-    let index = newStatusList.indexOf(status);
-    if (index > -1) {
-      newStatusList.splice(index, 1);
+    const _statusList = [...statusList];
+    const isStatusInStatusList = _statusList.indexOf(status) > -1;
+    const indexOfStatus = _statusList.indexOf(status);
+
+    if (isStatusInStatusList) {
+      _statusList.splice(indexOfStatus, 1);
     } else {
-      newStatusList.push(status);
+      _statusList.push(status);
     }
-    setStatusList(newStatusList);
+    setStatusList(_statusList);
   };
 
   const openEditModal = (transaction: Transaction) => {
@@ -108,25 +115,31 @@ const TransactionsPage: FC = () => {
     setSelectedTx(null);
   };
 
+  const handleFailedClick = () => {
+    handleFilterToggle('failed');
+    setIsFailedSelected(!isFailedSelected);
+  };
+  const handlePassedClick = () => {
+    handleFilterToggle('passed');
+    setIsPassedSelected(!isPassedSelected);
+  };
+  const handlePendingClick = () => {
+    handleFilterToggle('pending');
+    setIsPendingSelected(!isPendingSelected);
+  };
+
   return (
     <div className={'admin-table transactions'}>
       <h2>Transactions</h2>
       <div>
-        <h4>Filters</h4>
-        <div className={'filters'}>
-          {Object.entries(TX_STATUS).map((entry, index) => {
-            let status = entry[1];
-            return (
-              <div key={index} className={'filter'}>
-                <input
-                  type={'checkbox'}
-                  id={`id_${status}`}
-                  onChange={() => handleFilterToggle(status)}
-                />
-                <label htmlFor={`id_${status}`}>{status}</label>
-              </div>
-            );
-          })}
+        <div className={'filters-container'}>
+          <FilterChip text="Failed" isActive={isFailedSelected} handleOnClick={handleFailedClick} />
+          <FilterChip text="Passed" isActive={isPassedSelected} handleOnClick={handlePassedClick} />
+          <FilterChip
+            text="Pending"
+            isActive={isPendingSelected}
+            handleOnClick={handlePendingClick}
+          />
         </div>
       </div>
       <div className={'row table-header visible-md'}>
