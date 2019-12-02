@@ -398,7 +398,7 @@ export async function getEventHostQrRolls(eventHostId: number): Promise<null | q
 }
 
 export async function getQrRolls(): Promise<null | qrRoll[]> {
-  const res = await db.manyOrNone<qrRoll>('SELECT * FROM qr_roll WHERE AND is_active = true');
+  const res = await db.manyOrNone<qrRoll>('SELECT * FROM qr_roll WHERE is_active = true');
   return res;
 }
 
