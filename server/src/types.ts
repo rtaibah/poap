@@ -161,7 +161,7 @@ export interface qrRoll {
   is_active: boolean;
 }
 
-export interface auth0USer {
+export interface Auth0User {
   'https://poap.xyz/roles': string[],
   iss: number;
   sub: number;

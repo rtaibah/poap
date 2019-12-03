@@ -8,21 +8,29 @@ dotenv.config();
 
 export async function migrateEventImagesToGoogle(){
   const events = await getEvents();
-  for await (let event of events) {
-    if(event.image_url){
-      console.log(event.image_url)
-      const response = await fetch(event.image_url)
-      const file = await response.buffer();
+  const eventsWithImages = events.filter(event => event.hasOwnProperty('image_url'));
+  console.log(eventsWithImages);
 
-      const filename = event.fancy_id + '-' + event.id + '-logo.png'
-      const google_image_url = await uploadFile(filename, 'image/png', file);
-      if (google_image_url) {
-        console.log('--->' + google_image_url);
-        await updateEvent(event.fancy_id, event.event_host_id, {
-          event_url: event.event_url,
-          image_url: google_image_url
-        });
-      }
+  for await (let event of eventsWithImages) {
+    console.log(event);
+    const {
+      id,
+      fancy_id: fancyId,
+      event_url: eventUrl,
+      image_url: imageUrl,
+      event_host_id: eventHostId,
+    } = event;
+
+    console.log(imageUrl);
+    const response = await fetch(imageUrl);
+    const file = await response.buffer();
+
+    const filename = fancyId + '-' + id + '-logo.png'
+    const googleImageUrl = await uploadFile(filename, 'image/png', file);
+
+    if (googleImageUrl) {
+      console.log('--->' + googleImageUrl);
+      await updateEvent(fancyId, eventHostId, { event_url: eventUrl, image_url: googleImageUrl });
     }
   }
 

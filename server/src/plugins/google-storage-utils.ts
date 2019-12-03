@@ -1,10 +1,7 @@
 
 import * as storage from '@google-cloud/storage';
 import getEnv from '../envs';
-
-function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+import { sleep } from '../utils';
 
 export async function uploadFile(gcsFileName: string, mimetype:string, in_memory_file:any): Promise<string | null> {
     const env = getEnv();
@@ -58,38 +55,24 @@ export async function uploadFile(gcsFileName: string, mimetype:string, in_memory
     const [files] = await googleStorageClient.bucket(env.googleStorageBucket).getFiles();
   
     console.log('Files:');
-    files.forEach(file => {
-      getMetadata(env.googleStorageBucket, file.name);
-    });
-    // [END storage_list_files]
+    files.forEach(({ name }) => getMetadata(env.googleStorageBucket, name));
   }
   
   export async function getMetadata(bucketName: string, filename: string) {
-    // [START storage_get_metadata]
-    // Imports the Google Cloud client library
-    const {Storage} = require('@google-cloud/storage');
-  
-    // Creates a client
-    const storage = new Storage();
-  
-    /**
-     * TODO(developer): Uncomment the following lines before running the sample.
-     */
-    // const bucketName = 'Name of a bucket, e.g. my-bucket';
-    // const filename = 'File to access, e.g. file.txt';
-  
-    // Gets the metadata for the file
-    const [metadata] = await storage
+    const googleStorageClient = new storage.Storage();
+
+    const [metadata] = await googleStorageClient
       .bucket(bucketName)
       .file(filename)
       .getMetadata();
   
     console.log(`File: ${metadata.name}`);
-    // console.log(`Bucket: ${metadata.bucket}`);
-    // console.log(`  Storage class: ${metadata.storageClass}`);
+    console.log(`Bucket: ${metadata.bucket}`);
     console.log(`  Self link: ${metadata.selfLink}`);
     console.log(`  ID: ${metadata.id}`);
     console.log(`  Size: ${metadata.size}`);
+
+    // console.log(`  Storage class: ${metadata.storageClass}`);
     // console.log(`  Updated: ${metadata.updated}`);
     // console.log(`  Generation: ${metadata.generation}`);
     // console.log(`  Metageneration: ${metadata.metageneration}`);

@@ -64,12 +64,7 @@ import getEnv from './envs';
 import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
-
-function sleep(ms: number) {
-  return new Promise(resolve=>{
-      setTimeout(resolve,ms)
-  })
-}
+import { sleep } from './utils';
 
 function buildMetadataJson(tokenUrl: string, ev: PoapEvent) {
   return {
@@ -1668,7 +1663,7 @@ export default async function routes(fastify: FastifyInstance) {
   );
 
   fastify.put(
-    '/qr-code/range-assing',
+    '/qr-code/range-assign',
     {
       preValidation: [fastify.authenticate, ],
       schema: {
@@ -1700,9 +1695,6 @@ export default async function routes(fastify: FastifyInstance) {
 
       const user_id = req.user.sub;
       const eventHost = await getEventHost(user_id);
-      if (!eventHost) {
-        return new createError.NotFound('You are not registered as an event host');
-      }
 
       if(eventId) {
         eventId = parseInt(eventId)
@@ -1711,6 +1703,9 @@ export default async function routes(fastify: FastifyInstance) {
           return new createError.BadRequest('event does not exist');
         }
         if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+          if (!eventHost) {
+            return new createError.NotFound('You are not registered as an event host');
+          }
           if(event.event_host_id != eventHost.id) {
             return new createError.BadRequest('You cant assign an event that does not belongs to you');
           }
@@ -1735,6 +1730,9 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
         const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
         if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
           return new createError.NotFound('You dont have any QrRoll asigned');
@@ -1788,15 +1786,15 @@ export default async function routes(fastify: FastifyInstance) {
 
       const user_id = req.user.sub;
       const eventHost = await getEventHost(user_id);
-      if (!eventHost) {
-        return new createError.NotFound('You are not registered as an event host');
-      }
 
       const event = await getEvent(eventId);
       if (!event) {
         return new createError.BadRequest('event does not exist');
       }
       if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
         if(event.event_host_id != eventHost.id) {
           return new createError.BadRequest('You cant assign an event that does not belongs to you');
         }
@@ -1804,14 +1802,13 @@ export default async function routes(fastify: FastifyInstance) {
 
       const claimedQrs = await getClaimedQrsList(qrCodeIds);
       if (claimedQrs && claimedQrs[0]) {
-        let ids = [];
-        for (let claimedQr of claimedQrs) {
-          ids.push(claimedQr.qr_hash)
-        }
-        return new createError.BadRequest('this qr ids are already claimed: [ ' + ids.toString() + ' ]');
+        return new createError.BadRequest('some qr ids of the range are already claimed');
       }
 
       if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
         const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
         if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
           return new createError.NotFound('You dont have any QrRoll asigned');

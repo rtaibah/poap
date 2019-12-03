@@ -18,3 +18,6 @@ export async function concurrentMap<A, B>(
   return results;
 }
 
+export function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
