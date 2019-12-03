@@ -27,13 +27,13 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
 
   return (
     <div className={'claim-info'} data-aos="fade-up" data-aos-delay="300">
-      <div className={'info-title'}>Your badge is on it's way to your wallet</div>
+      <div className={'info-title'}>Your badge is on its way to your wallet</div>
       <div className={'info-pending'}>
         <img src={Spinner} alt={'Mining'} />
         Pending
       </div>
       <div className={'text-info'}>
-        Come back im a few minutes to check the status, or follow the transaction on Etherscan
+        Come back in a few minutes to check the status, or follow the transaction on Etherscan
       </div>
       <LinkButton
         text={'View on Etherscan'}

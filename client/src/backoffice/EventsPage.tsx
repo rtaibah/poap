@@ -332,7 +332,7 @@ export const EventList: React.FC = () => {
 
       {fetchEventsError && <div>There was a problem fetching events</div>}
 
-      {events && <EventTable criteria={criteria} events={events} />}
+      {events && <EventTable criteria={criteria} initialEvents={events} />}
     </div>
   );
 };
@@ -342,13 +342,23 @@ type PaginateAction = {
 };
 
 type EventTableProps = {
-  events: PoapEvent[];
+  initialEvents: PoapEvent[];
   criteria: string;
 };
 
-const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
-  const total = events.length;
+const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
+  const [events, setEvents] = useState<PoapEvent[]>(initialEvents);
+  const [total, setTotal] = useState<number>(events.length);
   const [page, setPage] = useState<number>(1);
+
+  useEffect(() => {
+    setEvents(initialEvents.filter(handleCriteriaFilter));
+    if (!criteria) setPage(1);
+  }, [criteria]);
+
+  useEffect(() => {
+    setTotal(events.length);
+  }, [events]);
 
   const handlePageChange = (obj: PaginateAction) => {
     setPage(obj.selected);
@@ -373,32 +383,30 @@ const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
           <div className={'col-md-1 center'}>Image</div>
         </div>
         <div className={'admin-table-row'}>
-          {eventsToShowManager(events)
-            .filter(handleCriteriaFilter)
-            .map((event, i) => (
-              <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={event.id}>
-                <div className={'col-md-1 center'}>
-                  <span className={'visible-sm visible-md'}>#</span>
-                  {event.id}
-                </div>
-                <div className={'col-md-4'}>
-                  <span>
-                    <a href={event.event_url} target="_blank" rel="noopener noreferrer">
-                      {event.name}
-                    </a>
-                  </span>
-                </div>
-                <div className={'col-md-3'}>
-                  <span>{event.start_date}</span>
-                </div>
-                <div className={'col-md-3'}>
-                  <span>{event.end_date}</span>
-                </div>
-                <div className={'col-md-1 center logo-image-container'}>
-                  <img alt={event.image} className={'logo-image'} src={event.image} />
-                </div>
+          {eventsToShowManager(events).map((event, i) => (
+            <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={event.id}>
+              <div className={'col-md-1 center'}>
+                <span className={'visible-sm visible-md'}>#</span>
+                {event.id}
               </div>
-            ))}
+              <div className={'col-md-4'}>
+                <span>
+                  <a href={event.event_url} target="_blank" rel="noopener noreferrer">
+                    {event.name}
+                  </a>
+                </span>
+              </div>
+              <div className={'col-md-3'}>
+                <span>{event.start_date}</span>
+              </div>
+              <div className={'col-md-3'}>
+                <span>{event.end_date}</span>
+              </div>
+              <div className={'col-md-1 center logo-image-container'}>
+                <img alt={event.image} className={'logo-image'} src={event.image} />
+              </div>
+            </div>
+          ))}
         </div>
         <div className={'pagination'}>
           {events && events.length > 10 && (
@@ -415,13 +423,3 @@ const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
     </div>
   );
 };
-
-// export const EventsPage: React.FC<RouteComponentProps> = () => {
-//   return (
-//     <div>
-//       <Route exact path={ROUTES.eventsList.path} component={EventList} />
-//       <Route exact path={ROUTES.eventsNew.path} component={CreateEventForm} />
-//       <Route exact path={ROUTES.event.path} component={EditEventForm} />
-//     </div>
-//   );
-// };
