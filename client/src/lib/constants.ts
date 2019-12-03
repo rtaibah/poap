@@ -1,23 +1,23 @@
 const ROLES = {
-  super: 'super',
-  eventAdmin: 'eventAdmin',
+  administrator: 'administrator',
+  eventHost: 'event_host',
 };
 
 const LABELS = {
   issueBadges: {
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
     title: 'Issue Badges',
   },
   inbox: {
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
     title: 'Inbox',
   },
   otherTasks: {
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
     title: 'Other Tasks',
   },
   quickLinks: {
-    roles: [ROLES.eventAdmin],
+    roles: [ROLES.eventHost],
     title: 'Quick Links',
   },
 };
@@ -33,63 +33,63 @@ const ROUTES = {
   admin: '/admin',
   issueForEvent: {
     path: '/admin/issue-for-event',
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
     title: 'Many Users',
   },
   issueForUser: {
     path: '/admin/issue-for-user',
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
     title: 'Many Events',
   },
   events: {
     path: '/admin/events',
-    roles: [ROLES.super, ROLES.eventAdmin],
+    roles: [ROLES.administrator, ROLES.eventHost],
     title: 'Manage Events',
   },
   eventsList: {
     path: '/admin/events/list',
-    roles: [ROLES.super, ROLES.eventAdmin],
+    roles: [ROLES.administrator, ROLES.eventHost],
   },
   eventsNew: {
     path: '/admin/events/new',
-    roles: [ROLES.super, ROLES.eventAdmin],
+    roles: [ROLES.administrator, ROLES.eventHost],
   },
   event: {
     path: '/admin/events/:eventId',
-    roles: [ROLES.super, ROLES.eventAdmin],
+    roles: [ROLES.administrator, ROLES.eventHost],
   },
   minters: {
     path: '/admin/minters',
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
   },
   burn: {
     path: '/admin/burn',
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
     title: 'Burn Tokens',
   },
   addressManagement: {
     path: '/admin/address-management',
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
     title: 'Manage Addresses',
   },
   transactions: {
     path: '/admin/transactions',
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
     title: 'Transactions',
   },
   inbox: {
     path: '/admin/inbox',
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
     title: 'Send Notification',
   },
   inboxList: {
     path: '/admin/inbox-list',
-    roles: [ROLES.super],
+    roles: [ROLES.administrator],
     title: 'Notifications List',
   },
   qr: {
     path: '/admin/qr',
-    roles: [ROLES.super, ROLES.eventAdmin],
+    roles: [ROLES.administrator, ROLES.eventHost],
     title: 'Manage QR Codes',
   },
 };

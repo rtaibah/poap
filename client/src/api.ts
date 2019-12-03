@@ -375,14 +375,25 @@ export async function getQrCodes(
 export async function qrCodesRangeAssign(
   from: number,
   to: number,
-  event: number | null
+  eventId: number | null
 ): Promise<void> {
   return secureFetchNoResponse(`${API_BASE}/qr-code/range-assign`, {
     method: 'PUT',
     body: JSON.stringify({
       numeric_id_min: from,
       numeric_id_max: to,
-      event_id: event,
+      event_id: eventId,
+    }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export async function qrCodesUpdate(qrCodesIds: string[], eventId: number): Promise<void> {
+  return secureFetchNoResponse(`${API_BASE}/qr-code/update`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      qr_code_ids: qrCodesIds,
+      event_id: eventId,
     }),
     headers: { 'Content-Type': 'application/json' },
   });

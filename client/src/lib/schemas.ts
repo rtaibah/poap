@@ -1,5 +1,4 @@
 import * as yup from 'yup';
-import { utils } from 'ethers';
 
 import { IMAGE_SUPPORTED_FORMATS } from './constants';
 
@@ -91,12 +90,13 @@ const InboxFormSchema = yup.object().shape({
   selectedEventId: yup.number().nullable(),
   notificationType: yup.string().required(),
 });
-const UpdateByRangeModalWithFormikSchema = yup.object().shape({
-  title: yup.string().required(),
-  description: yup.string().required(),
-  recipientFilter: yup.string().required(),
-  selectedEventId: yup.number().nullable(),
-  notificationType: yup.string().required(),
+const UpdateModalWithFormikSchema = yup.object().shape({
+  from: yup.number().required(),
+  to: yup.number().required(),
+  event: yup
+    .number()
+    .positive()
+    .required(),
 });
 
 export {
@@ -108,5 +108,5 @@ export {
   IssueForEventFormValueSchema,
   IssueForUserFormValueSchema,
   InboxFormSchema,
-  UpdateByRangeModalWithFormikSchema,
+  UpdateModalWithFormikSchema,
 };

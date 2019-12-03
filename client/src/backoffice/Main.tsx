@@ -1,6 +1,6 @@
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 import React, { useCallback, useContext, useState, useEffect } from 'react';
-import { Link, Route, withRouter, Redirect, Switch } from 'react-router-dom';
+import { Link, Route, withRouter, Switch } from 'react-router-dom';
 import { slide as Menu } from 'react-burger-menu';
 
 /* Assets */
@@ -8,7 +8,7 @@ import PoapLogo from '../images/POAP.svg';
 /* Constants */
 import { ROUTES, ROLES, LABELS } from '../lib/constants';
 /* Components */
-import { AuthContext } from '../auth';
+import { AuthContext, authClient } from '../auth';
 // import { EventsPage } from './EventsPage';
 import { BurnPage } from './BurnPage';
 import { IssueForEventPage, IssueForUserPage } from './IssuePage';
@@ -63,8 +63,7 @@ export const withRole = <T extends Object>(
   WrappedComponent: React.ComponentType<T>
 ): React.FC<T & Roles> => {
   return (props: Roles & T) => {
-    // TODO: Get user role (Backend WIP)
-    const userRole = 'super';
+    const userRole = authClient.getRoles();
 
     if (!props.roles.includes(userRole)) return null;
 
@@ -81,10 +80,9 @@ const NavigationMenu = withRouter(({ history }) => {
   const closeMenu = useCallback(() => setIsOpen(false), []);
 
   useEffect(() => {
-    // TODO: Get user role (Backend WIP)
-    const userRole = 'super';
+    const userRole = authClient.getRoles();
 
-    if (userRole === ROLES.eventAdmin) return;
+    if (userRole === ROLES.eventHost) return;
 
     const { pathname } = history.location;
     if (pathname === '/admin' || pathname === '/admin/') setIsOpen(true);
@@ -153,9 +151,9 @@ const NavigationMenu = withRouter(({ history }) => {
 
 const Landing = () => {
   // TODO: Get user role (Backend WIP)
-  const userRole = 'super';
+  const userRole = 'administrator';
 
-  if (userRole === ROLES.super) return <div>Choose an option from the right side menu</div>;
+  if (userRole === ROLES.administrator) return <div>Choose an option from the right side menu</div>;
 
   return (
     <div className={'cards-container'}>

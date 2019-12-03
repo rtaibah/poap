@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect, ChangeEvent } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import { useToasts } from 'react-toast-notifications';
 
 /* Libraries */
@@ -19,6 +19,7 @@ import {
   PoapEvent,
   getEvents,
   qrCodesRangeAssign,
+  qrCodesUpdate,
 } from '../api';
 import { reduceAddress } from '../lib/helpers';
 import { etherscanLinks } from '../lib/constants';
@@ -32,7 +33,8 @@ import error from '../images/error.svg';
 import { Value } from '../types';
 
 // shemas
-import { UpdateByRangeModalWithFormikSchema } from '../lib/schemas';
+import { UpdateModalWithFormikSchema } from '../lib/schemas';
+import FilterChip from '../components/FilterChip';
 
 const PAGE_SIZE = 10;
 
@@ -66,8 +68,7 @@ const QrPage: FC = () => {
 
   const { addToast } = useToasts();
 
-  //testuseeffect
-  useEffect(() => console.log(claimStatus), [claimStatus]);
+  const hasSelectedQrs = selectedQrs.length > 0;
 
   useEffect(() => {
     fetchEvents();
@@ -177,6 +178,8 @@ const QrPage: FC = () => {
 
   const handleConfirmationModalRequestClose = (): void => updateModal('confirmation', false);
 
+  const handleRefreshQrs = () => fetchQrCodes();
+
   return (
     <div className={'admin-table qr'}>
       <h2>QR Codes</h2>
@@ -225,7 +228,12 @@ const QrPage: FC = () => {
           shouldCloseOnOverlayClick={true}
           shouldCloseOnEsc={true}
         >
-          <UpdateModal events={events} />
+          <UpdateModal
+            handleUpdateModalClosing={handleUpdateModalRequestClose}
+            selectedQrs={selectedQrs}
+            refreshQrs={handleRefreshQrs}
+            events={events}
+          />
         </ReactModal>
 
         <ReactModal
@@ -331,6 +339,9 @@ const QrPage: FC = () => {
 
 type UpdateByRangeModalProps = {
   events: PoapEvent[];
+  selectedQrs: string[];
+  refreshQrs: () => void;
+  handleUpdateModalClosing: () => void;
 };
 
 type UpdateModalFormikValues = {
@@ -340,8 +351,80 @@ type UpdateModalFormikValues = {
   isUnassigning: boolean;
 };
 
-const UpdateModal: React.FC<UpdateByRangeModalProps> = ({ events }) => {
+const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
+  events,
+  selectedQrs,
+  refreshQrs,
+  handleUpdateModalClosing,
+}) => {
+  const [isSelectionActive, setIsSelectionActive] = useState<boolean>(false);
+  const [isRangeActive, setIsRangeActive] = useState<boolean>(false);
   const { addToast } = useToasts();
+
+  const hasSelectedQrs = selectedQrs.length > 0;
+
+  useEffect(() => {
+    hasSelectedQrs ? setIsSelectionActive(true) : setIsRangeActive(true);
+  }, []);
+
+  const handleUpdateModalSubmit = (values: UpdateModalFormikValues) => {
+    const { from, to, event, isUnassigning } = values;
+    const _event = isUnassigning ? null : event;
+
+    if (isRangeActive) {
+      qrCodesRangeAssign(from, to, _event)
+        .then(_ => {
+          addToast('Qrs assignment was performed correctly', {
+            appearance: 'success',
+            autoDismiss: true,
+          });
+
+          refreshQrs();
+          handleUpdateModalClosing();
+        })
+        .catch(e =>
+          addToast(e.message, {
+            appearance: 'error',
+            autoDismiss: true,
+          })
+        );
+    }
+
+    if (isSelectionActive) {
+      qrCodesUpdate(selectedQrs, event)
+        .then(_ => {
+          addToast('Qrs assignment was performed correctly', {
+            appearance: 'success',
+            autoDismiss: true,
+          });
+
+          refreshQrs();
+          handleUpdateModalClosing();
+        })
+        .catch(e =>
+          addToast(e.message, {
+            appearance: 'error',
+            autoDismiss: true,
+          })
+        );
+    }
+  };
+
+  const handleChipClick = (event: React.ChangeEvent, setFieldValue: Function, values: any) => {
+    setFieldValue('isUnassigning', !values.isUnassigning);
+  };
+
+  const handleSelectionChange = () => {
+    if (!hasSelectedQrs) return;
+    setIsRangeActive(false);
+    setIsSelectionActive(true);
+  };
+
+  const handleRangeChange = () => {
+    setIsSelectionActive(false);
+    setIsRangeActive(true);
+  };
+
   return (
     <Formik
       initialValues={{
@@ -350,27 +433,18 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({ events }) => {
         event: 0,
         isUnassigning: false,
       }}
-      onSubmit={(values: UpdateModalFormikValues) => {
-        const { from, to, event, isUnassigning } = values;
-        const _event = isUnassigning ? null : event;
-
-        qrCodesRangeAssign(from, to, _event)
-          .then(_ =>
-            addToast('Qrs assignment was performed correctly', {
-              appearance: 'success',
-              autoDismiss: true,
-            })
-          )
-          .catch(e =>
-            addToast(e.message, {
-              appearance: 'error',
-              autoDismiss: true,
-            })
-          );
-      }}
+      validationSchema={UpdateModalWithFormikSchema}
+      onSubmit={handleUpdateModalSubmit}
     >
-      {({ values, handleChange, handleSubmit }) => {
+      {({ values, handleChange, handleSubmit, setFieldValue }) => {
+        const { isUnassigning } = values;
         const isPlaceholderValue = Boolean(values.event);
+
+        const resolveSelectClass = () => {
+          if (isUnassigning) return '';
+          if (!isPlaceholderValue) return 'placeholder-option';
+          return '';
+        };
 
         const handleFormSubmitClick = () => {
           handleSubmit();
@@ -378,35 +452,79 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({ events }) => {
 
         return (
           <div className={'update-modal-container'}>
-            <input type="text" placeholder="From" name="from" onChange={handleChange} />
-            <input type="text" placeholder="To" name="to" onChange={handleChange} />
-            <select
-              className={`${!isPlaceholderValue ? 'placeholder-option' : ''}`}
-              disabled={values.isUnassigning}
-              name="event"
-              onChange={handleChange}
-            >
-              <option value="">Select an event</option>
-              {events &&
-                events.map(event => {
-                  const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
-                    event.year
-                  }`;
-                  return (
-                    <option key={event.id} value={event.id}>
-                      {label}
-                    </option>
-                  );
-                })}
-            </select>
-            <input
-              name="isUnassigning"
-              type="checkbox"
-              checked={values.isUnassigning}
-              onChange={handleChange}
-              className={'by-range-modal'}
-            />
-            <button onClick={handleFormSubmitClick}>Update</button>
+            <div className={'modal-top-bar'}>
+              <h3>QR Update</h3>
+            </div>
+            <div className="modal-content">
+              <div className="option-container">
+                <div className="radio-container">
+                  <input
+                    type="radio"
+                    checked={isSelectionActive}
+                    onChange={handleSelectionChange}
+                  />
+                </div>
+                <div className="label-container">
+                  <span>Selection</span>
+                </div>
+                <div className="content-container">
+                  {hasSelectedQrs ? (
+                    <span>{`You have ${selectedQrs.length} QR's selected`}</span>
+                  ) : (
+                    <span className="grey-text">You have no selected QRs</span>
+                  )}
+                </div>
+              </div>
+              <div className="option-container">
+                <div className="radio-container">
+                  <input type="radio" checked={isRangeActive} onChange={handleRangeChange} />
+                </div>
+                <div className="label-container">
+                  <span>Range</span>
+                </div>
+                <div className="content-container">
+                  <input type="text" placeholder="From" name="from" onChange={handleChange} />
+                  <input type="text" placeholder="To" name="to" onChange={handleChange} />
+                </div>
+              </div>
+              <select
+                className={resolveSelectClass()}
+                disabled={values.isUnassigning}
+                name="event"
+                onChange={handleChange}
+              >
+                <option value="">Select an event</option>
+                {events &&
+                  events.map(event => {
+                    const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
+                      event.year
+                    }`;
+                    return (
+                      <option key={event.id} value={event.id}>
+                        {label}
+                      </option>
+                    );
+                  })}
+              </select>
+              <div className="modal-buttons-container">
+                <FilterChip
+                  name="isUnassigning"
+                  text="Unasign QRs"
+                  isActive={values.isUnassigning}
+                  handleOnClick={(e: React.ChangeEvent) =>
+                    handleChipClick(e, setFieldValue, values)
+                  }
+                />
+                <div className="modal-action-buttons-container">
+                  <FilterButton text="Cancel" handleClick={handleUpdateModalClosing}>
+                    Cancel
+                  </FilterButton>
+                  <FilterButton text="Confirm update" handleClick={handleFormSubmitClick}>
+                    Update
+                  </FilterButton>
+                </div>
+              </div>
+            </div>
           </div>
         );
       }}

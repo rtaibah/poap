@@ -1,9 +1,16 @@
 import React from 'react';
 
+import { FormikHandlers } from 'formik';
+
+type HandleFormikChange = FormikHandlers['handleChange'];
+
+type HandleClick = () => void;
+
 type FilterChipProps = {
+  name?: string;
   text: string;
   isActive: boolean;
-  handleOnClick: () => void;
+  handleOnClick: HandleFormikChange | HandleClick;
 };
 
 const FilterChip: React.FC<FilterChipProps> = ({ text, isActive, handleOnClick }) => {

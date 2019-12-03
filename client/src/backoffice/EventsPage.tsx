@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
-import { Link, Route, RouteComponentProps } from 'react-router-dom';
+import { Link, RouteComponentProps } from 'react-router-dom';
 import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
@@ -205,7 +205,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             />
             {event && typeof event.image === 'string' && (
               <div className={'image-edit-container'}>
-                <img className={'image-edit'} src={event.image} />
+                <img alt={event.image} className={'image-edit'} src={event.image} />
               </div>
             )}
             <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={true} />
@@ -305,7 +305,9 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
 
 export const EventList: React.FC = () => {
   const [criteria, setCriteria] = useState<string>('');
-  const isAdmin = authClient.user['https://poap.xyz/roles'].includes('administrator');
+
+  const users = authClient.user['https://poap.xyz/roles'];
+  const isAdmin = Array.isArray(users) ? users.includes('administrator') : false;
 
   const [events, fetchingEvents, fetchEventsError] = useAsync(
     isAdmin ? getEvents : getEventsForSpecificUser

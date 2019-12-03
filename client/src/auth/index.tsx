@@ -34,8 +34,11 @@ export class AuthService {
       audience: process.env.REACT_APP_AUTH0_AUDIENCE || '',
     });
     this._isAuthenticated = await this.client.isAuthenticated();
-    const _user = await this.client.getUser();
-    this.user = _user;
+
+    if (this._isAuthenticated) {
+      const _user = await this.client.getUser();
+      this.user = _user;
+    }
   }
 
   async login(onSuccessPath = '/') {
@@ -50,9 +53,21 @@ export class AuthService {
     });
   }
 
+  getRoles() {
+    // REVIEW CHECK IF YOU ARE GOING TO NEED MORE THAN ONE ROLE
+    const [userRole] = this.user['https://poap.xyz/roles'];
+
+    return userRole;
+  }
+
   async handleCallback() {
     const result = await this.client.handleRedirectCallback();
     this._isAuthenticated = await this.client.isAuthenticated();
+
+    if (this._isAuthenticated) {
+      const _user = await this.client.getUser();
+      this.user = _user;
+    }
 
     if (result.appState) {
       const resultPath = localStorage.getItem(result.appState) || '/';

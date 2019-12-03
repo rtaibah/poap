@@ -19,7 +19,6 @@ import gas from '../images/gas-station.svg';
 import checked from '../images/checked.svg';
 import error from '../images/error.svg';
 import clock from '../images/clock.svg';
-import FilterSelect from '../components/FilterSelect';
 import FilterChip from '../components/FilterChip';
 
 const PAGE_SIZE = 10;
