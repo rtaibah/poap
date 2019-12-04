@@ -191,7 +191,7 @@ const ClaimHeader: React.FC<{ event: PoapEvent }> = React.memo(({ event }) => (
     <div className="container">
       <h1>{event.name}</h1>
       <div className="logo-event" data-aos="fade-up">
-        {typeof event.image === 'string' && <img src={event.image} alt="Event" />}
+        {typeof event.image_url === 'string' && <img src={event.image_url} alt="Event" />}
       </div>
     </div>
   </header>

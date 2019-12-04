@@ -17,6 +17,9 @@ import { SubmitButton } from '../components/SubmitButton';
 import { Loading } from '../components/Loading';
 import FilterButton from '../components/FilterButton';
 
+// assets
+import { ReactComponent as EditIcon } from '../images/edit.svg';
+
 /* Helpers */
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
@@ -203,9 +206,9 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
               setFieldValue={setFieldValue}
               errors={errors}
             />
-            {event && typeof event.image === 'string' && (
+            {event && typeof event.image_url === 'string' && (
               <div className={'image-edit-container'}>
-                <img alt={event.image} className={'image-edit'} src={event.image} />
+                <img alt={event.image_url} className={'image-edit'} src={event.image_url} />
               </div>
             )}
             <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={true} />
@@ -349,16 +352,19 @@ type EventTableProps = {
 const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
   const [events, setEvents] = useState<PoapEvent[]>(initialEvents);
   const [total, setTotal] = useState<number>(events.length);
-  const [page, setPage] = useState<number>(1);
+  const [page, setPage] = useState<number>(0);
 
   useEffect(() => {
     setEvents(initialEvents.filter(handleCriteriaFilter));
-    if (!criteria) setPage(1);
   }, [criteria]);
 
   useEffect(() => {
     setTotal(events.length);
   }, [events]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [total]);
 
   const handlePageChange = (obj: PaginateAction) => {
     setPage(obj.selected);
@@ -378,9 +384,10 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
         <div className={'row table-header visible-md'}>
           <div className={'col-md-1 center'}>#</div>
           <div className={'col-md-4'}>Name</div>
-          <div className={'col-md-3'}>Start Date</div>
-          <div className={'col-md-3'}>End Date</div>
-          <div className={'col-md-1 center'}>Image</div>
+          <div className={'col-md-2 center'}>Start Date</div>
+          <div className={'col-md-2 center'}>End Date</div>
+          <div className={'col-md-2 center'}>Image</div>
+          <div className={'col-md-1 center'}>Edit</div>
         </div>
         <div className={'admin-table-row'}>
           {eventsToShowManager(events).map((event, i) => (
@@ -396,14 +403,19 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
                   </a>
                 </span>
               </div>
-              <div className={'col-md-3'}>
+              <div className={'col-md-2 center'}>
                 <span>{event.start_date}</span>
               </div>
-              <div className={'col-md-3'}>
+              <div className={'col-md-2 center'}>
                 <span>{event.end_date}</span>
               </div>
-              <div className={'col-md-1 center logo-image-container'}>
-                <img alt={event.image} className={'logo-image'} src={event.image} />
+              <div className={'col-md-2 center logo-image-container'}>
+                <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
+              </div>
+              <div className={'col-md-1 center event-edit-icon-container'}>
+                <Link to={`/admin/events/${event.fancy_id}`}>
+                  <EditIcon />
+                </Link>
               </div>
             </div>
           ))}
@@ -414,6 +426,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
               pageCount={Math.ceil(total / PAGE_SIZE)}
               marginPagesDisplayed={2}
               pageRangeDisplayed={PAGE_SIZE}
+              forcePage={page}
               activeClassName={'active'}
               onPageChange={handlePageChange}
             />

@@ -10,9 +10,10 @@ import { Notification, getNotifications, getEvents, PoapEvent } from '../api';
 
 /* Components */
 import { Loading } from '../components/Loading';
+import FilterSelect from '../components/FilterSelect';
 
 /* Assets */
-import plus from '../images/plus.svg';
+import { ReactComponent as PlusIcon } from '../images/plus.svg';
 
 /* Typings */
 import { Name, Value } from '../types';
@@ -119,73 +120,56 @@ const InboxListPage: FC = () => {
     setModalOpen(!modalOpen);
   };
 
+  const handleNotificationTypeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { value } = e.target;
+
+    if (value === 'inbox') handleRadio('notificationType', value);
+    if (value === 'push') handleRadio('notificationType', value);
+  };
+
+  const handleRecipientSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { value } = e.target;
+
+    if (value === 'everyone') handleRadio('recipientFilter', value);
+    if (value === 'event') handleRadio('recipientFilter', value);
+  };
+
   return (
-    <div className={'admin-table notifications'}>
+    <div className="admin-table notifications">
       <h2>Notifications</h2>
       <div>
-        <h4>Filters</h4>
-        <div className={'filters inbox'}>
-          <div className={'filter col-md-3'}>
-            <label>Notification type:</label>
-            <div className="filter-option">
-              <input
-                type={'radio'}
-                id={`inbox`}
-                onChange={() => handleRadio('notificationType', 'inbox')}
-                checked={notificationType === 'inbox'}
-              />
-              <label htmlFor={`inbox`}>Inbox</label>
-            </div>
-            <div className="filter-option">
-              <input
-                type={'radio'}
-                id={`push`}
-                onChange={() => handleRadio('notificationType', 'push')}
-                checked={notificationType === 'push'}
-              />
-              <label htmlFor={`push`}>Push notification</label>
-            </div>
+        <div className="filters-container inbox row notifications-filters">
+          <div className="col-md-3 ">
+            <FilterSelect handleChange={handleNotificationTypeSelect}>
+              {/* <option value="">Select an option</option> */}
+              <option value="inbox">Inbox</option>
+              <option value="push">Push</option>
+            </FilterSelect>
           </div>
 
-          <div className={'filter col-md-9'}>
-            <label>Filter recipient:</label>
-            <div className="filter-option">
-              <input
-                type={'radio'}
-                id={`everyone`}
-                onChange={() => handleRadio('recipientFilter', 'everyone')}
-                checked={recipientFilter === 'everyone'}
-              />
-              <label htmlFor={`everyone`}>Sent to everyone</label>
-            </div>
-            <div className="filter-option select">
-              <div className="ellipsis">
-                <input
-                  type={'radio'}
-                  id={`event`}
-                  onChange={() => handleRadio('recipientFilter', 'event')}
-                  checked={recipientFilter === 'event'}
-                />
-                <label htmlFor={`event`}>Sent to the attendees of a an event</label>
-              </div>
+          <div className="col-md-3">
+            <FilterSelect handleChange={handleRecipientSelect}>
+              {/* <option value="">Select an option</option> */}
+              <option value="everyone">Sent to everyone</option>
+              <option value="event">Filter recipient</option>
+            </FilterSelect>
+          </div>
 
-              {recipientFilter === 'event' && (
-                <select onChange={handleSelect}>
-                  <option key={'initialValue'} value={-1}>
-                    Select an option
-                  </option>
-                  {events &&
-                    events.map(event => {
-                      const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
-                      return (
-                        <option key={event.id} value={event.id}>
-                          {label}
-                        </option>
-                      );
-                    })}
-                </select>
-              )}
-            </div>
+          <div className="col-md-3">
+            {recipientFilter === 'event' && (
+              <FilterSelect handleChange={handleSelect}>
+                <option value="">Select an option</option>
+                {events &&
+                  events.map((event: PoapEvent) => {
+                    const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                    return (
+                      <option key={event.id} value={event.id}>
+                        {label}
+                      </option>
+                    );
+                  })}
+              </FilterSelect>
+            )}
           </div>
         </div>
       </div>
@@ -230,10 +214,8 @@ const InboxListPage: FC = () => {
                 </div>
 
                 <div className={'col-md-1 description'}>
-                  <img
-                    src={plus}
-                    alt={'Edit'}
-                    className={'edit-icon'}
+                  <PlusIcon
+                    className={'plus-edit-icon'}
                     onClick={() =>
                       handleModal({
                         title: notification.title,

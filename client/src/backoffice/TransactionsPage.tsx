@@ -44,8 +44,16 @@ const TransactionsPage: FC = () => {
   const [isPendingSelected, setIsPendingSelected] = useState<boolean>(false);
 
   useEffect(() => {
+    console.log(total);
+  }, [total]);
+
+  useEffect(() => {
     fetchTransactions();
   }, [page, statusList]); /* eslint-disable-line react-hooks/exhaustive-deps */
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusList]);
 
   const txStatus = {
     [TX_STATUS.pending]: clock,
@@ -200,12 +208,13 @@ const TransactionsPage: FC = () => {
           <div className={'no-results'}>No transactions found</div>
         )}
       </div>
-      {total > 0 && (
+      {total > 10 && (
         <div className={'pagination'}>
           <ReactPaginate
             pageCount={Math.ceil(total / PAGE_SIZE)}
             marginPagesDisplayed={2}
             pageRangeDisplayed={5}
+            forcePage={page}
             activeClassName={'active'}
             onPageChange={handlePageChange}
           />

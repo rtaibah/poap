@@ -61,6 +61,8 @@ div {
 
     input {
       width: 100%;
+      color: $color-primary;
+      outline-color: $color-primary;
       padding: 12px;
       box-shadow: none;
       border: 2px solid $color-invert;
@@ -70,6 +72,15 @@ div {
       margin: 0 auto 16px;
       @include x-rem(font-size, 13px);
       height: 50px;
+
+      &::placeholder {
+        color: $color-light-violet;
+      }
+
+      &:focus,
+      &:hover {
+        border: 2px solid $color-primary;
+      }
     }
   }
 }
@@ -94,6 +105,8 @@ input[type='tel'],
 input[type='textarea'],
 input[type='email'],
 input[type='color'],
+input[type='number'],
+input[type='text'],
 input[type='file'] {
   width: 100%;
   height: 50px;
@@ -252,8 +265,7 @@ select {
 
   appearance: none;
 
-  background-image: linear-gradient(45deg, transparent 50%, $color-primary 50%),
-    linear-gradient(135deg, $color-primary 50%, transparent 50%);
+  background-image: $violet-select-arrow;
   background-position: calc(100% - 20px) calc(1em + 2px), calc(100% - 15px) calc(1em + 2px),
     calc(100% - 2.5em) 0.5em;
   background-size: 5px 5px, 5px 5px, 1px 1.5em;
@@ -317,6 +329,11 @@ textarea {
   input,
   select {
     border: 2px solid $color-light-grey;
+
+    &:focus,
+    &:hover {
+      border: 2px solid $color-primary;
+    }
   }
 }
 
@@ -361,6 +378,7 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 50px;
 }
 
 .modal-action-buttons-container {
@@ -376,5 +394,20 @@ textarea {
 .modal-top-bar {
   h3 {
     margin-bottom: 20px;
+  }
+}
+
+.modal-select-error {
+  border: 2px solid $color-error !important;
+  outline-color: $color-error;
+  color: $color-error;
+  background-image: $red-select-arrow;
+}
+
+.modal-input-error {
+  border: 2px solid $color-error !important;
+  outline-color: $color-error !important;
+  &::placeholder {
+    color: $color-error !important;
   }
 }

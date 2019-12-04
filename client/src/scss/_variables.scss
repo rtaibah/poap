@@ -15,6 +15,13 @@ $color-medium-violet: #9b9cd5;
 $color-light-violet: #cabdf3;
 $color-light-grey: #eef0fb;
 $color-grey: #878787;
+$color-error: #e13d5e;
+
+$violet-select-arrow: linear-gradient(45deg, transparent 50%, $color-primary 50%),
+  linear-gradient(135deg, $color-primary 50%, transparent 50%);
+
+$red-select-arrow: linear-gradient(45deg, transparent 50%, $color-error 50%),
+  linear-gradient(135deg, $color-error 50%, transparent 50%);
 
 // Typography
 $font-family: 'Archivo', sans-serif;

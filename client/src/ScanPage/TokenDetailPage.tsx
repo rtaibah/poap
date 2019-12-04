@@ -54,7 +54,9 @@ export const TokenDetailPage: React.FC<RouteComponentProps<{
             <b>{token.event.start_date}</b>
           </p>
           <div className="logo-event" data-aos="fade-up">
-            {typeof token.event.image === 'string' && <img src={token.event.image} alt="Event" />}
+            {typeof token.event.image_url === 'string' && (
+              <img src={token.event.image_url} alt="Event" />
+            )}
           </div>
         </div>
       </div>

@@ -91,8 +91,14 @@ const InboxFormSchema = yup.object().shape({
   notificationType: yup.string().required(),
 });
 const UpdateModalWithFormikSchema = yup.object().shape({
-  from: yup.number().required(),
-  to: yup.number().required(),
+  from: yup
+    .number()
+    .positive()
+    .required(),
+  to: yup
+    .number()
+    .positive()
+    .required(),
   event: yup
     .number()
     .positive()

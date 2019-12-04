@@ -267,13 +267,16 @@ const QrPage: FC = () => {
           qrCodes.map((qr, i) => {
             return (
               <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={qr.id}>
-                <div className={'col-md-1 center'}>
-                  <input
-                    type="checkbox"
-                    onChange={handleQrCheckboxChange}
-                    checked={selectedQrs.includes(String(qr.id))}
-                    id={String(qr.id)}
-                  />
+                <div className={'col-md-1 center checkbox'}>
+                  {!qr.claimed && (
+                    <input
+                      type="checkbox"
+                      disabled={qr.claimed}
+                      onChange={handleQrCheckboxChange}
+                      checked={selectedQrs.includes(String(qr.id))}
+                      id={String(qr.id)}
+                    />
+                  )}
                 </div>
 
                 <div className={'col-md-1 center'}>
@@ -321,7 +324,7 @@ const QrPage: FC = () => {
           <div className={'no-results'}>No QR codes found</div>
         )}
       </div>
-      {total > 0 && (
+      {total > 10 && (
         <div className={'pagination'}>
           <ReactPaginate
             pageCount={Math.ceil(total / PAGE_SIZE)}
@@ -345,8 +348,8 @@ type UpdateByRangeModalProps = {
 };
 
 type UpdateModalFormikValues = {
-  from: number;
-  to: number;
+  from: number | string;
+  to: number | string;
   event: number;
   isUnassigning: boolean;
 };
@@ -372,22 +375,24 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     const _event = isUnassigning ? null : event;
 
     if (isRangeActive) {
-      qrCodesRangeAssign(from, to, _event)
-        .then(_ => {
-          addToast('Qrs assignment was performed correctly', {
-            appearance: 'success',
-            autoDismiss: true,
-          });
+      if (typeof from === 'number' && typeof to === 'number') {
+        qrCodesRangeAssign(from, to, _event)
+          .then(_ => {
+            addToast('Qrs assignment was performed correctly', {
+              appearance: 'success',
+              autoDismiss: true,
+            });
 
-          refreshQrs();
-          handleUpdateModalClosing();
-        })
-        .catch(e =>
-          addToast(e.message, {
-            appearance: 'error',
-            autoDismiss: true,
+            refreshQrs();
+            handleUpdateModalClosing();
           })
-        );
+          .catch(e =>
+            addToast(e.message, {
+              appearance: 'error',
+              autoDismiss: true,
+            })
+          );
+      }
     }
 
     if (isSelectionActive) {
@@ -434,16 +439,25 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
         isUnassigning: false,
       }}
       validationSchema={UpdateModalWithFormikSchema}
+      validateOnBlur={false}
+      validateOnChange={false}
       onSubmit={handleUpdateModalSubmit}
     >
-      {({ values, handleChange, handleSubmit, setFieldValue }) => {
+      {({ values, errors, handleChange, handleSubmit, setFieldValue }) => {
         const { isUnassigning } = values;
         const isPlaceholderValue = Boolean(values.event);
 
         const resolveSelectClass = () => {
           if (isUnassigning) return '';
+          if (errors.event && !Boolean(values.event)) return 'modal-select-error';
           if (!isPlaceholderValue) return 'placeholder-option';
           return '';
+        };
+
+        const resolveSelectText = () => {
+          if (values.isUnassigning) return 'You are unassigning the QRs';
+          if (errors.event && !Boolean(values.event)) return 'The selection is required';
+          return 'Select an event';
         };
 
         const handleFormSubmitClick = () => {
@@ -483,8 +497,28 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                   <span>Range</span>
                 </div>
                 <div className="content-container">
-                  <input type="text" placeholder="From" name="from" onChange={handleChange} />
-                  <input type="text" placeholder="To" name="to" onChange={handleChange} />
+                  <input
+                    className={errors.from && !Boolean(values.from) ? 'modal-input-error' : ''}
+                    type="number"
+                    placeholder={
+                      errors.from && !Boolean(values.from)
+                        ? 'This field should be a positive number'
+                        : 'From'
+                    }
+                    name="from"
+                    onChange={handleChange}
+                  />
+                  <input
+                    className={errors.to && !Boolean(values.to) ? 'modal-input-error' : ''}
+                    type="number"
+                    placeholder={
+                      errors.to && !Boolean(values.to)
+                        ? 'This field should be a positive number'
+                        : 'To'
+                    }
+                    name="to"
+                    onChange={handleChange}
+                  />
                 </div>
               </div>
               <select
@@ -493,7 +527,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                 name="event"
                 onChange={handleChange}
               >
-                <option value="">Select an event</option>
+                <option value="">{resolveSelectText()}</option>
                 {events &&
                   events.map(event => {
                     const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${

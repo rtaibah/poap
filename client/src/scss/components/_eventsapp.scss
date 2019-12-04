@@ -110,15 +110,15 @@
       }
 
       &.big-picture {
-          max-width: 330px;
-          margin: -120px auto 10px;
+        max-width: 330px;
+        margin: -120px auto 10px;
 
-          @media (min-width: $bp-m) {
-            margin: -100px auto 10px;
-          }
-          @media (min-width: $bp-l) {
-            margin: -105px auto 10px;
-          }
+        @media (min-width: $bp-m) {
+          margin: -100px auto 10px;
+        }
+        @media (min-width: $bp-l) {
+          margin: -105px auto 10px;
+        }
       }
     }
 
@@ -147,22 +147,21 @@
       justify-content: center;
       pointer-events: none;
 
-
-       svg {
+      svg {
         margin: 0 2px 2px 2px;
         transform: scale(0.85);
         transition: all 400ms ease-in-out;
 
-         rect {
+        rect {
           fill: transparent;
         }
 
-         path {
+        path {
           fill: white;
         }
       }
 
-       &:hover  svg  {
+      &:hover svg {
         transform: scale(0.9);
       }
     }
@@ -173,22 +172,18 @@
       margin-left: 3px;
       text-decoration: none;
       pointer-events: auto;
+    }
 
-
-     }
-
-    .social-icons{
+    .social-icons {
       text-align: center;
       padding: 30px 0;
       a {
         margin: 0 10px;
         img {
-          width: 30px
+          width: 30px;
         }
       }
-
     }
-
   }
 }
 
@@ -276,7 +271,7 @@
       }
 
       .error {
-        color: #e13c5d;
+        color: $color-error;
         max-width: 400px;
         margin: 0 auto;
         @include x-rem(font-size, 20px);
@@ -316,12 +311,12 @@
    Effects
    ****************************************************** */
 
- .highlight-effect {
+.highlight-effect {
   position: relative;
   z-index: 1;
 }
 
- .highlight-effect::before {
+.highlight-effect::before {
   content: '';
   position: absolute;
   z-index: -1;
@@ -335,189 +330,183 @@
   transition: transform 0.2s ease-in-out;
 }
 
- .highlight-effect:hover::before {
+.highlight-effect:hover::before {
   transform: scaleX(1);
   transform-origin: center left;
 }
 
-
 /* ******************************************************
   Code Claim Page
   ****************************************************** */
- .code-claim-page {
-   background: $color-invert;
-   min-height: 100vh;
-   .claim-header {
-     position: relative;
-     background: $bg-color;
+.code-claim-page {
+  background: $color-invert;
+  min-height: 100vh;
+  .claim-header {
+    position: relative;
+    background: $bg-color;
 
-     .title {
-       text-align: center;
-       font-size: 38px;
-       color: $color-primary;
-       font-weight: bold;
-       padding: 80px 0 20px;
-       font-family: $font-family-narrow;
-     }
+    .title {
+      text-align: center;
+      font-size: 38px;
+      color: $color-primary;
+      font-weight: bold;
+      padding: 80px 0 20px;
+      font-family: $font-family-narrow;
+    }
 
-     .logo-event {
-       position: relative;
-       z-index: 1;
-       width: 120px;
-       height: 120px;
-       border-radius: 50%;
-       background-color: white;
-       margin: 0 auto;
-       -webkit-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
-       -moz-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
-       box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+    .logo-event {
+      position: relative;
+      z-index: 1;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background-color: white;
+      margin: 0 auto;
+      -webkit-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+      -moz-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+      box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
 
-       @media (min-width: $bp-mw) {
-         width: 200px;
-         height: 200px;
-       }
+      @media (min-width: $bp-mw) {
+        width: 200px;
+        height: 200px;
+      }
 
-       .claimed-badge {
-         background: $color-fourth;
-         -webkit-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
-         -moz-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
-         box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
-         width: 30px;
-         height: 30px;
-         border-radius: 50%;
-         position: absolute;
-         text-align: center;
-         top: 90px;
-         right: 10px;
+      .claimed-badge {
+        background: $color-fourth;
+        -webkit-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+        -moz-box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+        box-shadow: 0 4px 14px 0 rgba($color-primary, 0.5);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        position: absolute;
+        text-align: center;
+        top: 90px;
+        right: 10px;
 
-         @media (min-width: $bp-mw) {
-           top: 160px;
-           right: 20px;
-           width: 50px;
-           height: 50px;
-         }
+        @media (min-width: $bp-mw) {
+          top: 160px;
+          right: 20px;
+          width: 50px;
+          height: 50px;
+        }
 
-         img{
-           padding-top: 4px;
-           width: 20px;
-           @media (min-width: $bp-mw) {
-             width: 40px;
-             right: 30px;
-           }
-         }
-       }
+        img {
+          padding-top: 4px;
+          width: 20px;
+          @media (min-width: $bp-mw) {
+            width: 40px;
+            right: 30px;
+          }
+        }
+      }
+    }
 
-     }
+    .wave-holder {
+      width: 100%;
+      margin-top: -60px;
 
-     .wave-holder {
-       width: 100%;
-       margin-top: -60px;
+      @media (min-width: $bp-mw) {
+        margin-top: -100px;
+      }
 
-       @media (min-width: $bp-mw) {
-         margin-top: -100px;
-       }
+      img {
+        width: 100%;
+      }
+    }
+  }
 
-       img {
-         width: 100%;
-       }
-     }
+  .claim-body {
+    padding-top: 50px;
+    @media (min-width: $bp-mw) {
+      padding-top: 0;
+    }
+    @media (min-width: $bp-xxl) {
+      margin-top: -50px;
+    }
 
-   }
+    .claim-form {
+      text-align: center;
 
-   .claim-body {
-     padding-top: 50px;
-     @media (min-width: $bp-mw) {
-       padding-top: 0;
-     }
-     @media (min-width: $bp-xxl) {
-       margin-top: -50px;
-     }
+      input {
+        font-size: 16px;
+        text-align: center;
+        border: 1px solid $color-primary;
+      }
 
-     .claim-form {
-       text-align: center;
+      .web3-browser {
+        font-size: 16px;
+        padding: 25px 0;
+        font-family: $font-family-narrow;
+        color: $color-medium-violet;
+        span {
+          text-decoration: underline;
+          cursor: pointer;
+        }
+      }
+    }
 
-       input {
-         font-size: 16px;
-         text-align: center;
-         border: 1px solid $color-primary;
-       }
+    .claim-info {
+      padding: 20px;
+      max-width: 600px;
+      text-align: center;
+      margin: auto;
 
-       .web3-browser{
-         font-size: 16px;
-         padding: 25px 0;
-         font-family: $font-family-narrow;
-         color: $color-medium-violet;
-         span {
-           text-decoration: underline;
-           cursor: pointer;
-         }
-       }
-     }
+      .claim-preloader {
+        padding: 50px 0;
+        text-align: center;
 
-     .claim-info {
-       padding: 20px;
-       max-width: 600px;
-       text-align: center;
-       margin: auto;
+        img {
+          width: 50px;
+        }
+      }
 
-       .claim-preloader {
-         padding: 50px 0;
-         text-align: center;
+      .info-title {
+        font-family: $font-family-narrow;
+        font-weight: bold;
+        color: $color-primary;
+        font-size: 26px;
+        line-height: 30px;
+        max-width: 300px;
+        margin: 30px auto;
+      }
 
-         img {
-           width: 50px;
-         }
-       }
+      .info-pending {
+        background: $color-light-grey;
+        color: $color-medium-violet;
+        display: inline;
+        border-radius: 4px;
+        padding: 10px 10px 10px 35px;
+        font-size: 16px;
+        line-height: 20px;
+        position: relative;
 
-       .info-title {
-         font-family: $font-family-narrow;
-         font-weight: bold;
-         color: $color-primary;
-         font-size: 26px;
-         line-height: 30px;
-         max-width: 300px;
-         margin: 30px auto;
-       }
+        img {
+          width: 25px;
+          position: absolute;
+          left: 5px;
+          top: 15px;
+        }
+      }
 
-       .info-pending {
-         background: $color-light-grey;
-         color: $color-medium-violet;
-         display: inline;
-         border-radius: 4px;
-         padding: 10px 10px 10px 35px;
-         font-size: 16px;
-         line-height: 20px;
-         position: relative;
+      .text-info {
+        color: $color-medium-violet;
+        font-size: 16px;
+        line-height: 20px;
+        max-width: 300px;
+        margin: 40px auto;
+      }
 
-         img {
-           width: 25px;
-           position: absolute;
-           left: 5px;
-           top: 15px;
-         }
+      a.link-btn {
+        margin-top: 50px;
+        background: $color-fourth;
+        width: 300px;
+        min-width: 300px;
+      }
+    }
+  }
 
-       }
-
-       .text-info {
-         color: $color-medium-violet;
-         font-size: 16px;
-         line-height: 20px;
-         max-width: 300px;
-         margin: 40px auto;
-       }
-
-       a.link-btn{
-         margin-top: 50px;
-         background: $color-fourth;
-         width: 300px;
-         min-width: 300px;
-       }
-     }
-
-   }
-
-   footer {
-     background: #FFF;
-   }
-
- }
+  footer {
+    background: #fff;
+  }
+}
