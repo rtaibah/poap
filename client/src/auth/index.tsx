@@ -36,8 +36,7 @@ export class AuthService {
     this._isAuthenticated = await this.client.isAuthenticated();
 
     if (this._isAuthenticated) {
-      const _user = await this.client.getUser();
-      this.user = _user;
+      this.user = await this.client.getUser();
     }
   }
 
@@ -53,7 +52,7 @@ export class AuthService {
     });
   }
 
-  getRoles() {
+  getRole() {
     // REVIEW CHECK IF YOU ARE GOING TO NEED MORE THAN ONE ROLE
     const [userRole] = this.user['https://poap.xyz/roles'];
 
@@ -65,8 +64,7 @@ export class AuthService {
     this._isAuthenticated = await this.client.isAuthenticated();
 
     if (this._isAuthenticated) {
-      const _user = await this.client.getUser();
-      this.user = _user;
+      this.user = await this.client.getUser();
     }
 
     if (result.appState) {

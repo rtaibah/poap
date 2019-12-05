@@ -15,7 +15,10 @@ type FilterChipProps = {
 
 const FilterChip: React.FC<FilterChipProps> = ({ text, isActive, handleOnClick }) => {
   return (
-    <button className={`filter-base filter-chip ${isActive && 'active'}`} onClick={handleOnClick}>
+    <button
+      className={`filter-base filter-chip ${isActive ? 'active' : ''}`}
+      onClick={handleOnClick}
+    >
       {text}
     </button>
   );

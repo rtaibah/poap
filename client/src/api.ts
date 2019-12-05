@@ -1,6 +1,10 @@
 import queryString from 'query-string';
 
+import { API_URLS } from './lib/constants';
+
 import { authClient } from './auth';
+
+const API_BASE = process.env.NODE_ENV === 'development' ? API_URLS.local : API_URLS.prod;
 
 export type Address = string;
 export interface TokenInfo {
@@ -122,18 +126,6 @@ export type PaginatedQrCodes = {
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
-
-// let API_BASE = 'https://api.poap.xyz';
-let API_BASE = 'http://10.0.0.146:8080';
-// let API_BASE = 'https://development-dot-poapapp.appspot.com';
-
-// if (process.env.NODE_ENV === 'development') {
-//   if (process.env.REACT_APP_API_ROOT) {
-//     API_BASE = process.env.REACT_APP_API_ROOT;
-//   } else {
-//     API_BASE = 'http://localhost:8080';
-//   }
-// }
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);

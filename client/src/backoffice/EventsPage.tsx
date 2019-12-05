@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
-import { Link, RouteComponentProps } from 'react-router-dom';
+import { Link, Route, RouteComponentProps, Switch } from 'react-router-dom';
 import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
@@ -16,6 +16,9 @@ import ReactPaginate from 'react-paginate';
 import { SubmitButton } from '../components/SubmitButton';
 import { Loading } from '../components/Loading';
 import FilterButton from '../components/FilterButton';
+
+// constants
+import { ROLES, ROUTES } from '../lib/constants';
 
 // assets
 import { ReactComponent as EditIcon } from '../images/edit.svg';
@@ -34,10 +37,70 @@ import {
 
 const PAGE_SIZE = 10;
 
-export const CreateEventForm: React.FC = () => {
-  console.log('create event form');
-  return <EventForm create />;
+type EventEditValues = {
+  name: string;
+  year: number;
+  id: number;
+  description: string;
+  start_date: string;
+  end_date: string;
+  city: string;
+  country: string;
+  event_url: string;
+  image: Blob;
+  isFile: boolean;
 };
+
+type DatePickerDay = 'start_date' | 'end_date';
+
+type SetFieldValue = (field: string, value: any) => void;
+
+type DatePickerContainerProps = {
+  text: string;
+  dayToSetup: DatePickerDay;
+  handleDayClick: (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) => void;
+  setFieldValue: SetFieldValue;
+  disabledDays: RangeModifier | undefined;
+};
+
+type PaginateAction = {
+  selected: number;
+};
+
+type EventTableProps = {
+  initialEvents: PoapEvent[];
+  criteria: string;
+};
+
+type EventFieldProps = {
+  title: string;
+  name: string;
+  disabled?: boolean;
+  type?: string;
+};
+
+type ImageContainerProps = {
+  text: string;
+  handleFileChange: Function;
+  setFieldValue: Function;
+  errors: any;
+};
+export interface RangeModifier {
+  from: Date;
+  to: Date;
+}
+
+export const EventsPage = () => (
+  <Switch>
+    <Route exact path={ROUTES.events.path} component={EventList} />
+
+    <Route exact path={ROUTES.eventsNew.path} component={CreateEventForm} />
+
+    <Route exact path={ROUTES.event.path} component={EditEventForm} />
+  </Switch>
+);
+
+export const CreateEventForm: React.FC = () => <EventForm create />;
 
 export const EditEventForm: React.FC<RouteComponentProps<{
   eventId: string;
@@ -58,24 +121,6 @@ export const EditEventForm: React.FC<RouteComponentProps<{
 
   return <EventForm event={event} />;
 };
-
-type EventEditValues = {
-  name: string;
-  year: number;
-  id: number;
-  description: string;
-  start_date: string;
-  end_date: string;
-  city: string;
-  country: string;
-  event_url: string;
-  image: Blob;
-  isFile: boolean;
-};
-
-type DatePickerDay = 'start_date' | 'end_date';
-
-type SetFieldValue = (field: string, value: any) => void;
 
 const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
   const startingDate = new Date('1 Jan 1900');
@@ -219,18 +264,6 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
   );
 };
 
-type DatePickerContainerProps = {
-  text: string;
-  dayToSetup: DatePickerDay;
-  handleDayClick: (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) => void;
-  setFieldValue: SetFieldValue;
-  disabledDays: RangeModifier | undefined;
-};
-export interface RangeModifier {
-  from: Date;
-  to: Date;
-}
-
 const DayPickerContainer = ({
   text,
   dayToSetup,
@@ -251,13 +284,6 @@ const DayPickerContainer = ({
   );
 };
 
-type ImageContainerProps = {
-  text: string;
-  handleFileChange: Function;
-  setFieldValue: Function;
-  errors: any;
-};
-
 const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: ImageContainerProps) => (
   <div className="date-picker-container">
     <label>{text}</label>
@@ -270,12 +296,6 @@ const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: Image
   </div>
 );
 
-type EventFieldProps = {
-  title: string;
-  name: string;
-  disabled?: boolean;
-  type?: string;
-};
 const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) => {
   return (
     <Field
@@ -309,8 +329,8 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
 export const EventList: React.FC = () => {
   const [criteria, setCriteria] = useState<string>('');
 
-  const users = authClient.user['https://poap.xyz/roles'];
-  const isAdmin = Array.isArray(users) ? users.includes('administrator') : false;
+  const userRole = authClient.getRole();
+  const isAdmin = userRole === ROLES.administrator;
 
   const [events, fetchingEvents, fetchEventsError] = useAsync(
     isAdmin ? getEvents : getEventsForSpecificUser
@@ -338,15 +358,6 @@ export const EventList: React.FC = () => {
       {events && <EventTable criteria={criteria} initialEvents={events} />}
     </div>
   );
-};
-
-type PaginateAction = {
-  selected: number;
-};
-
-type EventTableProps = {
-  initialEvents: PoapEvent[];
-  criteria: string;
 };
 
 const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {

@@ -1,7 +1,7 @@
 import React from 'react';
 
 type FilterSelectProps = {
-  handleChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 };
 
 const FilterSelect: React.FC<FilterSelectProps> = ({ children, handleChange }) => (
