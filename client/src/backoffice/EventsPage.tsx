@@ -391,22 +391,23 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
         </div>
         <div className={'admin-table-row'}>
           {eventsToShowManager(events).map((event, i) => (
-            <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={event.id}>
+            <div className={`row ${i % 2 === 0 ? 'even' : 'odd'} relative`} key={event.id}>
               <div className={'col-md-1 center'}>
                 <span className={'visible-sm visible-md'}>#</span>
                 {event.id}
               </div>
               <div className={'col-md-4'}>
-                <span>
-                  <a href={event.event_url} target="_blank" rel="noopener noreferrer">
-                    {event.name}
-                  </a>
-                </span>
+                <span className={'visible-sm'}>Name: </span>
+                <a href={event.event_url} target="_blank" rel="noopener noreferrer">
+                  {event.name}
+                </a>
               </div>
               <div className={'col-md-2 center'}>
+                <span className={'visible-sm'}>Start date: </span>
                 <span>{event.start_date}</span>
               </div>
               <div className={'col-md-2 center'}>
+                <span className={'visible-sm'}>End date: </span>
                 <span>{event.end_date}</span>
               </div>
               <div className={'col-md-2 center logo-image-container'}>

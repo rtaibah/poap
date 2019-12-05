@@ -194,7 +194,6 @@
 
     &.table-header {
       font-weight: bold;
-      border-bottom: 1px solid #d2d2d2;
     }
 
     .center {
@@ -203,13 +202,16 @@
   }
 
   .admin-table-row {
+    border-top: 1px solid #d2d2d2;
+    border-right: 1px solid #d2d2d2;
+    border-left: 1px solid #d2d2d2;
+
     .capitalize {
       text-transform: capitalize;
     }
 
     .row:nth-child(even) {
       background: white;
-      border: 1px solid #d2d2d2;
 
       @media (max-width: $bp-sw) {
         position: relative;
@@ -223,6 +225,8 @@
     }
 
     .row {
+      border-bottom: 1px solid #d2d2d2;
+
       @media (max-width: $bp-sw) {
         position: relative;
 
@@ -246,6 +250,13 @@
 
       .logo-image-container {
         height: 20px;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+
+        @media (min-width: $bp-l) {
+          position: relative;
+        }
       }
 
       .logo-image {
@@ -291,13 +302,20 @@
   .filters-container {
     display: flex;
     flex-direction: row;
-    margin-bottom: 35px;
+
+    @media (min-width: $bp-l) {
+      margin-bottom: 35px;
+    }
 
     &.notifications-filters {
       padding: 0;
 
       > div {
-        margin-right: 16px;
+        margin-bottom: 15px;
+
+        @media (min-width: $bp-l) {
+          margin-right: 16px;
+        }
       }
     }
 
@@ -361,9 +379,18 @@
       }
     }
 
+    &.transactions {
+      margin-bottom: 15px;
+
+      @media (min-width: $bp-l) {
+        margin-bottom: 0;
+      }
+    }
+
     &.qr {
       @media (max-width: $bp-mw) {
         flex-direction: column;
+        margin-bottom: 15px;
       }
 
       .filter {
@@ -612,7 +639,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 35px;
+  margin-bottom: 15px;
+
+  @media (min-width: $bp-l) {
+    margin-bottom: 35px;
+  }
 
   > * {
     max-width: 250px;
@@ -624,6 +655,15 @@
   justify-content: center;
   align-items: center;
   height: 20px;
+  width: 20px;
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+
+  @media (min-width: $bp-l) {
+    width: auto;
+    position: relative;
+  }
 
   a {
     width: 100%;
@@ -638,4 +678,8 @@
 
 .row-qr-claimed {
   background-color: $color-light-violet;
+}
+
+.relative {
+  position: relative;
 }

@@ -139,7 +139,7 @@ const TransactionsPage: FC = () => {
     <div className={'admin-table transactions'}>
       <h2>Transactions</h2>
       <div>
-        <div className={'filters-container'}>
+        <div className={'filters-container transactions'}>
           <FilterChip text="Failed" isActive={isFailedSelected} handleOnClick={handleFailedClick} />
           <FilterChip text="Passed" isActive={isPassedSelected} handleOnClick={handlePassedClick} />
           <FilterChip
@@ -156,9 +156,6 @@ const TransactionsPage: FC = () => {
         <div className={'col-md-2'}>Operation</div>
         <div className={'col-md-1 center'}>Status</div>
         <div className={'col-md-2 center'}>Gas Price (GWei)</div>
-      </div>
-      <div className={'row table-header visible-sm'}>
-        <div className={'center'}>Transactions</div>
       </div>
       <div className={'admin-table-row'}>
         {isFetchingTx && <Loading />}

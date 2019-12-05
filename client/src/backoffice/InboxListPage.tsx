@@ -180,9 +180,6 @@ const InboxListPage: FC = () => {
         <div className={'col-md-4'}>Event</div>
         <div className={'col-md-1'} />
       </div>
-      <div className={'row table-header visible-sm'}>
-        <div className={'center'}>Notifications</div>
-      </div>
       <div className={'admin-table-row'}>
         {isFetchingNotifications && <Loading />}
         {notifications &&

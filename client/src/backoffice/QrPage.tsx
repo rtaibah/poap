@@ -257,9 +257,9 @@ const QrPage: FC = () => {
         <div className={'col-md-2 center'}>Status</div>
         <div className={'col-md-2'}>Tx Hash</div>
       </div>
-      <div className={'row table-header visible-sm'}>
+      {/* <div className={'row table-header visible-sm'}>
         <div className={'center'}>QR Codes</div>
-      </div>
+      </div> */}
       <div className={'admin-table-row'}>
         {isFetchingQrCodes && <Loading />}
         {qrCodes &&
