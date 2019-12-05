@@ -249,92 +249,96 @@ const QrPage: FC = () => {
           />
         </ReactModal>
       </div>
-      <div className={'row table-header visible-md'}>
-        <div className={'col-md-1 center'}>-</div>
-        <div className={'col-md-1 center'}>#</div>
-        <div className={'col-md-2'}>QR Hash</div>
-        <div className={'col-md-4'}>Event</div>
-        <div className={'col-md-2 center'}>Status</div>
-        <div className={'col-md-2'}>Tx Hash</div>
-      </div>
-      {/* <div className={'row table-header visible-sm'}>
-        <div className={'center'}>QR Codes</div>
-      </div> */}
-      <div className={'admin-table-row'}>
-        {isFetchingQrCodes && <Loading />}
-        {qrCodes &&
-          !isFetchingQrCodes &&
-          qrCodes.map((qr, i) => {
-            return (
-              <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={qr.id}>
-                <div className={'col-md-1 center checkbox'}>
-                  {!qr.claimed && (
-                    <input
-                      type="checkbox"
-                      disabled={qr.claimed}
-                      onChange={handleQrCheckboxChange}
-                      checked={selectedQrs.includes(String(qr.id))}
-                      id={String(qr.id)}
+
+      {isFetchingQrCodes && <Loading />}
+
+      {qrCodes && qrCodes.length !== 0 && !isFetchingQrCodes && (
+        <div>
+          <div className={'row table-header visible-md'}>
+            <div className={'col-md-1 center'}>-</div>
+            <div className={'col-md-1 center'}>#</div>
+            <div className={'col-md-2'}>QR Hash</div>
+            <div className={'col-md-4'}>Event</div>
+            <div className={'col-md-2 center'}>Status</div>
+            <div className={'col-md-2'}>Tx Hash</div>
+          </div>
+          <div className={'admin-table-row'}>
+            {qrCodes.map((qr, i) => {
+              return (
+                <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={qr.id}>
+                  <div className={'col-md-1 center checkbox'}>
+                    {!qr.claimed && (
+                      <input
+                        type="checkbox"
+                        disabled={qr.claimed}
+                        onChange={handleQrCheckboxChange}
+                        checked={selectedQrs.includes(String(qr.id))}
+                        id={String(qr.id)}
+                      />
+                    )}
+                  </div>
+
+                  <div className={'col-md-1 center'}>
+                    <span className={'visible-sm'}>#</span>
+                    {qr.id}
+                  </div>
+
+                  <div className={'col-md-2'}>
+                    <span className={'visible-sm'}>QR Hash</span>
+                    {qr.qr_hash}
+                  </div>
+
+                  <div className={'col-md-4 elipsis'}>
+                    <span className={'visible-sm'}>Event: </span>
+                    {(!qr.event || !qr.event.name) && <span>-</span>}
+
+                    {qr.event && qr.event.event_url && qr.event.name && (
+                      <a href={qr.event.event_url} target="_blank" rel="noopener noreferrer">
+                        {qr.event.name}
+                      </a>
+                    )}
+
+                    {qr.event && qr.event.name && !qr.event.event_url && (
+                      <span>{qr.event.name}</span>
+                    )}
+                  </div>
+
+                  <div className={'col-md-2 center status'}>
+                    <span className={'visible-sm'}>Status: </span>
+                    <img
+                      src={qr.claimed ? checked : error}
+                      alt={qr.event && qr.event.name ? `${qr.event.name} status` : 'qr status'}
+                      className={'status-icon'}
                     />
-                  )}
-                </div>
+                  </div>
 
-                <div className={'col-md-1 center'}>
-                  <span className={'visible-sm'}>#</span>
-                  {qr.id}
-                </div>
-
-                <div className={'col-md-2'}>
-                  <span className={'visible-sm'}>QR Hash</span>
-                  {qr.qr_hash}
-                </div>
-
-                <div className={'col-md-4 elipsis'}>
-                  <span className={'visible-sm'}>Event: </span>
-                  {(!qr.event || !qr.event.name) && <span>-</span>}
-
-                  {qr.event && qr.event.event_url && qr.event.name && (
-                    <a href={qr.event.event_url} target="_blank" rel="noopener noreferrer">
-                      {qr.event.name}
+                  <div className={'col-md-2'}>
+                    <span className={'visible-sm'}>Tx Hash: </span>
+                    <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
+                      {qr.tx_hash && reduceAddress(qr.tx_hash)}
                     </a>
-                  )}
-
-                  {qr.event && qr.event.name && !qr.event.event_url && <span>{qr.event.name}</span>}
+                  </div>
                 </div>
-
-                <div className={'col-md-2 center status'}>
-                  <span className={'visible-sm'}>Status: </span>
-                  <img
-                    src={qr.claimed ? checked : error}
-                    alt={qr.event && qr.event.name ? `${qr.event.name} status` : 'qr status'}
-                    className={'status-icon'}
-                  />
-                </div>
-
-                <div className={'col-md-2'}>
-                  <span className={'visible-sm'}>Tx Hash: </span>
-                  <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
-                    {qr.tx_hash && reduceAddress(qr.tx_hash)}
-                  </a>
-                </div>
-              </div>
-            );
-          })}
-        {qrCodes && qrCodes.length === 0 && !isFetchingQrCodes && (
-          <div className={'no-results'}>No QR codes found</div>
-        )}
-      </div>
-      {total > 10 && (
-        <div className={'pagination'}>
-          <ReactPaginate
-            pageCount={Math.ceil(total / PAGE_SIZE)}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={5}
-            activeClassName={'active'}
-            onPageChange={handlePageChange}
-            forcePage={page}
-          />
+              );
+            })}
+          </div>
+          {total > 10 && (
+            <div className={'pagination'}>
+              <ReactPaginate
+                pageCount={Math.ceil(total / PAGE_SIZE)}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={5}
+                activeClassName={'active'}
+                onPageChange={handlePageChange}
+                forcePage={page}
+              />
+            </div>
+          )}
         </div>
+      )}
+
+      {qrCodes && qrCodes.length === 0 && !isFetchingQrCodes && (
+        <div className={'no-results'}>No QR codes found</div>
       )}
     </div>
   );

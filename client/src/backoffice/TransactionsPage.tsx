@@ -159,6 +159,7 @@ const TransactionsPage: FC = () => {
       </div>
       <div className={'admin-table-row'}>
         {isFetchingTx && <Loading />}
+
         {transactions &&
           transactions.map((tx, i) => {
             return (
@@ -201,6 +202,7 @@ const TransactionsPage: FC = () => {
               </div>
             );
           })}
+
         {transactions && transactions.length === 0 && !isFetchingTx && (
           <div className={'no-results'}>No transactions found</div>
         )}

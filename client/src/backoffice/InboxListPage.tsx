@@ -173,61 +173,65 @@ const InboxListPage: FC = () => {
           </div>
         </div>
       </div>
-      <div className={'row table-header visible-md'}>
-        <div className={'col-md-1 center'}>#</div>
-        <div className={'col-md-4'}>Title</div>
-        <div className={'col-md-2'}>Type</div>
-        <div className={'col-md-4'}>Event</div>
-        <div className={'col-md-1'} />
-      </div>
-      <div className={'admin-table-row'}>
-        {isFetchingNotifications && <Loading />}
-        {notifications &&
-          !isFetchingNotifications &&
-          notifications &&
-          notifications.map((notification, i) => {
-            return (
-              <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={notification.id}>
-                <div className={'col-md-1 center'}>
-                  <span className={'visible-sm'}>#</span>
-                  {notification.id}
-                </div>
+      {isFetchingNotifications && <Loading />}
 
-                <div className={'col-md-4 ellipsis'}>
-                  <span className={'visible-sm'}>Title: </span>
-                  {notification.title}
-                </div>
+      {notifications && notifications.length !== 0 && !isFetchingNotifications && (
+        <div>
+          <div className={'row table-header visible-md'}>
+            <div className={'col-md-1 center'}>#</div>
+            <div className={'col-md-4'}>Title</div>
+            <div className={'col-md-2'}>Type</div>
+            <div className={'col-md-4'}>Event</div>
+            <div className={'col-md-1'} />
+          </div>
+          <div className={'admin-table-row'}>
+            {notifications.map((notification, i) => {
+              return (
+                <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={notification.id}>
+                  <div className={'col-md-1 center'}>
+                    <span className={'visible-sm'}>#</span>
+                    {notification.id}
+                  </div>
 
-                <div className={'col-md-2'}>
-                  <span className={'visible-sm'}>Type: </span>
-                  {notification.type}
-                </div>
+                  <div className={'col-md-4 ellipsis'}>
+                    <span className={'visible-sm'}>Title: </span>
+                    {notification.title}
+                  </div>
 
-                <div className={'col-md-4 ellipsis'}>
-                  <span className={'visible-sm'}>Event: </span>
-                  {notification.event && notification.event.name
-                    ? notification.event.name
-                    : 'No name'}
-                </div>
+                  <div className={'col-md-2'}>
+                    <span className={'visible-sm'}>Type: </span>
+                    {notification.type}
+                  </div>
 
-                <div className={'col-md-1 description'}>
-                  <PlusIcon
-                    className={'plus-edit-icon'}
-                    onClick={() =>
-                      handleModal({
-                        title: notification.title,
-                        description: notification.description,
-                      })
-                    }
-                  />
+                  <div className={'col-md-4 ellipsis'}>
+                    <span className={'visible-sm'}>Event: </span>
+                    {notification.event && notification.event.name
+                      ? notification.event.name
+                      : 'No name'}
+                  </div>
+
+                  <div className={'col-md-1 description'}>
+                    <PlusIcon
+                      className={'plus-edit-icon'}
+                      onClick={() =>
+                        handleModal({
+                          title: notification.title,
+                          description: notification.description,
+                        })
+                      }
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        {notifications && notifications.length === 0 && !isFetchingNotifications && (
-          <div className={'no-results'}>No notifications found</div>
-        )}
-      </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {notifications && notifications.length === 0 && !isFetchingNotifications && (
+        <div className={'no-results'}>No notifications found</div>
+      )}
+
       {total > 0 && (
         <div className={'pagination'}>
           <ReactPaginate
