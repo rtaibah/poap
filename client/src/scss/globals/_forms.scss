@@ -141,8 +141,8 @@ input[type='file'] {
   }
 
   &:disabled {
-    background: scale-color($color-invert, $lightness: -5%);
-    border-color: scale-color($color-invert, $lightness: -5%);
+    background: $color-disabled-field;
+    border-color: $color-disabled-field;
   }
 
   &.error {
@@ -314,7 +314,13 @@ textarea {
 
   &:focus,
   &:hover {
-    outline: 2px solid $color-primary;
+    outline-color: $color-primary;
+    border: 2px solid $color-primary;
+  }
+
+  &:disabled {
+    background-color: $color-disabled-field;
+    border: none;
   }
 }
 
