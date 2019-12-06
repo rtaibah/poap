@@ -1,51 +1,28 @@
 
 import * as storage from '@google-cloud/storage';
 import getEnv from '../envs';
-import { sleep } from '../utils';
 
 export async function uploadFile(gcsFileName: string, mimetype:string, in_memory_file:any): Promise<string | null> {
     const env = getEnv();
-    let finished = false;
+    // let finished = false;
     const googleStorageClient = new storage.Storage();
     const bucketName = env.googleStorageBucket;
     const bucket = googleStorageClient.bucket(bucketName);
     const file = bucket.file(gcsFileName);
-  
-    const blob = file.createWriteStream({
-      metadata: {
-        contentType: mimetype,
-      },
-      public: true
-    });
 
-    blob.on('error', (err: any) => {
-      console.log(err);
-      return null;
-    });
-  
-    blob.on('finish', () => {
-      finished = true;
-    });
+    const promisifyBlob = (file: any, inMemoryFile: any) => {
+      return new Promise((resolve, reject) => {
+        const blob = file.createWriteStream({ metadata: { contentType: mimetype }, public: true });
+        blob.end(inMemoryFile);
 
-    blob.end(in_memory_file);
+        blob.on('error', (error:any) => reject(error));
+        blob.on('finish', () => resolve());
+      });
+    };
 
-    while(finished===false){
-      await sleep(200);
-    }
+    await promisifyBlob(file, in_memory_file);
 
     return `https://storage.googleapis.com/${bucket.name}/${gcsFileName}`
-
-    // stream.on('readable', () => {
-    //   let chunk;
-    //   let in_process = false;
-    //   while (null !== (chunk = stream.read())) {
-    //     in_process = true;
-    //     blob.write(chunk);
-    //   }
-    //   if(!in_process) {
-        
-    //   }
-    // })
   }
   
   export async function listFiles() {

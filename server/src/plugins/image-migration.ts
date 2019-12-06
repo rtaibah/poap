@@ -8,7 +8,7 @@ dotenv.config();
 
 export async function migrateEventImagesToGoogle(){
   const events = await getEvents();
-  const eventsWithImages = events.filter(event => event.hasOwnProperty('image_url'));
+  const eventsWithImages = events.filter(event => event.hasOwnProperty('image_url') && event.image_url !== '');
   console.log(eventsWithImages);
 
   for await (let event of eventsWithImages) {
