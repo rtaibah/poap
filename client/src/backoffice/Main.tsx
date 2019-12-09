@@ -144,7 +144,7 @@ const NavigationMenu = withRouter(({ history }) => {
         href=""
         onClick={() => {
           auth.logout();
-          history.push('/');
+          // history.push('/');
         }}
       >
         Logout

@@ -4,7 +4,10 @@ import { API_URLS } from './lib/constants';
 
 import { authClient } from './auth';
 
-const API_BASE = process.env.NODE_ENV === 'development' ? API_URLS.local : API_URLS.prod;
+const API_BASE =
+  process.env.NODE_ENV === 'development'
+    ? `${process.env.REACT_APP_TEST_API_ROOT}`
+    : `${process.env.REACT_APP_API_ROOT}`;
 
 export type Address = string;
 export interface TokenInfo {
@@ -345,12 +348,26 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
 }
 
 export function getNotifications(
-  limit?: number,
-  offset?: number,
+  limit: number,
+  offset: number,
   type?: string,
-  event_id?: number
+  recipientFilter?: string,
+  eventId?: number
 ): Promise<PaginatedNotifications> {
-  const params = queryString.stringify({ limit, offset, type, event_id }, { sort: false });
+  let paramsObject = { limit, offset };
+
+  if (type) Object.assign(paramsObject, { type });
+
+  if (recipientFilter === 'everyone') {
+    Object.assign(paramsObject, { eventId: 'null' });
+  }
+
+  if (recipientFilter === 'event') {
+    Object.assign(paramsObject, { eventId });
+  }
+
+  const params = queryString.stringify(paramsObject);
+
   return secureFetch(`${API_BASE}/notifications?${params}`);
 }
 

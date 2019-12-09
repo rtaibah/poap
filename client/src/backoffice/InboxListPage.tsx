@@ -16,7 +16,7 @@ import FilterSelect from '../components/FilterSelect';
 import { ReactComponent as PlusIcon } from '../images/plus.svg';
 
 /* Typings */
-import { Name, Value } from '../types';
+import { Name, Value, EmptyValue } from '../types';
 
 const PAGE_SIZE = 10;
 
@@ -28,8 +28,8 @@ const InboxListPage: FC = () => {
   const [page, setPage] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
   const [shouldResetPage, setShouldResetPage] = useState<boolean>(false);
-  const [notificationType, setNotificationType] = useState<string>('inbox');
-  const [recipientFilter, setRecipientFilter] = useState<string>('everyone');
+  const [notificationType, setNotificationType] = useState<string>('');
+  const [recipientFilter, setRecipientFilter] = useState<string>('');
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<number | undefined>(undefined);
   const [modalText, setModalText] = useState<string>('');
@@ -39,6 +39,14 @@ const InboxListPage: FC = () => {
   const [events, setEvents] = useState<PoapEvent[]>([]);
 
   const { addToast } = useToasts();
+
+  useEffect(() => {
+    console.log(notificationType);
+  }, [notificationType]);
+
+  useEffect(() => {
+    console.log(recipientFilter);
+  }, [recipientFilter]);
 
   useEffect(() => {
     fetchEvents();
@@ -74,17 +82,13 @@ const InboxListPage: FC = () => {
   const fetchNotifications = async () => {
     setIsFetchingNotifications(true);
 
-    let event_id = undefined;
-    if (recipientFilter === 'event' && selectedEvent !== undefined) {
-      event_id = selectedEvent > -1 ? selectedEvent : undefined;
-    }
-
     try {
       const response = await getNotifications(
         PAGE_SIZE,
         page * PAGE_SIZE,
         notificationType,
-        event_id
+        recipientFilter,
+        selectedEvent
       );
       if (!response) return;
       setNotifications(response.notifications);
@@ -103,12 +107,12 @@ const InboxListPage: FC = () => {
     setPage(obj.selected);
   };
 
-  const handleRadio = (name: Name, value: Value) => {
+  const handleRadio = (name: Name, value: Value | EmptyValue) => {
     if (name === 'notificationType') setNotificationType(value);
     if (name === 'recipientFilter') setRecipientFilter(value);
   };
 
-  const handleSelect = (e: ChangeEvent<HTMLSelectElement>) => {
+  const handleEventSelect = (e: ChangeEvent<HTMLSelectElement>) => {
     setSelectedEvent(Number(e.target.value));
   };
 
@@ -123,6 +127,7 @@ const InboxListPage: FC = () => {
   const handleNotificationTypeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { value } = e.target;
 
+    if (value === '') handleRadio('notificationType', value);
     if (value === 'inbox') handleRadio('notificationType', value);
     if (value === 'push') handleRadio('notificationType', value);
   };
@@ -130,6 +135,7 @@ const InboxListPage: FC = () => {
   const handleRecipientSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { value } = e.target;
 
+    if (value === '') handleRadio('recipientFilter', value);
     if (value === 'everyone') handleRadio('recipientFilter', value);
     if (value === 'event') handleRadio('recipientFilter', value);
   };
@@ -141,7 +147,7 @@ const InboxListPage: FC = () => {
         <div className="filters-container inbox row notifications-filters">
           <div className="col-md-3 ">
             <FilterSelect handleChange={handleNotificationTypeSelect}>
-              {/* <option value="">Select an option</option> */}
+              <option value="">Select a type</option>
               <option value="inbox">Inbox</option>
               <option value="push">Push</option>
             </FilterSelect>
@@ -149,7 +155,7 @@ const InboxListPage: FC = () => {
 
           <div className="col-md-3">
             <FilterSelect handleChange={handleRecipientSelect}>
-              {/* <option value="">Select an option</option> */}
+              <option value="">Select the recipient</option>
               <option value="everyone">Sent to everyone</option>
               <option value="event">Filter recipient</option>
             </FilterSelect>
@@ -157,7 +163,7 @@ const InboxListPage: FC = () => {
 
           <div className="col-md-3">
             {recipientFilter === 'event' && (
-              <FilterSelect handleChange={handleSelect}>
+              <FilterSelect handleChange={handleEventSelect}>
                 <option value="">Select an option</option>
                 {events &&
                   events.map((event: PoapEvent) => {
