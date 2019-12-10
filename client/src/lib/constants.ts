@@ -107,10 +107,4 @@ const etherscanLinks = {
   address: (address: string): string => `https://etherscan.io/address/${address}`,
 };
 
-const API_URLS = {
-  prod: 'https://api.poap.xyz',
-  test: 'https://development-dot-poapapp.appspot.com',
-  local: 'http://10.0.0.146:8080',
-};
-
-export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS, API_URLS };
+export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS };

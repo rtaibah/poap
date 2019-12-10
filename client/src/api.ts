@@ -1,13 +1,6 @@
 import queryString from 'query-string';
 
-import { API_URLS } from './lib/constants';
-
 import { authClient } from './auth';
-
-const API_BASE =
-  process.env.NODE_ENV === 'development'
-    ? `${process.env.REACT_APP_TEST_API_ROOT}`
-    : `${process.env.REACT_APP_API_ROOT}`;
 
 export type Address = string;
 export interface TokenInfo {
@@ -129,6 +122,11 @@ export type PaginatedQrCodes = {
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
+
+const API_BASE =
+  process.env.NODE_ENV === 'development'
+    ? `${process.env.REACT_APP_TEST_API_ROOT}`
+    : `${process.env.REACT_APP_API_ROOT}`;
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
@@ -372,8 +370,8 @@ export function getNotifications(
 }
 
 export async function getQrCodes(
-  limit?: number,
-  offset?: number,
+  limit: number,
+  offset: number,
   status?: boolean,
   event_id?: number
 ): Promise<PaginatedQrCodes> {
