@@ -1,14 +1,20 @@
 import React from 'react';
+
+// routing
 import { RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
+
+// libraries
 import classNames from 'classnames';
 import delve from 'dlv';
 
 /* Helpers */
 import { TokenInfo, getTokensFor, resolveENS, getENSFromAddress } from '../api';
 import { isValidAddress } from '../lib/helpers';
+
 /* Assets */
 import NoEventsImg from '../images/event-2019.svg';
+
 /* Components */
 import { Loading } from '../components/Loading';
 

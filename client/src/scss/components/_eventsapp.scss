@@ -59,7 +59,19 @@
 
 .footer-events {
   width: 100%;
-  margin: 50px 0 0;
+  padding: 80px 0 0;
+
+  &.normal-background {
+    background-color: $bg-color;
+  }
+
+  &.secondary-background {
+    background-color: $color-secondary;
+  }
+
+  &.white-background {
+    background-color: white;
+  }
 
   &.violet-bg {
     z-index: 1;
@@ -192,7 +204,6 @@
    ****************************************************** */
 
 .main-events {
-  padding: 0 0 40px;
   margin: -100px 0 0;
 
   @media (min-width: $bp-m) {
@@ -201,7 +212,6 @@
 
   @media (min-width: $bp-mw) {
     margin: -200px 0 0;
-    padding: 0 0 40px;
   }
 
   .image-main {
@@ -432,6 +442,7 @@
         font-size: 16px;
         text-align: center;
         border: 1px solid $color-primary;
+        max-width: 500px;
       }
 
       .web3-browser {

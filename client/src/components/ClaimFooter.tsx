@@ -7,8 +7,12 @@ import Telegram from '../images/logo-telegram.svg';
 import Github from '../images/logo-git.svg';
 // import BuiltOnEth from '../images/built-on-eth.png';
 
-export const ClaimFooter: React.FC = React.memo(() => (
-  <footer role="contentinfo" className="footer-events">
+type ClaimFooterProps = {
+  path: string;
+};
+
+export const ClaimFooter: React.FC = () => (
+  <footer role="contentinfo" className="footer-events white-background">
     <div className="image-footer">
       <img src={FooterShadow} className="mobile" alt="" />
       <img src={FooterShadowDesktop} className="desktop" alt="" />
@@ -52,4 +56,4 @@ export const ClaimFooter: React.FC = React.memo(() => (
       </div>
     </div>
   </footer>
-));
+);

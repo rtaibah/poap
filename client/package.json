@@ -15,6 +15,7 @@
     "query-string": "^6.8.3",
     "react": "^16.8.6",
     "react-burger-menu": "^2.6.10",
+    "react-day-picker": "^7.4.0",
     "react-dom": "^16.8.6",
     "react-modal": "^3.10.1",
     "react-paginate": "^6.3.0",

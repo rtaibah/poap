@@ -13,7 +13,11 @@ import BuiltOnEth from '../images/built-on-eth.png';
 import { useBodyClassName } from '../react-helpers';
 import { ROUTES } from '../lib/constants';
 
-export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
+type ScanFooterProps = {
+  path: string;
+};
+
+export const ScanPage: React.FC<RouteComponentProps> = ({ match, history, location }) => {
   const showBadges = useCallback(
     (addressOrENS: string, address: string) => {
       return history.push(`${match.path}scan/${addressOrENS}`, { address });
@@ -21,6 +25,13 @@ export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
     [history, match]
   );
   useBodyClassName('poap-app');
+
+  const resolvePathname = (): string => {
+    const { pathname } = history.location;
+    if (pathname.includes('/claim')) return 'claim';
+    if (pathname.includes('/token')) return 'token';
+    return 'home';
+  };
 
   return (
     <div className="landing">
@@ -32,30 +43,33 @@ export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
       />
       <Route path={ROUTES.scan} component={AddressTokensPage} />
       <Route path={ROUTES.token} component={TokenDetailPage} />
-      <ScanFooter />
+      <ScanFooter path={resolvePathname()} />
     </div>
   );
 };
 
-const ScanHeader: React.FC = React.memo(() => (
-  <>
-    <header id="site-header" role="banner">
-      <div className="container">
-        <div className="col-xs-6 col-sm-6 col-md-6">
-          <Link to="/" className="logo">
-            <img src={PoapLogo} alt="POAP" />
-          </Link>
-        </div>
-        <div className="col-xs-6 col-sm-6 col-md-6">
-          <p className="page-title">Scan</p>
-        </div>
+const ScanHeader: React.FC = () => (
+  <header id="site-header" role="banner">
+    <div className="container">
+      <div className="col-xs-6 col-sm-6 col-md-6">
+        <Link to="/" className="logo">
+          <img src={PoapLogo} alt="POAP" />
+        </Link>
       </div>
-    </header>
-  </>
-));
+      <div className="col-xs-6 col-sm-6 col-md-6">
+        <p className="page-title">Scan</p>
+      </div>
+    </div>
+  </header>
+);
 
-const ScanFooter: React.FC = React.memo(() => (
-  <footer role="contentinfo" className="footer-events">
+const ScanFooter: React.FC<ScanFooterProps> = ({ path }) => (
+  <footer
+    role="contentinfo"
+    className={`footer-events 
+    ${path === 'home' ? 'normal-background' : ''} 
+    ${path === 'token' ? 'normal-background' : ''}`}
+  >
     <div className="image-footer">
       <img src={FooterShadow} className="mobile" alt="" />
       <img src={FooterShadowDesktop} className="desktop" alt="" />
@@ -89,4 +103,4 @@ const ScanFooter: React.FC = React.memo(() => (
       </div>
     </div>
   </footer>
-));
+);

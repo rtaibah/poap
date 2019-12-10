@@ -16,7 +16,7 @@ import FilterSelect from '../components/FilterSelect';
 import { ReactComponent as PlusIcon } from '../images/plus.svg';
 
 /* Typings */
-import { Name, Value, EmptyValue } from '../types';
+import { Name, NotificationType, RecipientType } from '../types';
 
 const PAGE_SIZE = 10;
 
@@ -107,7 +107,7 @@ const InboxListPage: FC = () => {
     setPage(obj.selected);
   };
 
-  const handleRadio = (name: Name, value: Value | EmptyValue) => {
+  const handleRadio = (name: Name, value: NotificationType | RecipientType) => {
     if (name === 'notificationType') setNotificationType(value);
     if (name === 'recipientFilter') setRecipientFilter(value);
   };

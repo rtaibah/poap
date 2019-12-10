@@ -49,6 +49,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   };
 
   let body = <QRHashForm loading={isClaimLoading} checkClaim={fetchClaim} error={claimError} />;
+
   if (claim) {
     body = <ClaimForm enabledWeb3={web3} claim={claim} checkClaim={fetchClaim} />;
     title = claim.event.name;

@@ -132,9 +132,13 @@ async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> 
   const res = await fetch(input, init);
   if (res.ok) {
     return await res.json();
-  } else {
-    throw new Error(`Error with request statusCode: ${res.status}`);
   }
+  if (!res.ok) {
+    const data = await res.json();
+    if (data && data.message) throw new Error(data.message);
+  }
+
+  return await res.json();
 }
 
 async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Promise<void> {
@@ -274,8 +278,7 @@ export async function sendNotification(
   notificationType: string,
   selectedEventId: number | null
 ): Promise<any> {
-  return secureFetchNoResponse(`${API_BASE}/notifications/`, {
-    // TODO: remove / in url
+  return secureFetchNoResponse(`${API_BASE}/notifications`, {
     method: 'POST',
     body: JSON.stringify({
       title,

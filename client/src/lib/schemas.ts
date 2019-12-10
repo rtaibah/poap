@@ -87,10 +87,11 @@ const InboxFormSchema = yup.object().shape({
   title: yup.string().required(),
   description: yup.string().required(),
   recipientFilter: yup.string().required(),
-  selectedEventId: yup.number().nullable(),
   notificationType: yup.string().required(),
+  selectedEvent: yup.number().nullable(),
 });
-const UpdateModalWithFormikSchema = yup.object().shape({
+
+const UpdateModalWithFormikRangeSchema = yup.object().shape({
   from: yup
     .number()
     .positive()
@@ -99,10 +100,11 @@ const UpdateModalWithFormikSchema = yup.object().shape({
     .number()
     .positive()
     .required(),
-  event: yup
-    .number()
-    .positive()
-    .required(),
+  event: yup.number().positive(),
+});
+
+const UpdateModalWithFormikSelectedQrsSchema = yup.object().shape({
+  event: yup.number().positive(),
 });
 
 export {
@@ -114,5 +116,6 @@ export {
   IssueForEventFormValueSchema,
   IssueForUserFormValueSchema,
   InboxFormSchema,
-  UpdateModalWithFormikSchema,
+  UpdateModalWithFormikRangeSchema,
+  UpdateModalWithFormikSelectedQrsSchema,
 };

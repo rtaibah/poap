@@ -10,6 +10,7 @@ import { Formik } from 'formik';
 import { Loading } from '../components/Loading';
 import FilterSelect from '../components/FilterSelect';
 import FilterButton from '../components/FilterButton';
+import FilterChip from '../components/FilterChip';
 
 /* Helpers */
 import {
@@ -33,8 +34,10 @@ import error from '../images/error.svg';
 import { Value } from '../types';
 
 // shemas
-import { UpdateModalWithFormikSchema } from '../lib/schemas';
-import FilterChip from '../components/FilterChip';
+import {
+  UpdateModalWithFormikRangeSchema,
+  UpdateModalWithFormikSelectedQrsSchema,
+} from '../lib/schemas';
 
 const PAGE_SIZE = 10;
 
@@ -67,8 +70,6 @@ const QrPage: FC = () => {
   const [isRefetchConfirmed, setIsRefetchConfirmed] = useState<boolean>(false);
 
   const { addToast } = useToasts();
-
-  const hasSelectedQrs = selectedQrs.length > 0;
 
   useEffect(() => {
     fetchEvents();
@@ -442,7 +443,11 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
         event: 0,
         isUnassigning: false,
       }}
-      validationSchema={UpdateModalWithFormikSchema}
+      validationSchema={
+        isSelectionActive
+          ? UpdateModalWithFormikSelectedQrsSchema
+          : UpdateModalWithFormikRangeSchema
+      }
       validateOnBlur={false}
       validateOnChange={false}
       onSubmit={handleUpdateModalSubmit}

@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
+
+// routing
 import { RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
+
+// libraries
 import {
   RedditIcon,
   RedditShareButton,
@@ -9,20 +13,24 @@ import {
   TwitterIcon,
   TwitterShareButton,
 } from 'react-share';
+
+// api
 import { getTokenInfo, TokenInfo } from '../api';
+
+// assets
 import HeaderShadowDesktopImg from '../images/header-shadow-desktop.svg';
 import HeaderShadowImg from '../images/header-shadow.svg';
-import { useBodyClassName } from '../react-helpers';
 
-type TokenPageState = {
-  token: null | TokenInfo;
-};
+// utils
+import { useBodyClassName } from '../react-helpers';
 
 export const TokenDetailPage: React.FC<RouteComponentProps<{
   tokenId: string;
 }>> = ({ location, match }) => {
-  useBodyClassName('poap-app event-page');
   const [token, setToken] = useState<null | TokenInfo>(null);
+
+  useBodyClassName('poap-app event-page');
+
   useEffect(() => {
     const fn = async () => {
       if (location.state) {
@@ -82,10 +90,6 @@ export const TokenDetailPage: React.FC<RouteComponentProps<{
                   >
                     <TwitterIcon size={40} round iconBgStyle={{ fill: '#6534FF' }} />
                   </TwitterShareButton>
-
-                  {/* <a href="">
-                    <img src={TwitterImg} alt="Twitter" />
-                  </a> */}
                 </li>
                 <li>
                   <TelegramShareButton
@@ -103,11 +107,6 @@ export const TokenDetailPage: React.FC<RouteComponentProps<{
                     <RedditIcon size={40} round iconBgStyle={{ fill: '#6534FF' }} />
                   </RedditShareButton>
                 </li>
-                {/* <li>
-                  <a href="#">
-                    <img src="assets/images/twitter.svg" alt="Twitter" />
-                  </a>
-                </li> */}
               </ul>
             </div>
           </div>

@@ -100,10 +100,6 @@
       }
     }
   }
-
-  main {
-    padding: 10px 0 30px;
-  }
 }
 
 /* ******************************************************
@@ -127,6 +123,7 @@
       text-align: center;
 
       input[type='text'] {
+        max-width: 500px;
         text-align: center;
       }
     }
