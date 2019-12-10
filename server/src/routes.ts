@@ -65,6 +65,7 @@ import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
+import { getAssets } from './plugins/opensea-utils';
 
 function buildMetadataJson(tokenUrl: string, ev: PoapEvent) {
   return {
@@ -270,7 +271,7 @@ export default async function routes(fastify: FastifyInstance) {
           address: 'address#',
         },
         response: {
-          200: { 
+          200: {
             type: 'array',
             items: {
               type: 'object',
@@ -289,11 +290,13 @@ export default async function routes(fastify: FastifyInstance) {
                     year: { type: 'number'},
                     start_date: { type: 'string'},
                     end_date: { type: 'string'},
-                    created_date: { type: 'string'}
+                    created_date: { type: 'string'},
+                    supply: { type: 'number'},
                   }
                 },
                 tokenId: { type: 'string'},
-                owner: { type: 'string'}
+                owner: { type: 'string'},
+                supply: { type: 'number'},
               }
             }
           }
@@ -302,8 +305,26 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const address = req.params.address;
-      const tokens = await getAllTokens(address);
-      return tokens;
+      const assets = await getAssets(address);
+      let tokens = await getAllTokens(address);
+
+      tokens = tokens.map(token => {
+        let token_asset = assets.find(asset => asset.token_id === token.tokenId)
+        let supply = 1;
+        if (token_asset) {
+          let min_trait_count = token_asset.traits.reduce((min:number, trait:any) => {
+            if (trait.trait_count) {
+              return min ? Math.min(trait.trait_count, min) : trait.trait_count
+            }
+            return min
+          }, null);
+          supply = min_trait_count ? min_trait_count : supply;
+        }
+        return {...token, event: {...token.event, supply: supply}}
+
+      })
+
+      return tokens
     }
   );
 
@@ -457,6 +478,7 @@ export default async function routes(fastify: FastifyInstance) {
               claimed_date: { type: 'string'},
               created_date: { type: 'string'},
               is_active: { type: 'boolean'},
+              secret: { type: 'string'},
               event: {
                 type: 'object',
                 properties: {
@@ -1389,7 +1411,7 @@ export default async function routes(fastify: FastifyInstance) {
           limit: { type: 'number' },
           offset: { type: 'number' },
           address: { type: 'string' },
-          event_id: { type: 'number' },
+          event_id: { type: 'number', nullable: true },
           type: { type: 'string' },
         },
         response: {
@@ -1441,30 +1463,35 @@ export default async function routes(fastify: FastifyInstance) {
       const limit = req.query.limit || 10;
       const offset = req.query.offset || 0;
       const type = req.query.type || null;
-      const event_id = req.query.event_id || null;
+      const event_id = req.query.event_id;
       const address = req.query.address || null;
-      let event_ids:number[] = [];
+      let event_ids:number[]|null = [];
 
       if(type && [NotificationType.inbox, NotificationType.push].indexOf(type) == -1) {
         return new createError.BadRequest('notification type must be in ["inbox", "push"]');
       }
 
-      if(event_id) {
-        const event = await getEvent(event_id);
-        if (!event) {
-          return new createError.BadRequest('event does not exist');
+      if(event_id === null) {
+        event_ids = null;
+      } else {      
+        if(event_id) {
+          console.log('paso');
+          const event = await getEvent(event_id);
+          if (!event) {
+            return new createError.BadRequest('event does not exist');
+          }
+
+          event_ids.push(event.id)
         }
 
-        event_ids.push(event.id)
-      }
+        if(address) {
+          const parsed_address = await checkAddress(address);
+          if (!parsed_address) {
+            return new createError.BadRequest('Address is not valid');
+          }
 
-      if(address) {
-        const parsed_address = await checkAddress(address);
-        if (!parsed_address) {
-          return new createError.BadRequest('Address is not valid');
+          event_ids = await getAllEventIds(address)
         }
-
-        event_ids = await getAllEventIds(address)
       }
 
       let notifications = await getNotifications(limit, offset, type, event_ids);

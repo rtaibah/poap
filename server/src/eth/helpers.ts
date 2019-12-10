@@ -354,7 +354,10 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
       owner: address,
     });
   }
-  return tokens;
+
+  const sortedTokens = tokens.sort((a:any, b:any) => b.event.start_date - a.event.start_date)
+
+  return sortedTokens;
 }
 
 export async function getAllEventIds(address: Address): Promise<number[]> {

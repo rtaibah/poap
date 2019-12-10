@@ -101,8 +101,11 @@ export async function getPendingTxsAmount(signer: Signer): Promise<Signer> {
   return signer
 }
 
-export async function getEvent(id: number): Promise<null | PoapEvent> {
-  const res = await db.oneOrNone<PoapEvent>('SELECT * FROM events WHERE id = $1', [id]);
+export async function getEvent(id: number | string): Promise<null | PoapEvent> {
+  const res = await db.oneOrNone<PoapEvent>('SELECT * FROM events WHERE id = ${id}', 
+  {
+    id: id
+  });
   return res ? replaceDates(res) : res;
 }
 
@@ -281,14 +284,16 @@ export async function finishTask(txHash: string | undefined, taskId: number){
   );
 }
 
-export async function getNotifications(limit: number, offset: number, typeList: string[]|null, eventIds:number[]): Promise<Notification[]> {
+export async function getNotifications(limit: number, offset: number, typeList: string[]|null, eventIds:number[]|null): Promise<Notification[]> {
   if(!typeList) {
     typeList = [NotificationType.inbox, NotificationType.push]
   }
 
   let query = "SELECT * FROM notifications WHERE type IN (${typeList:csv})"
 
-  if(eventIds.length > 0) {
+  if(eventIds === null) {
+    query = query + "AND event_id IS NULL "
+  } else if(eventIds.length > 0) {
     query = query + "AND event_id IN (${eventIds:csv}) "
   }
 
@@ -298,14 +303,16 @@ export async function getNotifications(limit: number, offset: number, typeList: 
   return res
 }
 
-export async function getTotalNotifications(typeList: string[]|null, eventIds:number[]): Promise<number> {
+export async function getTotalNotifications(typeList: string[]|null, eventIds:number[]| null): Promise<number> {
   if(!typeList) {
     typeList = [NotificationType.inbox, NotificationType.push]
   }
 
   let query = "SELECT COUNT(*) FROM notifications WHERE type IN (${typeList:csv}) "
 
-  if(eventIds.length > 0) {
+  if(eventIds === null) {
+    query = query + "AND event_id IS NULL "
+  } else if(eventIds.length > 0) {
     query = query + "AND event_id IN (${eventIds:csv}) "
   }
 
