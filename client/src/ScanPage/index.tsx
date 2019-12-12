@@ -68,7 +68,7 @@ const ScanFooter: React.FC<ScanFooterProps> = ({ path }) => (
     role="contentinfo"
     className={`footer-events 
     ${path === 'home' ? 'normal-background' : ''} 
-    ${path === 'token' ? 'normal-background' : ''}`}
+    ${path === 'token' ? 'secondary-background' : ''}`}
   >
     <div className="image-footer">
       <img src={FooterShadow} className="mobile" alt="" />
