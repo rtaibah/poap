@@ -56,7 +56,7 @@ const ClaimForm: React.FC<{
     } catch (error) {
       actions.setStatus({
         ok: false,
-        msg: `Badge couldn't be minted. Error message: ${error.message}`,
+        msg: `Badge couldn't be claimed: ${error.message}`,
       });
     } finally {
       actions.setSubmitting(false);

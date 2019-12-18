@@ -283,7 +283,7 @@ export async function sendNotification(
     body: JSON.stringify({
       title,
       description,
-      event_id: selectedEventId,
+      event_id: selectedEventId ? selectedEventId : null,
       type: notificationType,
     }),
     headers: { 'Content-Type': 'application/json' },
@@ -360,11 +360,11 @@ export function getNotifications(
   if (type) Object.assign(paramsObject, { type });
 
   if (recipientFilter === 'everyone') {
-    Object.assign(paramsObject, { eventId: 'null' });
+    Object.assign(paramsObject, { event_id: '' });
   }
 
   if (recipientFilter === 'event') {
-    Object.assign(paramsObject, { eventId });
+    Object.assign(paramsObject, { event_id: eventId });
   }
 
   const params = queryString.stringify(paramsObject);
@@ -375,10 +375,10 @@ export function getNotifications(
 export async function getQrCodes(
   limit: number,
   offset: number,
-  status?: boolean,
+  claimed?: boolean,
   event_id?: number
 ): Promise<PaginatedQrCodes> {
-  const params = queryString.stringify({ limit, offset, status, event_id }, { sort: false });
+  const params = queryString.stringify({ limit, offset, claimed, event_id }, { sort: false });
   return secureFetch(`${API_BASE}/qr-code?${params}`);
 }
 
@@ -398,7 +398,7 @@ export async function qrCodesRangeAssign(
   });
 }
 
-export async function qrCodesUpdate(qrCodesIds: string[], eventId: number): Promise<void> {
+export async function qrCodesUpdate(qrCodesIds: string[], eventId: number | null): Promise<void> {
   return secureFetchNoResponse(`${API_BASE}/qr-code/update`, {
     method: 'PUT',
     body: JSON.stringify({

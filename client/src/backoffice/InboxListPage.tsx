@@ -40,13 +40,9 @@ const InboxListPage: FC = () => {
 
   const { addToast } = useToasts();
 
-  useEffect(() => {
-    console.log(notificationType);
-  }, [notificationType]);
+  useEffect(() => {}, [notificationType]);
 
-  useEffect(() => {
-    console.log(recipientFilter);
-  }, [recipientFilter]);
+  useEffect(() => {}, [recipientFilter]);
 
   useEffect(() => {
     fetchEvents();
@@ -206,14 +202,14 @@ const InboxListPage: FC = () => {
 
                   <div className={'col-md-2'}>
                     <span className={'visible-sm'}>Type: </span>
-                    {notification.type}
+                    <span className={'capitalize'}>{notification.type}</span>
                   </div>
 
                   <div className={'col-md-4 ellipsis'}>
                     <span className={'visible-sm'}>Event: </span>
                     {notification.event && notification.event.name
                       ? notification.event.name
-                      : 'No name'}
+                      : '-'}
                   </div>
 
                   <div className={'col-md-1 description'}>
@@ -255,7 +251,7 @@ const InboxListPage: FC = () => {
           {modalTitle && <h3 className={'title'}>{modalTitle}</h3>}
           {modalText && <div className={'description'}>{modalText}</div>}
           <div onClick={() => handleModal()} className={'close-modal'}>
-            Cancel
+            Close
           </div>
         </div>
       </ReactModal>

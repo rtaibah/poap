@@ -184,7 +184,7 @@ export const BackOffice: React.FC = () => (
     <header id="site-header" role="banner">
       <div className="container">
         <div className="col-xs-6 col-sm-6 col-md-6">
-          <Link to="/" className="logo">
+          <Link to="/admin" className="logo">
             <img src={PoapLogo} alt="POAP" />
           </Link>
         </div>
@@ -222,6 +222,12 @@ export const BackOffice: React.FC = () => (
             exact
             path={ROUTES.burn.path}
             render={() => <BurnPageWithRole roles={ROUTES.burn.roles} />}
+          />
+
+          <Route
+            exact
+            path={ROUTES.burnToken.path}
+            render={() => <BurnPageWithRole roles={ROUTES.burnToken.roles} />}
           />
 
           <Route

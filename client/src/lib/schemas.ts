@@ -23,7 +23,7 @@ const BurnFormSchema = yup.object().shape({
 
 const fileSchema = yup
   .mixed()
-  .test('fileFormat', 'Unsupported format, try .jpg or .png', value =>
+  .test('fileFormat', 'Unsupported format, please upload a png file', value =>
     IMAGE_SUPPORTED_FORMATS.includes(value.type)
   );
 
@@ -48,7 +48,6 @@ const PoapEventSchema = yup.object().shape({
       then: fileSchema,
       otherwise: yup.string(),
     })
-    .required(),
 });
 
 const IssueForEventFormValueSchema = yup.object().shape({
@@ -99,13 +98,10 @@ const UpdateModalWithFormikRangeSchema = yup.object().shape({
   to: yup
     .number()
     .positive()
-    .required(),
-  event: yup.number().positive(),
+    .required()
 });
 
-const UpdateModalWithFormikSelectedQrsSchema = yup.object().shape({
-  event: yup.number().positive(),
-});
+const UpdateModalWithFormikSelectedQrsSchema = yup.object().shape({});
 
 export {
   AddressSchema,

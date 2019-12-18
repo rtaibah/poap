@@ -30,7 +30,7 @@ export const InboxPage: React.FC = () => {
   const [events, setEvents] = useState<PoapEvent[]>([]);
   const [notificationType, setNotificationType] = useState<string>('');
   const [recipientFilter, setRecipientFilter] = useState<string>('');
-  const [selectedEvent, setSelectedEvent] = useState<number | null>();
+  const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
 
   const { addToast } = useToasts();
 
@@ -50,12 +50,17 @@ export const InboxPage: React.FC = () => {
     selectedEvent: null,
   };
 
-  const handleSubmit = async (values: IInboxFormValues) => {
+  const handleSubmit = async (
+    values: IInboxFormValues,
+    actions: FormikActions<IInboxFormValues>
+  ) => {
     const { title, description, notificationType } = values;
-
     try {
-      await sendNotification(title, description, notificationType, Number(selectedEvent));
-
+      await sendNotification(title, description, notificationType, selectedEvent);
+      setNotificationType('');
+      setRecipientFilter('');
+      setSelectedEvent(null);
+      actions.resetForm(initialValues);
       addToast('Notification created successfully', {
         appearance: 'success',
       });
@@ -115,6 +120,7 @@ export const InboxPage: React.FC = () => {
 
   return (
     <div className="bk-container">
+      <h2>Create Notification</h2>
       <Formik
         enableReinitialize
         initialValues={initialValues}

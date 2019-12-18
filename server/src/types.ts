@@ -55,7 +55,7 @@ export interface PoapEvent {
   year: number;
   start_date: string;
   end_date: string;
-  event_host_id: number;
+  event_host_id: number | null;
 }
 
 export interface PoapSetting {

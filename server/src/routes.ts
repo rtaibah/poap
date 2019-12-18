@@ -31,10 +31,10 @@ import {
   updateEventOnQrRange,
   getEventHostQrRolls,
   getRangeNotOwnedQr,
-  getQrRoll,
+  // getQrRoll,
   getTotalQrClaims,
   getPaginatedQrClaims,
-  getQrRolls,
+  // getQrRolls,
   getClaimedQrsList,
   getNotOwnedQrList,
   updateQrClaims,
@@ -58,7 +58,10 @@ import {
   getAllEventIds
 } from './eth/helpers';
 
-import { Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole, qrRoll } from './types';
+import {
+  Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole,
+  // qrRoll,
+} from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
@@ -604,23 +607,23 @@ export default async function routes(fastify: FastifyInstance) {
       const qr_claim = await getQrClaim(req.body.qr_hash);
       if (!qr_claim) {
         await sleep(1000)
-        return new createError.NotFound('Qr Claim not found');
+        return new createError.NotFound('QR Claim not found');
       }
 
       if (qr_claim.claimed) {
-        return new createError.BadRequest('Qr is already Claimed');
+        return new createError.BadRequest('QR is already Claimed');
       }
 
       let claim_qr_claim = await claimQrClaim(req.body.qr_hash);
       if (!claim_qr_claim) {
-        return new createError.InternalServerError('There was a problem updating claim boolean');
+        return new createError.InternalServerError('There was a problem updating claim information');
       }
       qr_claim.claimed = true
 
       const event = await getEvent(qr_claim.event_id);
       if (!event) {
         await unclaimQrClaim(req.body.qr_hash);
-        return new createError.InternalServerError('Qr Claim does not have any event');
+        return new createError.InternalServerError('QR Claim is not assigned to an event');
       }
       qr_claim.event = event
 
@@ -633,13 +636,13 @@ export default async function routes(fastify: FastifyInstance) {
       const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address);
       if (!dual_qr_claim) {
         await unclaimQrClaim(req.body.qr_hash);
-        return new createError.BadRequest('Address already has this claim');
+        return new createError.BadRequest('Address already claimed a code for this event');
       }
 
       const has_token = await checkHasToken(qr_claim.event.id, parsed_address);
       if (has_token) {
         await unclaimQrClaim(req.body.qr_hash);
-        return new createError.BadRequest('Address already has this claim');
+        return new createError.BadRequest('Address already has this POAP token');
       }
 
       const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
@@ -850,7 +853,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
-        description: 'Endpoint to edit a poap settings',
+        description: 'Endpoint to edit POAP settings',
         tags: ['Settings', ],
         params: {
           name: { type: 'string' },
@@ -1049,25 +1052,28 @@ export default async function routes(fastify: FastifyInstance) {
 
       const user_id = req.user.sub;
       const eventHost = await getEventHost(user_id);
-      if (!eventHost) {
-        return new createError.NotFound('You are not registered as an event host');
+
+      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
       }
 
       const image = req.body[Symbol.for('image')][0];
       if (!image) {
-        return new createError.BadRequest('You have to send an image');
+        return new createError.BadRequest('An image is required');
       }
 
       if(image.mimetype != 'image/png'){
-        return new createError.BadRequest('Image mimetype must be image/png');
+        return new createError.BadRequest('Image must be png');
       }
 
       const exists_event = await getEventByFancyId(parsed_fancy_id);
       if (exists_event) {
-        return new createError.BadRequest('Event with this fancy id already exists');
+        return new createError.BadRequest('Event with this name already exists, please try another one');
       }
 
-      const filename = parsed_fancy_id + '-' + eventHost.id + '-logo.png'
+      const filename = parsed_fancy_id + '-logo-'+(new Date().getTime())+'.png'
       const google_image_url = await uploadFile(filename, image.mimetype, image.data);
       if (!google_image_url) {
         return new createError.InternalServerError('Error uploading image');
@@ -1084,7 +1090,7 @@ export default async function routes(fastify: FastifyInstance) {
         year: req.body.year,
         event_url: req.body.event_url,
         image_url: google_image_url,
-        event_host_id: eventHost.id
+        event_host_id: eventHost ? eventHost.id : null
       }
 
       const event = await createEvent(newEvent);
@@ -1100,7 +1106,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate, validate_file],
       schema: {
-        description: 'Endpoint to modify several atributes of selected event',
+        description: 'Endpoint to modify several attributes of selected event',
         tags: ['Events', ],
         params: {
           fancyid: { type: 'string' },
@@ -1109,6 +1115,12 @@ export default async function routes(fastify: FastifyInstance) {
           type: 'object',
           required: ['event_url', ],
           properties: {
+            name: { type: 'string' },
+            description: { type: 'string' },
+            country: { type: 'string' },
+            city: { type: 'string' },
+            start_date: { type: 'string' },
+            end_date: { type: 'string' },
             event_url: { type: 'string' },
             image: { type: 'string', format: 'binary' }
           },
@@ -1125,30 +1137,46 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req: any, res) => {
       const user_id = req.user.sub;
-      const eventHost = await getEventHost(user_id);
-      if (!eventHost) {
-        return new createError.NotFound('You are not registered as an event host');
-      }
 
-      const event = await getEventByFancyId(req.params.fancyid );
+      // Check if event exists
+      const event = await getEventByFancyId(req.params.fancyid);
       if (!event) {
         return new createError.NotFound('Invalid Event');
+      }
+
+      // Check if user is host
+      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
+        const eventHost = await getEventHost(user_id);
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
+
+        // Check if user is editing owned event
+        if(event.event_host_id !== eventHost.id) {
+          return new createError.BadRequest('You can not edit an event that was created by another user');
+        }
       }
 
       const image = req.body[Symbol.for('image')][0];
       let google_image_url:null|string = null;
       if (image) {
         if(image.mimetype != 'image/png'){
-          return new createError.BadRequest('Image mimetype must be image/png');
+          return new createError.BadRequest('Image must be png');
         }
-        const filename = req.params.fancyid + '-' + eventHost.id + '-logo.png'
+        const filename = req.params.fancyid + '-logo-'+(new Date().getTime())+'.png'
         google_image_url = await uploadFile(filename, image.mimetype, image.data);
         if (!google_image_url) {
           return new createError.InternalServerError('Error uploading image');
         }
       }
 
-      const isOk = await updateEvent(req.params.fancyid, eventHost.id, {
+      const isOk = await updateEvent(req.params.fancyid, {
+        name: req.body.name ? req.body.name : event.name,
+        description: req.body.description ? req.body.description : event.description,
+        city: req.body.city ? req.body.city : event.city,
+        country: req.body.country ? req.body.country : event.country,
+        start_date: req.body.start_date ? req.body.start_date : event.start_date,
+        end_date: req.body.end_date ? req.body.end_date : event.end_date,
         event_url: req.body.event_url,
         image_url: ((google_image_url === null) ? event.image_url : google_image_url)
       });
@@ -1167,7 +1195,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/transactions',
     {
-      preValidation: [fastify.authenticate,], // fastify.isAdmin
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Paginates endpoint of transactions, you can filter by status',
         tags: ['Transactions', ],
@@ -1467,20 +1495,18 @@ export default async function routes(fastify: FastifyInstance) {
       const address = req.query.address || null;
       let event_ids:number[]|null = [];
 
-      if(type && [NotificationType.inbox, NotificationType.push].indexOf(type) == -1) {
-        return new createError.BadRequest('notification type must be in ["inbox", "push"]');
+      if(type && [NotificationType.inbox, NotificationType.push].indexOf(type) === -1) {
+        return new createError.BadRequest('Notification type must be in Inbox or Push');
       }
 
       if(event_id === null) {
         event_ids = null;
       } else {      
         if(event_id) {
-          console.log('paso');
           const event = await getEvent(event_id);
           if (!event) {
-            return new createError.BadRequest('event does not exist');
+            return new createError.BadRequest('Event not found');
           }
-
           event_ids.push(event.id)
         }
 
@@ -1505,7 +1531,7 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       notifications = notifications.map((notification: Notification) => {
-        return {...notification, event:indexedEvents[notification.event_id]};
+        return {...notification, event: indexedEvents[notification.event_id]};
       });
 
       return {
@@ -1520,7 +1546,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/notifications',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Create notification and send push notification',
         tags: ['Notifications', ],
@@ -1573,22 +1599,22 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const event_id = req.body.event_id || null;
+      const event_id = req.body.event_id && req.body.event_id > 0 ? req.body.event_id : null;
 
       if([NotificationType.inbox, NotificationType.push].indexOf(req.body.type) == -1) {
-        return new createError.BadRequest('notification type must be in ["inbox", "push"]');
+        return new createError.BadRequest('Notification type must be in Inbox or Push');
       }
 
-      const notification = await createNotification(req.body);
+      const notification = await createNotification({...req.body, event_id});
       if (!notification) {
-        return new createError.BadRequest('Couldn\'t create the task');
+        return new createError.BadRequest('Couldn\'t create the notification');
       }
       
       let topic = 'all';
       if(event_id) {
         const event = await getEvent(req.body.event_id);
         if (!event) {
-          return new createError.BadRequest('event does not exist');
+          return new createError.BadRequest('Event not found');
         }
         notification.event = event;
         topic = `event-${event.id}`;
@@ -1611,6 +1637,10 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  //********************************************************************
+  // QR Codes update
+  //********************************************************************
+
   fastify.get(
     '/qr-code',
     {
@@ -1632,39 +1662,38 @@ export default async function routes(fastify: FastifyInstance) {
       const limit = req.query.limit || 10;
       const offset = req.query.offset || 0;
       const eventId = req.query.event_id || null;
-      const qrRollId = req.query.qr_roll_id || null;
       const claimed = req.query.claimed || null;
-      
-      const user_id = req.user.sub;
-      let eventHostQrRolls:null | qrRoll[]
+      let qrRollId = req.query.qr_roll_id || null;
 
-      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+      const user_id = req.user.sub;
+
+      if(getUserRoles(req.user).indexOf(UserRole.administrator) === -1){
         const eventHost = await getEventHost(user_id);
         if (!eventHost) {
           return new createError.NotFound('You are not registered as an event host');
         }
-        eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
-      } else {
-        eventHostQrRolls = await getQrRolls();
+        let eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
+        // TODO - Support multiple Rolls
+        if (eventHostQrRolls) {
+          qrRollId = eventHostQrRolls[0].id
+        } else {
+          return new createError.NotFound('You dont have any QR codes assigned');
+        }
       }
 
-      if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
-        return new createError.NotFound('You dont have any QrRoll asigned');
-      }
-
-      if(eventId) {
+      if (eventId) {
         const event = await getEvent(eventId);
         if (!event) {
           return new createError.BadRequest('event does not exist');
         }
       }
 
-      if(qrRollId) {
-        const qrRoll = await getQrRoll(qrRollId);
-        if (!qrRoll) {
-          return new createError.BadRequest('Qr Roll does not exist');
-        }
-      }
+      // if(qrRollId) {
+      //   const qrRoll = await getQrRoll(qrRollId);
+      //   if (!qrRoll) {
+      //     return new createError.BadRequest('Qr Roll does not exist');
+      //   }
+      // }
 
       let qrClaims = await getPaginatedQrClaims(limit, offset, eventId, qrRollId, claimed);
       const totalQrClaims = await getTotalQrClaims(eventId, qrRollId, claimed) || 0;
@@ -1694,7 +1723,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate, ],
       schema: {
-        description: 'Endpoint to assign event to several qr from a range of numeric_id',
+        description: 'Endpoint to assign event to several QR codes from a range of numeric_id',
         tags: ['Qr-claims', ],
         body: {
           type: 'object',
@@ -1720,59 +1749,60 @@ export default async function routes(fastify: FastifyInstance) {
       const numericIdMax = parseInt(req.body.numeric_id_max);
       let eventId = req.body.event_id || null;
 
-      const user_id = req.user.sub;
-      const eventHost = await getEventHost(user_id);
-
-      if(eventId) {
-        eventId = parseInt(eventId)
-        const event = await getEvent(eventId);
-        if (!event) {
-          return new createError.BadRequest('event does not exist');
-        }
-        if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
-          if (!eventHost) {
-            return new createError.NotFound('You are not registered as an event host');
-          }
-          if(event.event_host_id != eventHost.id) {
-            return new createError.BadRequest('You cant assign an event that does not belongs to you');
-          }
-        }
-      }
-
+      // Check range submitted
       if (numericIdMin >= numericIdMax) {
-        return new createError.BadRequest('numeric_id_min is greater or equal than numeric_id_max');
+        return new createError.BadRequest('Range From number should be lower or equal than To');
       }
 
       if (numericIdMin <= 0 || numericIdMax <= 0) {
-        return new createError.BadRequest('numeric_id must be greater than 0');
+        return new createError.BadRequest('Range numbers must be greater than 0');
       }
 
+      // Check if user is an event host
+      const user_id = req.user.sub;
+      const eventHost = await getEventHost(user_id);
+      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
+
+        // Check if host has rolls assigned
+        const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
+        if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
+          return new createError.NotFound('You dont have any QR code batch assigned');
+        }
+
+        // Check if host is updating owned QR codes
+        const notOwnedQrs = await getRangeNotOwnedQr(numericIdMax, numericIdMin, eventHostQrRolls);
+        if (notOwnedQrs && notOwnedQrs[0]) {
+          return new createError.BadRequest('You can not edit codes that were not assigned to your user');
+        }
+      }
+
+      // Check if event exists
+      if (eventId) {
+        eventId = parseInt(eventId)
+        const event = await getEvent(eventId);
+        if (!event) {
+          return new createError.BadRequest('Event not found');
+        }
+
+        // Is user is host, check if the event was created by the user
+        if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1 && eventHost) {
+          if(event.event_host_id !== eventHost.id) {
+            return new createError.BadRequest('You can not assign an event that was created by another user');
+          }
+        }
+      }
+
+      // Check if QR codes were claimed
       const claimedQrs = await getRangeClaimedQr(numericIdMax, numericIdMin);
       if (claimedQrs && claimedQrs[0]) {
         let ids = [];
         for (let claimedQr of claimedQrs) {
           ids.push(claimedQr.qr_hash)
         }
-        return new createError.BadRequest('this qr ids are already claimed: [ ' + ids.toString() + ' ]');
-      }
-
-      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
-        if (!eventHost) {
-          return new createError.NotFound('You are not registered as an event host');
-        }
-        const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
-        if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
-          return new createError.NotFound('You dont have any QrRoll asigned');
-        }
-
-        const notOwnedQrs = await getRangeNotOwnedQr(numericIdMax, numericIdMin, eventHostQrRolls);
-        if (notOwnedQrs && notOwnedQrs[0]) {
-          let ids = [];
-          for (let notOwnedQr of notOwnedQrs) {
-            ids.push(notOwnedQr.qr_hash)
-          }
-          return new createError.BadRequest('this qr ids arent in your rols: [ ' + ids.toString() + ' ]');
-        }
+        return new createError.BadRequest('Some QR codes were already claimed: ' + ids.toString());
       }
 
       await updateEventOnQrRange(numericIdMax, numericIdMin, eventId);
@@ -1809,46 +1839,54 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req: any, res) => {
       const qrCodeIds:number[] = req.body.qr_code_ids;
-      const eventId = parseInt(req.body.event_id);
+      let eventId = req.body.event_id || null;
 
+      // Check if user is an event host
       const user_id = req.user.sub;
       const eventHost = await getEventHost(user_id);
-
-      const event = await getEvent(eventId);
-      if (!event) {
-        return new createError.BadRequest('event does not exist');
-      }
-      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
         if (!eventHost) {
           return new createError.NotFound('You are not registered as an event host');
         }
-        if(event.event_host_id != eventHost.id) {
-          return new createError.BadRequest('You cant assign an event that does not belongs to you');
-        }
-      }
 
-      const claimedQrs = await getClaimedQrsList(qrCodeIds);
-      if (claimedQrs && claimedQrs[0]) {
-        return new createError.BadRequest('some qr ids of the range are already claimed');
-      }
-
-      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
-        if (!eventHost) {
-          return new createError.NotFound('You are not registered as an event host');
-        }
+        // Check if host has rolls assigned
         const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
         if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
-          return new createError.NotFound('You dont have any QrRoll asigned');
+          return new createError.NotFound('You dont have any QR code batch assigned');
         }
 
+        // Check if host is updating owned QR codes
         const notOwnedQrs = await getNotOwnedQrList(qrCodeIds, eventHostQrRolls);
         if (notOwnedQrs && notOwnedQrs[0]) {
-          let ids = [];
-          for (let notOwnedQr of notOwnedQrs) {
-            ids.push(notOwnedQr.qr_hash)
-          }
-          return new createError.BadRequest('this qr ids arent in your rols: [ ' + ids.toString() + ' ]');
+          return new createError.BadRequest('You can not edit codes that were not assigned to your user');
         }
+
+      }
+
+      // Check if event exists
+      if (eventId) {
+        eventId = parseInt(eventId)
+        const event = await getEvent(eventId);
+        if (!event) {
+          return new createError.BadRequest('Event not found');
+        }
+
+        // Is user is host, check if the event was created by the user
+        if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1 && eventHost) {
+          if(event.event_host_id !== eventHost.id) {
+            return new createError.BadRequest('You can not assign an event that was created by another user');
+          }
+        }
+      }
+
+      // Check if QR codes were claimed
+      const claimedQrs = await getClaimedQrsList(qrCodeIds);
+      if (claimedQrs && claimedQrs[0]) {
+        let ids = [];
+        for (let claimedQr of claimedQrs) {
+          ids.push(claimedQr.qr_hash)
+        }
+        return new createError.BadRequest('Some QR codes were already claimed: ' + ids.toString());
       }
 
       await updateQrClaims(qrCodeIds, eventId);

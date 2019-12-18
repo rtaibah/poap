@@ -67,6 +67,11 @@ const ROUTES = {
     roles: [ROLES.administrator],
     title: 'Burn Tokens',
   },
+  burnToken: {
+    path: '/admin/burn/:tokenId',
+    roles: [ROLES.administrator],
+    title: 'Burn Token',
+  },
   addressManagement: {
     path: '/admin/address-management',
     roles: [ROLES.administrator],
@@ -94,7 +99,7 @@ const ROUTES = {
   },
 };
 
-const IMAGE_SUPPORTED_FORMATS = ['image/jpg', 'image/png'];
+const IMAGE_SUPPORTED_FORMATS = ['image/png'];
 
 const TX_STATUS = {
   failed: 'failed',

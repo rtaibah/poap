@@ -101,6 +101,6 @@ CREATE TABLE event_host (
 
 CREATE TABLE qr_roll (
     "id" SERIAL PRIMARY KEY,
-    "event_host_id" varchar(256) UNIQUE,
+    "event_host_id" integer,
     "is_active" boolean default true
 );

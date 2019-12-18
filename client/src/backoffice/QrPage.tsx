@@ -4,7 +4,7 @@ import { useToasts } from 'react-toast-notifications';
 /* Libraries */
 import ReactPaginate from 'react-paginate';
 import ReactModal from 'react-modal';
-import { Formik } from 'formik';
+import { Formik, FormikActions } from 'formik';
 
 /* Components */
 import { Loading } from '../components/Loading';
@@ -91,6 +91,8 @@ const QrPage: FC = () => {
   useEffect(() => {
     setSelectedQrs([]);
   }, [isRefetchConfirmed]);
+
+  const cleanQrSelection = () => setSelectedQrs([])
 
   const fetchEvents = async () => {
     const isAdmin = authClient.user['https://poap.xyz/roles'].includes('administrator');
@@ -212,7 +214,7 @@ const QrPage: FC = () => {
             <FilterSelect handleChange={handleInputModalOpening}>
               <option value="">Filter by status</option>
               {status.map(status => (
-                <option value={status}>{status}</option>
+                <option value={status}>{status.charAt(0).toUpperCase() + status.slice(1)}</option>
               ))}
             </FilterSelect>
           </div>
@@ -233,6 +235,7 @@ const QrPage: FC = () => {
             handleUpdateModalClosing={handleUpdateModalRequestClose}
             selectedQrs={selectedQrs}
             refreshQrs={handleRefreshQrs}
+            onSuccessAction={cleanQrSelection}
             events={events}
           />
         </ReactModal>
@@ -349,6 +352,7 @@ type UpdateByRangeModalProps = {
   events: PoapEvent[];
   selectedQrs: string[];
   refreshQrs: () => void;
+  onSuccessAction: () => void;
   handleUpdateModalClosing: () => void;
 };
 
@@ -363,6 +367,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   events,
   selectedQrs,
   refreshQrs,
+  onSuccessAction,
   handleUpdateModalClosing,
 }) => {
   const [isSelectionActive, setIsSelectionActive] = useState<boolean>(false);
@@ -375,19 +380,28 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     hasSelectedQrs ? setIsSelectionActive(true) : setIsRangeActive(true);
   }, []);
 
-  const handleUpdateModalSubmit = (values: UpdateModalFormikValues) => {
+  const handleUpdateModalSubmit = (
+    values: UpdateModalFormikValues,
+    actions: FormikActions<UpdateModalFormikValues>
+  ) => {
     const { from, to, event, isUnassigning } = values;
+
+    if (!isUnassigning && !event) {
+      actions.setErrors({event: 'Required'})
+      return false;
+    }
+
     const _event = isUnassigning ? null : event;
 
     if (isRangeActive) {
       if (typeof from === 'number' && typeof to === 'number') {
         qrCodesRangeAssign(from, to, _event)
           .then(_ => {
-            addToast('Qrs assignment was performed correctly', {
+            addToast('QR codes updated correctly', {
               appearance: 'success',
               autoDismiss: true,
             });
-
+            onSuccessAction();
             refreshQrs();
             handleUpdateModalClosing();
           })
@@ -401,13 +415,13 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     }
 
     if (isSelectionActive) {
-      qrCodesUpdate(selectedQrs, event)
+      qrCodesUpdate(selectedQrs, _event)
         .then(_ => {
-          addToast('Qrs assignment was performed correctly', {
+          addToast('QR codes updated correctly', {
             appearance: 'success',
             autoDismiss: true,
           });
-
+          onSuccessAction();
           refreshQrs();
           handleUpdateModalClosing();
         })
@@ -516,6 +530,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                     }
                     name="from"
                     onChange={handleChange}
+                    disabled={!isRangeActive}
                   />
                   <input
                     className={errors.to && !Boolean(values.to) ? 'modal-input-error' : ''}
@@ -527,6 +542,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                     }
                     name="to"
                     onChange={handleChange}
+                    disabled={!isRangeActive}
                   />
                 </div>
               </div>

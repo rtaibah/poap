@@ -116,14 +116,21 @@ export async function getEventByFancyId(fancyid: string): Promise<null | PoapEve
 
 export async function updateEvent(
   fancyId: string,
-  event_host_id: number,
-  changes: Pick<PoapEvent, 'event_url' | 'image_url'>
+  changes: Pick<PoapEvent, 'event_url' | 'image_url' | 'name' | 'description' | 'city' | 'country' | 'start_date' | 'end_date' >
 ): Promise<boolean> {
   const res = await db.result(
-    'update events set event_url=${event_url}, image_url=${image_url} where fancy_id = ${fancy_id} and event_host_id = ${event_host_id}',
+    'UPDATE EVENTS SET ' +
+    'name=${name}, ' +
+    'description=${description}, ' +
+    'city=${city}, ' +
+    'country=${country}, ' +
+    'start_date=${start_date}, ' +
+    'end_date=${end_date}, ' +
+    'event_url=${event_url}, ' +
+    'image_url=${image_url} ' +
+    'WHERE fancy_id = ${fancy_id}',
     {
       fancy_id: fancyId,
-      event_host_id: event_host_id,
       ...changes,
     }
   );
@@ -289,9 +296,9 @@ export async function getNotifications(limit: number, offset: number, typeList: 
     typeList = [NotificationType.inbox, NotificationType.push]
   }
 
-  let query = "SELECT * FROM notifications WHERE type IN (${typeList:csv})"
+  let query = "SELECT * FROM notifications WHERE type IN (${typeList:csv}) "
 
-  if(eventIds === null) {
+  if(!eventIds) {
     query = query + "AND event_id IS NULL "
   } else if(eventIds.length > 0) {
     query = query + "AND event_id IN (${eventIds:csv}) "
