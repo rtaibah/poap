@@ -61,6 +61,7 @@ type DatePickerContainerProps = {
   handleDayClick: (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) => void;
   setFieldValue: SetFieldValue;
   disabledDays: RangeModifier | undefined;
+  placeholder?: string;
 };
 
 type PaginateAction = {
@@ -123,16 +124,24 @@ export const EditEventForm: React.FC<RouteComponentProps<{
 };
 
 const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
-  const startingDate = new Date('1 Jan 1900');
-  const endingDate = new Date('1 Jan 2200');
+  const veryOldDate = new Date('1900-01-01');
+  const veryFutureDate = new Date('2200-01-01');
   const dateFormatter = (day: Date | number) => format(day, 'MM-dd-yyyy');
+  const dateFormatterString = (date: string) => {
+    const parts = date.split('-');
+    return new Date(`${parts[2]}-${parts[0]}-${parts[1]}`);
+  };
 
   const { addToast } = useToasts();
+
+  const dateRegex = /\//gi;
 
   const initialValues = useMemo(() => {
     if (event) {
       return {
         ...event,
+        start_date: event.start_date.replace(dateRegex, '-'),
+        end_date: event.start_date.replace(dateRegex, '-'),
         isFile: false,
       };
     } else {
@@ -190,7 +199,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             const { isFile, ...othersKeys } = submittedValues;
 
             if (create && !isFile) {
-              actions.setErrors({isFile: 'An image is required'})
+              actions.setErrors({ isFile: 'An image is required' });
             }
 
             Object.entries(othersKeys).forEach(([key, value]) => {
@@ -198,12 +207,11 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             });
 
             if (create) {
-              await createEvent(formData!)
-            } else if(event) {
-              await updateEvent(formData!, event.fancy_id)
+              await createEvent(formData!);
+            } else if (event) {
+              await updateEvent(formData!, event.fancy_id);
             }
             window.location.reload();
-
           } catch (err) {
             actions.setSubmitting(false);
             addToast(err.message, {
@@ -214,7 +222,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
         }}
       >
         {({ values, errors, isSubmitting, setFieldValue }) => (
-           <Form>
+          <Form>
             {create ? (
               <>
                 <h2>Create Event</h2>
@@ -239,9 +247,13 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 dayToSetup="start_date"
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
+                placeholder={values.start_date}
                 disabledDays={
                   values.end_date
-                    ? { from: new Date(new Date(values.end_date).getTime() + day), to: endingDate }
+                    ? {
+                        from: new Date(dateFormatterString(values.end_date).getTime() + day),
+                        to: veryFutureDate,
+                      }
                     : undefined
                 }
               />
@@ -250,9 +262,13 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 dayToSetup="end_date"
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
+                placeholder={values.end_date}
                 disabledDays={
                   values.start_date
-                    ? { from: startingDate, to: new Date(new Date(values.start_date).getTime() - day) }
+                    ? {
+                        from: veryOldDate,
+                        to: new Date(dateFormatterString(values.start_date).getTime() + day),
+                      }
                     : undefined
                 }
               />
@@ -283,16 +299,19 @@ const DayPickerContainer = ({
   dayToSetup,
   handleDayClick,
   setFieldValue,
+  placeholder,
   disabledDays,
 }: DatePickerContainerProps) => {
   const handleDayChange = (day: Date) => handleDayClick(day, dayToSetup, setFieldValue);
 
   return (
-    <div className="date-picker-container">
+    <div className={`date-picker-container ${dayToSetup === 'end_date' ? 'end-date-overlay' : ''}`}>
       <label>{text}</label>
       <DayPickerInput
-        dayPickerProps={{ disabledDays: disabledDays }}
+        placeholder={placeholder}
+        dayPickerProps={{ disabledDays }}
         onDayChange={handleDayChange}
+        inputProps={{ readOnly: 'readonly' }}
       />
     </div>
   );
@@ -348,7 +367,8 @@ export const EventList: React.FC = () => {
   const isAdmin = userRole === ROLES.administrator;
 
   const [events, fetchingEvents, fetchEventsError] = useAsync(
-    isAdmin ? getEvents : getEventsForSpecificUser
+    // isAdmin ? getEvents : getEventsForSpecificUser
+    getEvents
   );
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {

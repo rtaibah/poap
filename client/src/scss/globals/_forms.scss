@@ -74,7 +74,8 @@ div {
       height: 50px;
 
       &::placeholder {
-        color: $color-light-violet;
+        color: $color-primary;
+        opacity: 1;
       }
 
       &:focus,
@@ -96,6 +97,15 @@ div {
     margin-bottom: 10px;
     display: block;
     color: $color-primary;
+  }
+
+  &.end-date-overlay {
+    div {
+      .DayPickerInput-Overlay {
+        right: 0;
+        left: auto;
+      }
+    }
   }
 }
 

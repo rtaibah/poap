@@ -664,9 +664,10 @@
 
 .event-edit-icon-container {
   display: flex;
+  height: 20px;
   justify-content: center;
   align-items: center;
-  height: 20px;
+
   position: absolute;
   bottom: 15px;
   right: 15px;
@@ -676,8 +677,8 @@
   }
 
   a {
-    width: 100%;
-    height: 100%;
+    width: 20px;
+    height: 20px;
 
     svg {
       width: 100%;
