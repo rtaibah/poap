@@ -368,6 +368,14 @@ export async function getClaimedQrsList(qrCodeIds: number[]): Promise<null | Cla
   return res;
 }
 
+export async function getClaimedQrsHashList(qrHashIds: string[]): Promise<null | ClaimQR[]> {
+  const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash IN (${qrHashIds:csv}) AND is_active = true AND claimed = true', {
+    qrHashIds
+  });
+
+  return res;
+}
+
 export async function getRangeNotOwnedQr(numericIdMax: number, numericIdMin: number, eventHostQrRolls: qrRoll[]): Promise<null | ClaimQR[]> {
   let qrRollIds = [];
   for (let qrRoll of eventHostQrRolls) {
@@ -408,6 +416,13 @@ export async function updateEventOnQrRange(numericIdMax: number, numericIdMin: n
 export async function updateQrClaims(qrCodeIds:number[], eventId: number){
   await db.result('UPDATE qr_claims SET event_id=${eventId} where id IN (${qrCodeIds:csv})', {
     qrCodeIds,
+    eventId
+  });
+}
+
+export async function updateQrClaimsHashes(qrCodeHashes:string[], eventId: number){
+  await db.result('UPDATE qr_claims SET event_id=${eventId} where qr_hash IN (${qrCodeHashes:csv}) AND claimed = false', {
+    qrCodeHashes,
     eventId
   });
 }

@@ -38,7 +38,9 @@ import {
   getClaimedQrsList,
   getNotOwnedQrList,
   updateQrClaims,
-  updateQrScanned
+  updateQrScanned,
+  getClaimedQrsHashList,
+  updateQrClaimsHashes
 } from './db';
 
 import {
@@ -1813,6 +1815,69 @@ export default async function routes(fastify: FastifyInstance) {
 
       res.status(204);
       return;
+    }
+  );
+
+  fastify.put(
+    '/qr-code/list-assign',
+    {
+      preValidation: [fastify.authenticate, ],
+      schema: {
+        description: 'Endpoint to assign event to several qr from a range of numeric_id',
+        tags: ['Qr-claims', ],
+        body: {
+          type: 'object',
+          required: ['qr_code_hashes', 'event_id'],
+          properties: {
+            qr_code_hashes: { type: 'array', items: { type: 'string' }},
+            event_id: { type: 'number' },
+          },
+        },
+        response: {
+          204: { type: 'string'},
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req: any, res) => {
+      const qrCodeHashes:string[] = req.body.qr_code_hashes;
+      let eventId = req.body.event_id || null;
+
+      // Check if user is an event host
+      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
+        return new createError.BadRequest('You are not an administrator');
+      }
+
+      // Check if event exists
+      if (eventId) {
+        eventId = parseInt(eventId)
+        const event = await getEvent(eventId);
+        if (!event) {
+          return new createError.BadRequest('Event not found');
+        }
+      }
+
+      // Check if QR codes were claimed
+      const claimedQrs = await getClaimedQrsHashList(qrCodeHashes);
+      let alreadyClaimedQrs:string[] = [];
+      if (claimedQrs && claimedQrs[0]) {
+        let ids = [];
+        for (let claimedQr of claimedQrs) {
+          ids.push(claimedQr.qr_hash)
+        }
+        alreadyClaimedQrs = ids;
+      }
+
+      await updateQrClaimsHashes(qrCodeHashes, eventId);
+
+      return {
+        success: true,
+        alreadyclaimedQrs: alreadyClaimedQrs,
+      };
     }
   );
 
