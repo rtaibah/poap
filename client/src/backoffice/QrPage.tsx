@@ -82,8 +82,9 @@ const QrPage: FC = () => {
 
   useEffect(() => {
     if (initialFetch) {
-      setSelectedQrs([])
+      cleanQrSelection()
       setPage(0)
+      fetchQrCodes()
     }
   }, [selectedEvent, claimStatus, claimScanned]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
