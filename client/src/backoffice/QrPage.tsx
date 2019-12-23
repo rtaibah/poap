@@ -31,9 +31,8 @@ import checked from '../images/checked.svg';
 import error from '../images/error.svg';
 
 /* Typings */
-import { Value } from '../types';
 
-// shemas
+/* Schemas */
 import {
   UpdateModalWithFormikRangeSchema,
   UpdateModalWithFormikSelectedQrsSchema,
@@ -75,7 +74,7 @@ const QrPage: FC = () => {
       fetchQrCodes();
       setInitialFetch(true);
     }
-  }, []);
+  }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (initialFetch) fetchQrCodes();
@@ -356,7 +355,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
 
   useEffect(() => {
     hasSelectedQrs ? setIsSelectionActive(true) : setIsRangeActive(true);
-  }, []);
+  }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const handleUpdateModalSubmit = (
     values: UpdateModalFormikValues,

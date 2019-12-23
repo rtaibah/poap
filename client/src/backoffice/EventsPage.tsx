@@ -382,7 +382,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
 
   useEffect(() => {
     setEvents(initialEvents.filter(handleCriteriaFilter));
-  }, [criteria]);
+  }, [criteria]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     setTotal(events.length);

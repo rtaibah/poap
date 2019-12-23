@@ -86,16 +86,7 @@ export const InboxPage: React.FC = () => {
     setFieldValue: any
   ) => {
     const { value } = e.target;
-
-    if (value === '') {
-      handleRadio('notificationType', value);
-      setFieldValue('notificationType', value);
-    }
-    if (value === 'inbox') {
-      handleRadio('notificationType', value);
-      setFieldValue('notificationType', value);
-    }
-    if (value === 'push') {
+    if (value === '' || value === 'inbox' || value === 'push') {
       handleRadio('notificationType', value);
       setFieldValue('notificationType', value);
     }
@@ -103,16 +94,7 @@ export const InboxPage: React.FC = () => {
 
   const handleRecipientSelect = (e: React.ChangeEvent<HTMLSelectElement>, setFieldValue: any) => {
     const { value } = e.target;
-
-    if (value === '') {
-      handleRadio('recipientFilter', value);
-      setFieldValue('recipientFilter', value);
-    }
-    if (value === 'everyone') {
-      handleRadio('recipientFilter', value);
-      setFieldValue('recipientFilter', value);
-    }
-    if (value === 'event') {
+    if (value === '' || value === 'everyone' || value === 'event') {
       handleRadio('recipientFilter', value);
       setFieldValue('recipientFilter', value);
     }
