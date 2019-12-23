@@ -355,7 +355,13 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     });
   }
 
-  const sortedTokens = tokens.sort((a:any, b:any) => b.event.start_date - a.event.start_date)
+  const sortedTokens = tokens.sort((a:any, b:any) => {
+    try{
+      return new Date(b.event.start_date) > new Date(a.event.start_date) ? 1 : -1
+    } catch (e) {
+      return -1
+    }
+  })
 
   return sortedTokens;
 }

@@ -194,17 +194,17 @@ export async function getQrClaim(qrHash: string): Promise<null | ClaimQR> {
   return res;
 }
 
+export async function updateQrScanned(qrHash: string) {
+  const res = await db.result('UPDATE qr_claims SET scanned = true WHERE qr_hash=${qrHash} AND is_active = true', {qrHash});
+  return res.rowCount === 1;
+}
+
 export async function checkDualQrClaim(eventId: number, address: string): Promise<boolean> {
   const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE event_id = ${eventId} AND beneficiary = ${address} AND is_active = true', {
     eventId,
     address
   });
   return res === null;
-}
-
-export async function adQrClaim(qrHash: string): Promise<null | ClaimQR> {
-  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash = $1 AND is_active = true', [qrHash]);
-  return res;
 }
 
 export async function claimQrClaim(qrHash: string) {
@@ -291,37 +291,47 @@ export async function finishTask(txHash: string | undefined, taskId: number){
   );
 }
 
-export async function getNotifications(limit: number, offset: number, typeList: string[]|null, eventIds:number[]|null): Promise<Notification[]> {
+export async function getNotifications(limit: number, offset: number, typeList: string[]|null, eventIds: number[] | null, addressFilter: boolean): Promise<Notification[]> {
   if(!typeList) {
     typeList = [NotificationType.inbox, NotificationType.push]
   }
 
-  let query = "SELECT * FROM notifications WHERE type IN (${typeList:csv}) "
+  let condition = '';
 
-  if(!eventIds) {
-    query = query + "AND event_id IS NULL "
-  } else if(eventIds.length > 0) {
-    query = query + "AND event_id IN (${eventIds:csv}) "
+  if (eventIds === null) {
+    condition =  "AND event_id IS NULL "
+  } else if (eventIds.length > 0) {
+    condition = "AND event_id IN (${eventIds:csv}) "
   }
 
-  query = query + "ORDER BY created_date DESC LIMIT ${limit} OFFSET ${offset}";
+  if (addressFilter) {
+    condition = "AND ( event_id IN (${eventIds:csv}) OR event_id IS NULL ) "
+  }
+
+  let query = "SELECT * FROM notifications WHERE type IN (${typeList:csv}) " + condition +
+    " ORDER BY created_date DESC LIMIT ${limit} OFFSET ${offset}";
 
   const res = await db.manyOrNone(query, {limit, offset, typeList, eventIds});
   return res
 }
 
-export async function getTotalNotifications(typeList: string[]|null, eventIds:number[]| null): Promise<number> {
-  if(!typeList) {
+export async function getTotalNotifications(typeList: string[]|null, eventIds:number[]| null, addressFilter: boolean): Promise<number> {
+  if (!typeList) {
     typeList = [NotificationType.inbox, NotificationType.push]
   }
 
-  let query = "SELECT COUNT(*) FROM notifications WHERE type IN (${typeList:csv}) "
-
+  let condition = '';
   if(eventIds === null) {
-    query = query + "AND event_id IS NULL "
+    condition = "AND event_id IS NULL "
   } else if(eventIds.length > 0) {
-    query = query + "AND event_id IN (${eventIds:csv}) "
+    condition = "AND event_id IN (${eventIds:csv}) "
   }
+
+  if (addressFilter) {
+    condition = "AND ( event_id IN (${eventIds:csv}) OR event_id IS NULL ) "
+  }
+
+  let query = "SELECT COUNT(*) FROM notifications WHERE type IN (${typeList:csv}) " + condition
 
   const res = await db.result(query, {typeList, eventIds});
   return res.rows[0].count;
@@ -423,7 +433,7 @@ export async function getQrRoll(qrRollId: string): Promise<null | eventHost> {
 
 
 
-export async function getPaginatedQrClaims(limit: number, offset: number, eventId:number, qrRollId:number, claimed:string|null): Promise<ClaimQR[]> {
+export async function getPaginatedQrClaims(limit: number, offset: number, eventId:number, qrRollId:number, claimed:string|null, scanned:string|null): Promise<ClaimQR[]> {
   let query = 'SELECT * FROM qr_claims WHERE is_active = true '
 
   if(eventId) {
@@ -434,12 +444,12 @@ export async function getPaginatedQrClaims(limit: number, offset: number, eventI
     query = query + `AND qr_roll_id = ${qrRollId} `
   }
 
-  if(claimed == 'true') {
-    query = query + 'AND claimed = true '
+  if(claimed && ['true', 'false'].indexOf(claimed) > -1) {
+    query = query + 'AND claimed = ' + claimed + ' '
   }
 
-  if(claimed == 'false') {
-    query = query + 'AND claimed = false '
+  if(scanned && ['true', 'false'].indexOf(scanned) > -1) {
+    query = query + 'AND scanned = ' + scanned + ' '
   }
 
   query = query + 'ORDER BY created_date DESC LIMIT ${limit} OFFSET ${offset}';
@@ -448,7 +458,7 @@ export async function getPaginatedQrClaims(limit: number, offset: number, eventI
   return res
 }
 
-export async function getTotalQrClaims(eventId:number, qrRollId:number, claimed:string|null): Promise<number> {
+export async function getTotalQrClaims(eventId:number, qrRollId:number, claimed:string|null, scanned:string|null): Promise<number> {
   let query = 'SELECT * FROM qr_claims WHERE is_active = true '
 
   if(eventId) {
@@ -459,12 +469,12 @@ export async function getTotalQrClaims(eventId:number, qrRollId:number, claimed:
     query = query + `AND qr_roll_id = ${qrRollId} `
   }
 
-  if(claimed == 'true') {
-    query = query + `AND claimed = true `
+  if(claimed && ['true', 'false'].indexOf(claimed) > -1) {
+    query = query + 'AND claimed = ' + claimed + ' '
   }
 
-  if(claimed == 'false') {
-    query = query + `AND claimed = false `
+  if(scanned && ['true', 'false'].indexOf(scanned) > -1) {
+    query = query + 'AND scanned = ' + scanned + ' '
   }
 
   query = query + 'ORDER BY created_date DESC'

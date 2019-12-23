@@ -105,6 +105,7 @@ export type QrCode = {
   event_id: number;
   id: number;
   is_active: boolean;
+  scanned: boolean;
   numeric_id: number;
   qr_hash: string;
   qr_roll_id: number;
@@ -119,7 +120,7 @@ export type PaginatedQrCodes = {
   qr_claims: QrCode[];
 };
 
-export type ENSQueryResult = { valid: false } | { valid: true; address: string };
+export type ENSQueryResult = { valid: false } | { valid: true; ens: string };
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
 
@@ -376,9 +377,10 @@ export async function getQrCodes(
   limit: number,
   offset: number,
   claimed?: boolean,
+  scanned?: boolean,
   event_id?: number
 ): Promise<PaginatedQrCodes> {
-  const params = queryString.stringify({ limit, offset, claimed, event_id }, { sort: false });
+  const params = queryString.stringify({ limit, offset, claimed, event_id, scanned }, { sort: false });
   return secureFetch(`${API_BASE}/qr-code?${params}`);
 }
 
@@ -421,7 +423,8 @@ export function getTransactions(
 export function bumpTransaction(tx_hash: string, gasPrice: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/bump`, {
     method: 'POST',
-    body: JSON.stringify({ txHash: tx_hash, gas_price: gasPrice }),
+    body: JSON.stringify({ txHash: tx_hash, gasPrice: gasPrice }),
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 

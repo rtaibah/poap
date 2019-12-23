@@ -55,8 +55,8 @@ CREATE TABLE qr_claims (
   "claimed" boolean default false,
   "claimed_date" timestamp with time zone,
   "created_date" timestamp with time zone not null default now(),
-  "qr_roll_id": integer,
-  "numeric_id": integer,
+  "qr_roll_id" integer,
+  "numeric_id" integer,
   "is_active" boolean default true
 );
 
@@ -101,8 +101,17 @@ CREATE TABLE event_host (
 
 CREATE TABLE qr_roll (
     "id" SERIAL PRIMARY KEY,
-    "event_host_id" varchar(256) UNIQUE,
+    "event_host_id" integer,
     "is_active" boolean default true
 );
 
 alter table qr_claims alter column event_id drop not null;
+
+
+ALTER TABLE events ADD COLUMN event_host_id INTEGER NULL;
+
+ALTER TABLE qr_claims
+ADD COLUMN qr_roll_id INTEGER NULL,
+ADD COLUMN numeric_id INTEGER NULL;
+
+ALTER TABLE qr_claims ADD COLUMN scanned BOOLEAN DEFAULT false;

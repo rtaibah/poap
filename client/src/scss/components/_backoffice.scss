@@ -297,6 +297,18 @@
     .status-icon {
       height: 20px;
     }
+
+    &.qr-table{
+      @media (max-width: $bp-mw) {
+        .status-icon {
+          position: relative !important;
+          width: 15px;
+          top: inherit !important;
+          right: inherit !important;
+        }
+      }
+    }
+
   }
 
   .filters-container {

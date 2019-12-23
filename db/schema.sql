@@ -53,6 +53,7 @@ CREATE TABLE qr_claims (
   "beneficiary" varchar(256),
   "signer" varchar(256),
   "claimed" boolean default false,
+  "scanned" boolean default false,
   "claimed_date" timestamp with time zone,
   "created_date" timestamp with time zone not null default now(),
   "qr_roll_id": integer,

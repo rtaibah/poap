@@ -62,8 +62,8 @@ export class AddressTokensPage extends React.Component<
         const ensResponse = await resolveENS(address);
 
         if (ensResponse.valid) {
-          const tokens = await getTokensFor(ensResponse.address);
-          this.setState({ tokens, address: ensResponse.address, ens: address });
+          const tokens = await getTokensFor(ensResponse.ens);
+          this.setState({ tokens, address: ensResponse.ens, ens: address });
         }
       }
     } catch (err) {

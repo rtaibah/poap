@@ -38,6 +38,7 @@ import {
   getClaimedQrsList,
   getNotOwnedQrList,
   updateQrClaims,
+  updateQrScanned
 } from './db';
 
 import {
@@ -206,7 +207,6 @@ export default async function routes(fastify: FastifyInstance) {
         throw new createError.BadRequest('"name" query parameter is required');
       }
       const resolvedAddress = await resolveName(req.query['name']);
-
       if (resolvedAddress == null) {
         return {
           valid: false,
@@ -214,7 +214,7 @@ export default async function routes(fastify: FastifyInstance) {
       } else {
         return {
           valid: true,
-          address: resolvedAddress,
+          ens: resolvedAddress,
         };
       }
     }
@@ -535,6 +535,11 @@ export default async function routes(fastify: FastifyInstance) {
         if(transaction_status) {
           qr_claim.tx_status = transaction_status.status;
         }
+      }
+
+      // Update Scanned status
+      if (!qr_claim.scanned) {
+        await updateQrScanned(qr_hash);
       }
 
       return qr_claim
@@ -1493,35 +1498,33 @@ export default async function routes(fastify: FastifyInstance) {
       const type = req.query.type || null;
       const event_id = req.query.event_id;
       const address = req.query.address || null;
-      let event_ids:number[]|null = [];
 
-      if(type && [NotificationType.inbox, NotificationType.push].indexOf(type) === -1) {
+      let event_ids: number[] | null = [];
+
+      if (type && [NotificationType.inbox, NotificationType.push].indexOf(type) === -1) {
         return new createError.BadRequest('Notification type must be in Inbox or Push');
       }
 
-      if(event_id === null) {
+      if (event_id) {
+        const event = await getEvent(event_id);
+        if (!event) {
+          return new createError.BadRequest('Event not found');
+        }
+        event_ids.push(event.id)
+      } else if(event_id === null && typeof event_id !== 'undefined') {
         event_ids = null;
-      } else {      
-        if(event_id) {
-          const event = await getEvent(event_id);
-          if (!event) {
-            return new createError.BadRequest('Event not found');
-          }
-          event_ids.push(event.id)
-        }
-
-        if(address) {
-          const parsed_address = await checkAddress(address);
-          if (!parsed_address) {
-            return new createError.BadRequest('Address is not valid');
-          }
-
-          event_ids = await getAllEventIds(address)
-        }
       }
 
-      let notifications = await getNotifications(limit, offset, type, event_ids);
-      const totalNotifications = await getTotalNotifications(type, event_ids);
+      if (address) {
+        const parsed_address = await checkAddress(address);
+        if (!parsed_address) {
+          return new createError.BadRequest('Address is not valid');
+        }
+        event_ids = await getAllEventIds(address)
+      }
+
+      let notifications = await getNotifications(limit, offset, type, event_ids, !!address);
+      const totalNotifications = await getTotalNotifications(type, event_ids, !!address);
 
       const allEvents = await getEvents();
 
@@ -1654,8 +1657,8 @@ export default async function routes(fastify: FastifyInstance) {
           event_id: { type: 'number' },
           qr_roll_id: { type: 'number' },
           claimed: { type: 'string' },
+          scanned: { type: 'string' },
         },
-
       },
     },
     async (req: any, res) => {
@@ -1663,6 +1666,7 @@ export default async function routes(fastify: FastifyInstance) {
       const offset = req.query.offset || 0;
       const eventId = req.query.event_id || null;
       const claimed = req.query.claimed || null;
+      const scanned = req.query.scanned || null;
       let qrRollId = req.query.qr_roll_id || null;
 
       const user_id = req.user.sub;
@@ -1695,8 +1699,8 @@ export default async function routes(fastify: FastifyInstance) {
       //   }
       // }
 
-      let qrClaims = await getPaginatedQrClaims(limit, offset, eventId, qrRollId, claimed);
-      const totalQrClaims = await getTotalQrClaims(eventId, qrRollId, claimed) || 0;
+      let qrClaims = await getPaginatedQrClaims(limit, offset, eventId, qrRollId, claimed, scanned);
+      const totalQrClaims = await getTotalQrClaims(eventId, qrRollId, claimed, scanned) || 0;
 
       const allEvents = await getEvents();
 
