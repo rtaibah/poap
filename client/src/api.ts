@@ -9,6 +9,11 @@ export interface TokenInfo {
   event: PoapEvent;
   ownerText?: string;
 }
+
+export type QrCodesListAssignResponse = {
+  success: boolean;
+  alreadyclaimedQrs: string[];
+};
 export interface PoapEvent {
   id: number;
   fancy_id: string;
@@ -380,7 +385,10 @@ export async function getQrCodes(
   scanned?: boolean,
   event_id?: number
 ): Promise<PaginatedQrCodes> {
-  const params = queryString.stringify({ limit, offset, claimed, event_id, scanned }, { sort: false });
+  const params = queryString.stringify(
+    { limit, offset, claimed, event_id, scanned },
+    { sort: false }
+  );
   return secureFetch(`${API_BASE}/qr-code?${params}`);
 }
 
@@ -400,7 +408,24 @@ export async function qrCodesRangeAssign(
   });
 }
 
-export async function qrCodesUpdate(qrCodesIds: string[], eventId: number | null): Promise<void> {
+export async function qrCodesListAssign(
+  qrHashes: string[],
+  eventId: number
+): Promise<QrCodesListAssignResponse> {
+  return secureFetch(`${API_BASE}/qr-code/list-assign`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      qr_code_hashes: qrHashes,
+      event_id: eventId,
+    }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export async function qrCodesSelectionUpdate(
+  qrCodesIds: string[],
+  eventId: number | null
+): Promise<void> {
   return secureFetchNoResponse(`${API_BASE}/qr-code/update`, {
     method: 'PUT',
     body: JSON.stringify({

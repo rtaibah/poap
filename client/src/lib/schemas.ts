@@ -41,13 +41,11 @@ const PoapEventSchema = yup.object().shape({
   city: yup.string(),
   country: yup.string(),
   event_url: yup.string().url(),
-  image: yup
-    .mixed()
-    .when('isFile', {
-      is: value => value,
-      then: fileSchema,
-      otherwise: yup.string(),
-    })
+  image: yup.mixed().when('isFile', {
+    is: value => value,
+    then: fileSchema,
+    otherwise: yup.string(),
+  }),
 });
 
 const IssueForEventFormValueSchema = yup.object().shape({
@@ -98,7 +96,15 @@ const UpdateModalWithFormikRangeSchema = yup.object().shape({
   to: yup
     .number()
     .positive()
-    .required()
+    .required(),
+});
+
+const UpdateModalWithFormikListSchema = yup.object().shape({
+  hashesList: yup.string().required(),
+  event: yup
+    .string()
+    .matches(/^[0-9]{1,}$/)
+    .required(),
 });
 
 const UpdateModalWithFormikSelectedQrsSchema = yup.object().shape({});
@@ -114,4 +120,5 @@ export {
   InboxFormSchema,
   UpdateModalWithFormikRangeSchema,
   UpdateModalWithFormikSelectedQrsSchema,
+  UpdateModalWithFormikListSchema,
 };

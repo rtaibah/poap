@@ -14,14 +14,17 @@ import FilterChip from '../components/FilterChip';
 
 /* Helpers */
 import {
-  QrCode,
   getQrCodes,
   getEventsForSpecificUser,
   PoapEvent,
   getEvents,
   qrCodesRangeAssign,
-  qrCodesUpdate,
+  qrCodesSelectionUpdate,
+  QrCode,
+  qrCodesListAssign,
 } from '../api';
+
+// lib
 import { reduceAddress } from '../lib/helpers';
 import { etherscanLinks } from '../lib/constants';
 import { authClient } from '../auth';
@@ -30,27 +33,17 @@ import { authClient } from '../auth';
 import checked from '../images/checked.svg';
 import error from '../images/error.svg';
 
-/* Typings */
-
 /* Schemas */
 import {
   UpdateModalWithFormikRangeSchema,
   UpdateModalWithFormikSelectedQrsSchema,
+  UpdateModalWithFormikListSchema,
 } from '../lib/schemas';
 
 const PAGE_SIZE = 10;
 
 type PaginateAction = {
   selected: number;
-};
-
-export type QrCode = {
-  id: number;
-  qr_hash: string;
-  claimed: boolean;
-  tx_hash: string;
-  event_id: number;
-  event: PoapEvent;
 };
 
 const QrPage: FC = () => {
@@ -70,7 +63,7 @@ const QrPage: FC = () => {
 
   useEffect(() => {
     fetchEvents();
-    if(!initialFetch){
+    if (!initialFetch) {
       fetchQrCodes();
       setInitialFetch(true);
     }
@@ -82,13 +75,17 @@ const QrPage: FC = () => {
 
   useEffect(() => {
     if (initialFetch) {
-      cleanQrSelection()
-      setPage(0)
-      fetchQrCodes()
+      cleanQrSelection();
+      setPage(0);
+      fetchQrCodes();
     }
-  }, [selectedEvent, claimStatus, claimScanned]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [
+    selectedEvent,
+    claimStatus,
+    claimScanned,
+  ]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
-  const cleanQrSelection = () => setSelectedQrs([])
+  const cleanQrSelection = () => setSelectedQrs([]);
 
   const fetchEvents = async () => {
     const isAdmin = authClient.user['https://poap.xyz/roles'].includes('administrator');
@@ -106,8 +103,8 @@ const QrPage: FC = () => {
     let _status = undefined;
     let _scanned = undefined;
 
-    if (claimStatus) _status = claimStatus === 'claimed'
-    if (claimScanned) _scanned = claimScanned === 'true'
+    if (claimStatus) _status = claimStatus === 'claimed';
+    if (claimScanned) _scanned = claimScanned === 'true';
 
     try {
       const response = await getQrCodes(PAGE_SIZE, page * PAGE_SIZE, _status, _scanned, event_id);
@@ -130,9 +127,7 @@ const QrPage: FC = () => {
     setSelectedEvent(numericValue);
   };
 
-  const handleStatusChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ): void => {
+  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     const { value } = e.target;
     setClaimStatus(value);
   };
@@ -187,7 +182,7 @@ const QrPage: FC = () => {
           </div>
         </div>
 
-        <div className={'filter col-md-2'}>
+        <div className={'filter col-md-3'}>
           <div className={'filter-group'}>
             <FilterSelect handleChange={handleStatusChange}>
               <option value="">Filter by status</option>
@@ -197,7 +192,7 @@ const QrPage: FC = () => {
           </div>
         </div>
 
-        <div className={'filter col-md-2'}>
+        <div className={'filter col-md-3'}>
           <div className={'filter-group'}>
             <FilterSelect handleChange={handleScannedChange}>
               <option value="">Filter by scanned</option>
@@ -338,6 +333,7 @@ type UpdateModalFormikValues = {
   from: number | string;
   to: number | string;
   event: number;
+  hashesList: string;
   isUnassigning: boolean;
 };
 
@@ -350,26 +346,96 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
 }) => {
   const [isSelectionActive, setIsSelectionActive] = useState<boolean>(false);
   const [isRangeActive, setIsRangeActive] = useState<boolean>(false);
+  const [isListActive, setIsListActive] = useState<boolean>(false);
+  const [selectedEvent, setSelectedEvent] = useState<number>(0);
+  const [incorrectQrHashes, setIncorrectQrHashes] = useState<string[]>([]);
+  const [isSendingHashList, setIsSendingHashList] = useState<boolean>(false);
+  const [qrHashList, setQrHashList] = useState<string[]>([]);
   const { addToast } = useToasts();
 
   const hasSelectedQrs = selectedQrs.length > 0;
+  const hasIncorrectHashes = incorrectQrHashes.length > 0;
 
   useEffect(() => {
     hasSelectedQrs ? setIsSelectionActive(true) : setIsRangeActive(true);
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
+  useEffect(() => {
+    if (isSendingHashList && selectedEvent && !hasIncorrectHashes) {
+      assignHashList();
+    }
+    setIsSendingHashList(false);
+  }, [hasIncorrectHashes, isSendingHashList, selectedEvent]);
+
+  const assignHashList = () => {
+    if (isListActive && selectedEvent) {
+      if (!hasIncorrectHashes) {
+        qrCodesListAssign(qrHashList, selectedEvent)
+          .then(res => {
+            console.log(res);
+            const hasAlreadyClaimedHashes = res.alreadyclaimedQrs.length > 0;
+
+            if (hasAlreadyClaimedHashes) {
+              addToast(
+                `QR hashes list updated correctly but the following list had already been claimed: ${res.alreadyclaimedQrs.join(
+                  ', '
+                )}`,
+                {
+                  appearance: 'warning',
+                  autoDismiss: false,
+                }
+              );
+            } else {
+              addToast('QR hashes list updated correctly', {
+                appearance: 'success',
+                autoDismiss: true,
+              });
+            }
+
+            onSuccessAction();
+            refreshQrs();
+            handleUpdateModalClosing();
+          })
+          .catch(e =>
+            addToast(e.message, {
+              appearance: 'error',
+              autoDismiss: true,
+            })
+          );
+      }
+    }
+  };
+
   const handleUpdateModalSubmit = (
     values: UpdateModalFormikValues,
     actions: FormikActions<UpdateModalFormikValues>
   ) => {
-    const { from, to, event, isUnassigning } = values;
+    const { from, to, event, hashesList, isUnassigning } = values;
 
     if (!isUnassigning && !event) {
-      actions.setErrors({event: 'Required'})
+      actions.setErrors({ event: 'Required' });
       return false;
     }
 
     const _event = isUnassigning ? null : event;
+
+    const hashRegex = /^[a-zA-Z0-9]{6}$/;
+    setIncorrectQrHashes([]);
+
+    const _incorrectQrHashes: string[] = [];
+
+    const _hashesList = hashesList
+      .trim()
+      .split('\n')
+      .map(hash => hash.trim())
+      .filter(hash => {
+        if (!hash.match(hashRegex)) _incorrectQrHashes.push(hash);
+
+        return hash.match(hashRegex);
+      });
+
+    setIncorrectQrHashes(_incorrectQrHashes);
+    setQrHashList(_hashesList);
 
     if (isRangeActive) {
       if (typeof from === 'number' && typeof to === 'number') {
@@ -393,7 +459,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     }
 
     if (isSelectionActive) {
-      qrCodesUpdate(selectedQrs, _event)
+      qrCodesSelectionUpdate(selectedQrs, _event)
         .then(_ => {
           addToast('QR codes updated correctly', {
             appearance: 'success',
@@ -410,6 +476,11 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
           })
         );
     }
+
+    if (isListActive && _event) {
+      setIsSendingHashList(true);
+      setSelectedEvent(_event);
+    }
   };
 
   const handleChipClick = (event: React.ChangeEvent, setFieldValue: Function, values: any) => {
@@ -419,12 +490,20 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   const handleSelectionChange = () => {
     if (!hasSelectedQrs) return;
     setIsRangeActive(false);
+    setIsListActive(false);
     setIsSelectionActive(true);
   };
 
   const handleRangeChange = () => {
     setIsSelectionActive(false);
+    setIsListActive(false);
     setIsRangeActive(true);
+  };
+
+  const handleListChange = () => {
+    setIsRangeActive(false);
+    setIsSelectionActive(false);
+    setIsListActive(true);
   };
 
   return (
@@ -433,12 +512,13 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
         from: 0,
         to: 0,
         event: 0,
+        hashesList: '',
         isUnassigning: false,
       }}
       validationSchema={
-        isSelectionActive
-          ? UpdateModalWithFormikSelectedQrsSchema
-          : UpdateModalWithFormikRangeSchema
+        (isSelectionActive && UpdateModalWithFormikSelectedQrsSchema) ||
+        (isRangeActive && UpdateModalWithFormikRangeSchema) ||
+        (isListActive && UpdateModalWithFormikListSchema)
       }
       validateOnBlur={false}
       validateOnChange={false}
@@ -522,6 +602,29 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                     onChange={handleChange}
                     disabled={!isRangeActive}
                   />
+                </div>
+              </div>
+              <div className="option-container">
+                <div className="radio-container">
+                  <input type="radio" checked={isListActive} onChange={handleListChange} />
+                </div>
+                <div className="label-container">
+                  <span>List</span>
+                </div>
+                <div className="content-container list-container">
+                  <textarea
+                    name="hashesList"
+                    onChange={handleChange}
+                    disabled={!isListActive}
+                    placeholder="List of QRs"
+                    className="modal-textarea"
+                  />
+                  {hasIncorrectHashes && (
+                    <span>
+                      The following codes are not valid, please fix them or remove them to submit
+                      again: {`${incorrectQrHashes.join(', ')}`}
+                    </span>
+                  )}
                 </div>
               </div>
               <select

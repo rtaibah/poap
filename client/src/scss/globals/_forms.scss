@@ -333,7 +333,8 @@ textarea {
 
 .modal-content {
   input,
-  select {
+  select,
+  textarea {
     border: 2px solid $color-light-grey;
 
     &:focus,
@@ -344,11 +345,15 @@ textarea {
 }
 
 .option-container {
+  &:first-of-type {
+    padding-top: 25px;
+  }
+
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
 
-  padding: 25px 0;
+  padding-bottom: 25px;
 
   > div {
     &:not(:last-child) {
@@ -364,8 +369,16 @@ textarea {
 
 .content-container {
   flex: 1;
+  display: flex;
+  justify-content: space-between;
 
-  span {
+  input {
+    width: 48%;
+    margin: 0;
+  }
+
+  span,
+  textarea {
     color: $color-primary;
 
     &.grey-text {
@@ -373,9 +386,18 @@ textarea {
     }
   }
 
-  input {
+  input,
+  textarea {
     &::placeholder {
       color: $color-medium-violet;
+    }
+  }
+
+  &.list-container {
+    flex-direction: column;
+
+    span {
+      margin-top: 25px;
     }
   }
 }
@@ -434,4 +456,8 @@ textarea {
   &::placeholder {
     color: $color-error !important;
   }
+}
+
+.modal-textarea {
+  height: 200px;
 }
