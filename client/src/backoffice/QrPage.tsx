@@ -46,6 +46,8 @@ type PaginateAction = {
   selected: number;
 };
 
+const isAdmin = authClient.user['https://poap.xyz/roles'].includes('administrator');
+
 const QrPage: FC = () => {
   const [page, setPage] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
@@ -88,8 +90,6 @@ const QrPage: FC = () => {
   const cleanQrSelection = () => setSelectedQrs([]);
 
   const fetchEvents = async () => {
-    const isAdmin = authClient.user['https://poap.xyz/roles'].includes('administrator');
-
     const events = isAdmin ? await getEvents() : await getEventsForSpecificUser();
     setEvents(events);
   };
@@ -604,29 +604,31 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                   />
                 </div>
               </div>
-              <div className="option-container">
-                <div className="radio-container">
-                  <input type="radio" checked={isListActive} onChange={handleListChange} />
+              {isAdmin && (
+                <div className="option-container">
+                  <div className="radio-container">
+                    <input type="radio" checked={isListActive} onChange={handleListChange} />
+                  </div>
+                  <div className="label-container">
+                    <span>List</span>
+                  </div>
+                  <div className="content-container list-container">
+                    <textarea
+                      name="hashesList"
+                      onChange={handleChange}
+                      disabled={!isListActive}
+                      placeholder="List of QRs"
+                      className="modal-textarea"
+                    />
+                    {hasIncorrectHashes && (
+                      <span>
+                        The following codes are not valid, please fix them or remove them to submit
+                        again: {`${incorrectQrHashes.join(', ')}`}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="label-container">
-                  <span>List</span>
-                </div>
-                <div className="content-container list-container">
-                  <textarea
-                    name="hashesList"
-                    onChange={handleChange}
-                    disabled={!isListActive}
-                    placeholder="List of QRs"
-                    className="modal-textarea"
-                  />
-                  {hasIncorrectHashes && (
-                    <span>
-                      The following codes are not valid, please fix them or remove them to submit
-                      again: {`${incorrectQrHashes.join(', ')}`}
-                    </span>
-                  )}
-                </div>
-              </div>
+              )}
               <select
                 className={resolveSelectClass()}
                 disabled={values.isUnassigning}
