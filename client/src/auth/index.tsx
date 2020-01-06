@@ -14,7 +14,6 @@ export class AuthService {
   }
 
   constructor() {
-    console.log('initializing');
     this.user = {
       email: 'none',
       email_verified: false,
