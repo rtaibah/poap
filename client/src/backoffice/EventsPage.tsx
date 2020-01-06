@@ -367,8 +367,7 @@ export const EventList: React.FC = () => {
   const isAdmin = userRole === ROLES.administrator;
 
   const [events, fetchingEvents, fetchEventsError] = useAsync(
-    // isAdmin ? getEvents : getEventsForSpecificUser
-    getEvents
+    isAdmin ? getEvents : getEventsForSpecificUser
   );
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
