@@ -14,6 +14,7 @@ export class AuthService {
   }
 
   constructor() {
+    console.log('initializing');
     this.user = {
       email: 'none',
       email_verified: false,
@@ -22,7 +23,7 @@ export class AuthService {
       picture: 'none',
       sub: 'none',
       updated_at: 'none',
-      'https://poap.xyz/roles': ['none'],
+      'https://poap.xyz/roles': [],
     };
   }
 
@@ -33,6 +34,7 @@ export class AuthService {
       redirect_uri: `${BASE_URI}/callback`,
       audience: process.env.REACT_APP_AUTH0_AUDIENCE || '',
     });
+
     this._isAuthenticated = await this.client.isAuthenticated();
 
     if (this._isAuthenticated) {

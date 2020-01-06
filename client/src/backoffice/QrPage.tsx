@@ -46,8 +46,6 @@ type PaginateAction = {
   selected: number;
 };
 
-const isAdmin = authClient.user['https://poap.xyz/roles'].includes('administrator');
-
 const QrPage: FC = () => {
   const [page, setPage] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
@@ -62,6 +60,8 @@ const QrPage: FC = () => {
   const [initialFetch, setInitialFetch] = useState<boolean>(false);
 
   const { addToast } = useToasts();
+
+  const isAdmin = authClient.getRole() === 'administrator';
 
   useEffect(() => {
     fetchEvents();
@@ -352,6 +352,8 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   const [isSendingHashList, setIsSendingHashList] = useState<boolean>(false);
   const [qrHashList, setQrHashList] = useState<string[]>([]);
   const { addToast } = useToasts();
+
+  const isAdmin = authClient.getRole() === 'administrator';
 
   const hasSelectedQrs = selectedQrs.length > 0;
   const hasIncorrectHashes = incorrectQrHashes.length > 0;
