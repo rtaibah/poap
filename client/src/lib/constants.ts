@@ -31,6 +31,7 @@ const ROUTES = {
   codeClaimPageHash: '/claim/:hash',
   codeClaimPage: '/claim',
   admin: '/admin',
+  adminLogin: '/admin/login',
   issueForEvent: {
     path: '/admin/issue-for-event',
     roles: [ROLES.administrator],

@@ -43,7 +43,7 @@ const Label: React.FC<{ label: LabelProps }> = ({ label }) => {
   return <h2>{title}</h2>;
 };
 
-const RoleLink: React.FC<{ route: RouteProps; handleClick: () => void }> = ({
+const SidebarLink: React.FC<{ route: RouteProps; handleClick: () => void }> = ({
   route,
   handleClick,
 }) => {
@@ -59,24 +59,20 @@ const RoleLink: React.FC<{ route: RouteProps; handleClick: () => void }> = ({
   return null;
 };
 
-type Roles = {
-  roles: string[];
-};
-
-export const withRole = <T extends Object>(
+export const withAuthentication = <T extends Object>(
   WrappedComponent: React.ComponentType<T>
-): React.FC<T & Roles> => {
-  return (props: Roles & T) => {
-    const userRole = authClient.getRole();
+): React.FC<T> => {
+  return (props: T) => {
+    const isAuthenticated = authClient.isAuthenticated();
 
-    if (!props.roles.includes(userRole)) return null;
+    if (!isAuthenticated) return null;
 
     return <WrappedComponent {...props} />;
   };
 };
 
-const LabelWithRole = withRole(Label);
-const RoleLinkWithRole = withRole(RoleLink);
+const LabelWithAuthentication = withAuthentication(Label);
+const SidebarLinkWithAuthentication = withAuthentication(SidebarLink);
 
 const NavigationMenu = withRouter(({ history }) => {
   const auth = useContext(AuthContext);
@@ -94,50 +90,30 @@ const NavigationMenu = withRouter(({ history }) => {
 
   return (
     <Menu isOpen={isOpen} onStateChange={state => setIsOpen(state.isOpen)} right disableAutoFocus>
-      <LabelWithRole roles={LABELS.issueBadges.roles} label={LABELS.issueBadges} />
+      <LabelWithAuthentication label={LABELS.issueBadges} />
 
-      <RoleLinkWithRole
-        roles={ROUTES.issueForEvent.roles}
-        route={ROUTES.issueForEvent}
-        handleClick={closeMenu}
-      />
+      <SidebarLinkWithAuthentication route={ROUTES.issueForEvent} handleClick={closeMenu} />
 
-      <RoleLinkWithRole
-        roles={ROUTES.issueForUser.roles}
-        route={ROUTES.issueForUser}
-        handleClick={closeMenu}
-      />
-      <LabelWithRole roles={ROUTES.inbox.roles} label={LABELS.inbox} />
+      <SidebarLinkWithAuthentication route={ROUTES.issueForUser} handleClick={closeMenu} />
+      <LabelWithAuthentication label={LABELS.inbox} />
 
-      <RoleLinkWithRole roles={ROUTES.inbox.roles} route={ROUTES.inbox} handleClick={closeMenu} />
+      <SidebarLinkWithAuthentication route={ROUTES.inbox} handleClick={closeMenu} />
 
-      <RoleLinkWithRole
-        roles={ROUTES.inboxList.roles}
-        route={ROUTES.inboxList}
-        handleClick={closeMenu}
-      />
+      <SidebarLinkWithAuthentication route={ROUTES.inboxList} handleClick={closeMenu} />
 
-      <LabelWithRole roles={LABELS.otherTasks.roles} label={LABELS.otherTasks} />
+      <LabelWithAuthentication label={LABELS.otherTasks} />
 
-      <LabelWithRole roles={LABELS.quickLinks.roles} label={LABELS.quickLinks} />
+      <LabelWithAuthentication label={LABELS.quickLinks} />
 
-      <RoleLinkWithRole
-        roles={ROUTES.addressManagement.roles}
-        route={ROUTES.addressManagement}
-        handleClick={closeMenu}
-      />
+      <SidebarLinkWithAuthentication route={ROUTES.addressManagement} handleClick={closeMenu} />
 
-      <RoleLinkWithRole roles={ROUTES.events.roles} route={ROUTES.events} handleClick={closeMenu} />
+      <SidebarLinkWithAuthentication route={ROUTES.events} handleClick={closeMenu} />
 
-      <RoleLinkWithRole roles={ROUTES.qr.roles} route={ROUTES.qr} handleClick={closeMenu} />
+      <SidebarLinkWithAuthentication route={ROUTES.qr} handleClick={closeMenu} />
 
-      <RoleLinkWithRole roles={ROUTES.burn.roles} route={ROUTES.burn} handleClick={closeMenu} />
+      <SidebarLinkWithAuthentication route={ROUTES.burn} handleClick={closeMenu} />
 
-      <RoleLinkWithRole
-        roles={ROUTES.transactions.roles}
-        route={ROUTES.transactions}
-        handleClick={closeMenu}
-      />
+      <SidebarLinkWithAuthentication route={ROUTES.transactions} handleClick={closeMenu} />
 
       <a
         className="bm-item"
@@ -166,16 +142,14 @@ const Landing = () => (
   </div>
 );
 
-const IssueForEventPageWithRole = withRole(IssueForEventPage);
-const IssueForUserPageWithRole = withRole(IssueForUserPage);
-// const EventsPageWithRole = withRole(EventsPage);
-const QrPageWithRole = withRole(QrPage);
-const InboxListPageWithRole = withRole(InboxListPage);
-const TransactionsPageWithRole = withRole(TransactionsPage);
-const MintersPageWithRole = withRole(MintersPage);
-const BurnPageWithRole = withRole(BurnPage);
-const InboxPageWithRole = withRole(InboxPage);
-const AddressManagementPageWithRole = withRole(AddressManagementPage);
+const IssueForEventPageWithAuthentication = withAuthentication(IssueForEventPage);
+const IssueForUserPageWithAuthentication = withAuthentication(IssueForUserPage);
+const InboxListPageWithAuthentication = withAuthentication(InboxListPage);
+const TransactionsPageWithAuthentication = withAuthentication(TransactionsPage);
+const MintersPageWithAuthentication = withAuthentication(MintersPage);
+const BurnPageWithAuthentication = withAuthentication(BurnPage);
+const InboxPageWithAuthentication = withAuthentication(InboxPage);
+const AddressManagementPageWithAuthentication = withAuthentication(AddressManagementPage);
 
 export const BackOffice: React.FC = () => (
   <>
@@ -198,66 +172,50 @@ export const BackOffice: React.FC = () => (
         <Switch>
           <Route exact path={ROUTES.admin} component={Landing} />
 
-          <Route
-            exact
-            path={ROUTES.issueForEvent.path}
-            render={() => <IssueForEventPageWithRole roles={ROUTES.issueForEvent.roles} />}
-          />
-
-          <Route
-            exact
-            path={ROUTES.issueForUser.path}
-            render={() => <IssueForUserPageWithRole roles={ROUTES.issueForUser.roles} />}
-          />
+          <Route exact path={ROUTES.qr.path} component={QrPage} />
 
           <Route path={ROUTES.events.path} component={EventsPage} />
 
           <Route
             exact
+            path={ROUTES.issueForEvent.path}
+            render={() => <IssueForEventPageWithAuthentication />}
+          />
+
+          <Route
+            exact
+            path={ROUTES.issueForUser.path}
+            render={() => <IssueForUserPageWithAuthentication />}
+          />
+
+          <Route
+            exact
             path={ROUTES.minters.path}
-            render={() => <MintersPageWithRole roles={ROUTES.minters.roles} />}
+            render={() => <MintersPageWithAuthentication />}
           />
 
-          <Route
-            exact
-            path={ROUTES.burn.path}
-            render={() => <BurnPageWithRole roles={ROUTES.burn.roles} />}
-          />
+          <Route exact path={ROUTES.burn.path} render={() => <BurnPageWithAuthentication />} />
 
-          <Route
-            exact
-            path={ROUTES.burnToken.path}
-            render={() => <BurnPageWithRole roles={ROUTES.burnToken.roles} />}
-          />
+          <Route exact path={ROUTES.burnToken.path} render={() => <BurnPageWithAuthentication />} />
 
           <Route
             exact
             path={ROUTES.addressManagement.path}
-            render={() => <AddressManagementPageWithRole roles={ROUTES.addressManagement.roles} />}
+            render={() => <AddressManagementPageWithAuthentication />}
           />
 
           <Route
             exact
             path={ROUTES.transactions.path}
-            render={() => <TransactionsPageWithRole roles={ROUTES.transactions.roles} />}
+            render={() => <TransactionsPageWithAuthentication />}
           />
 
-          <Route
-            exact
-            path={ROUTES.inbox.path}
-            render={() => <InboxPageWithRole roles={ROUTES.inbox.roles} />}
-          />
+          <Route exact path={ROUTES.inbox.path} render={() => <InboxPageWithAuthentication />} />
 
           <Route
             exact
             path={ROUTES.inboxList.path}
-            render={() => <InboxListPageWithRole roles={ROUTES.inboxList.roles} />}
-          />
-
-          <Route
-            exact
-            path={ROUTES.qr.path}
-            render={() => <QrPageWithRole roles={ROUTES.qr.roles} />}
+            render={() => <InboxListPageWithAuthentication />}
           />
 
           <Route path="*" render={() => <Redirect to="/admin" />} />
