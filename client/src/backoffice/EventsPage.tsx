@@ -18,7 +18,7 @@ import { Loading } from '../components/Loading';
 import FilterButton from '../components/FilterButton';
 
 // constants
-import { ROLES, ROUTES } from '../lib/constants';
+import { ROUTES } from '../lib/constants';
 
 // assets
 import { ReactComponent as EditIcon } from '../images/edit.svg';
@@ -26,14 +26,7 @@ import { ReactComponent as EditIcon } from '../images/edit.svg';
 /* Helpers */
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
-import {
-  getEventsForSpecificUser,
-  PoapEvent,
-  getEvent,
-  getEvents,
-  updateEvent,
-  createEvent,
-} from '../api';
+import { PoapEvent, getEvent, getEvents, updateEvent, createEvent } from '../api';
 
 const PAGE_SIZE = 10;
 
@@ -363,12 +356,7 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
 export const EventList: React.FC = () => {
   const [criteria, setCriteria] = useState<string>('');
 
-  const userRole = authClient.getRole();
-  const isAdmin = userRole === ROLES.administrator;
-
-  const [events, fetchingEvents, fetchEventsError] = useAsync(
-    isAdmin ? getEvents : getEventsForSpecificUser
-  );
+  const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { value } = e.target;
@@ -399,6 +387,8 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
   const [total, setTotal] = useState<number>(events.length);
   const [page, setPage] = useState<number>(0);
 
+  const isAdmin = authClient.isAuthenticated();
+
   useEffect(() => {
     setEvents(initialEvents.filter(handleCriteriaFilter));
   }, [criteria]); /* eslint-disable-line react-hooks/exhaustive-deps */
@@ -423,16 +413,18 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
   const handleCriteriaFilter = (event: PoapEvent): boolean =>
     event.name.toLowerCase().includes(criteria);
 
+  const nameColumnLength = isAdmin ? 4 : 5;
+
   return (
     <div>
       <div className={'admin-table transactions'}>
         <div className={'row table-header visible-md'}>
           <div className={'col-md-1 center'}>#</div>
-          <div className={'col-md-4'}>Name</div>
+          <div className={`col-md-${nameColumnLength}`}>Name</div>
           <div className={'col-md-2 center'}>Start Date</div>
           <div className={'col-md-2 center'}>End Date</div>
           <div className={'col-md-2 center'}>Image</div>
-          <div className={'col-md-1 center'}>Edit</div>
+          {isAdmin && <div className={'col-md-1 center'}>Edit</div>}
         </div>
         <div className={'admin-table-row'}>
           {eventsToShowManager(events).map((event, i) => (
@@ -441,7 +433,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
                 <span className={'visible-sm visible-md'}>#</span>
                 {event.id}
               </div>
-              <div className={'col-md-4'}>
+              <div className={`col-md-${nameColumnLength}`}>
                 <span className={'visible-sm'}>Name: </span>
                 <a href={event.event_url} target="_blank" rel="noopener noreferrer">
                   {event.name}
@@ -458,11 +450,13 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
               <div className={'col-md-2 center logo-image-container'}>
                 <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
               </div>
-              <div className={'col-md-1 center event-edit-icon-container'}>
-                <Link to={`/admin/events/${event.fancy_id}`}>
-                  <EditIcon />
-                </Link>
-              </div>
+              {isAdmin && (
+                <div className={'col-md-1 center event-edit-icon-container'}>
+                  <Link to={`/admin/events/${event.fancy_id}`}>
+                    <EditIcon />
+                  </Link>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -197,13 +197,9 @@ export function getTokenInfo(tokenId: string): Promise<TokenInfo> {
 }
 
 export async function getEvents(): Promise<PoapEvent[]> {
-  return fetchJson(`${API_BASE}/events`);
-}
-
-export async function getEventsForSpecificUser(): Promise<PoapEvent[]> {
-  const user = await authClient.user;
-  const userId = user.sub;
-  return fetchJson(`${API_BASE}/events?user_id=${userId}`);
+  return authClient.isAuthenticated()
+    ? secureFetch(`${API_BASE}/events`)
+    : fetchJson(`${API_BASE}/events`);
 }
 
 export async function getEvent(fancyId: string): Promise<null | PoapEvent> {

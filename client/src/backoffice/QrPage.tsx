@@ -15,7 +15,6 @@ import FilterChip from '../components/FilterChip';
 /* Helpers */
 import {
   getQrCodes,
-  getEventsForSpecificUser,
   PoapEvent,
   getEvents,
   qrCodesRangeAssign,
@@ -90,7 +89,7 @@ const QrPage: FC = () => {
   const cleanQrSelection = () => setSelectedQrs([]);
 
   const fetchEvents = async () => {
-    const events = isAdmin ? await getEvents() : await getEventsForSpecificUser();
+    const events = await getEvents();
     setEvents(events);
   };
 
