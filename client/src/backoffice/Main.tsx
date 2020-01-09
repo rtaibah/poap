@@ -65,7 +65,7 @@ export const withAuthentication = <T extends Object>(
   return (props: T) => {
     const isAuthenticated = authClient.isAuthenticated();
 
-    if (!isAuthenticated) return null;
+    if (!isAuthenticated) return <Redirect to="/admin" />;
 
     return <WrappedComponent {...props} />;
   };
