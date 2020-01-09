@@ -347,7 +347,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   const [isSelectionActive, setIsSelectionActive] = useState<boolean>(false);
   const [isRangeActive, setIsRangeActive] = useState<boolean>(false);
   const [isListActive, setIsListActive] = useState<boolean>(false);
-  const [selectedEvent, setSelectedEvent] = useState<number>(0);
+  const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
   const [incorrectQrHashes, setIncorrectQrHashes] = useState<string[]>([]);
   const [isSendingHashList, setIsSendingHashList] = useState<boolean>(false);
   const [qrHashList, setQrHashList] = useState<string[]>([]);
@@ -363,14 +363,14 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    if (isSendingHashList && selectedEvent && !hasIncorrectHashes) {
+    if (isSendingHashList && !hasIncorrectHashes) {
       assignHashList();
     }
     setIsSendingHashList(false);
   }, [hasIncorrectHashes, isSendingHashList, selectedEvent]);
 
   const assignHashList = () => {
-    if (isListActive && selectedEvent) {
+    if (isListActive) {
       if (!hasIncorrectHashes) {
         qrCodesListAssign(qrHashList, selectedEvent)
           .then(res => {
@@ -479,7 +479,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
         );
     }
 
-    if (isListActive && _event) {
+    if (isListActive) {
       setIsSendingHashList(true);
       setSelectedEvent(_event);
     }
@@ -622,7 +622,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                       placeholder="List of QRs"
                       className="modal-textarea"
                     />
-                    {hasIncorrectHashes && (
+                    {isListActive && hasIncorrectHashes && (
                       <span>
                         The following codes are not valid, please fix them or remove them to submit
                         again: {`${incorrectQrHashes.join(', ')}`}
@@ -660,12 +660,8 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                   }
                 />
                 <div className="modal-action-buttons-container">
-                  <FilterButton text="Cancel" handleClick={handleUpdateModalClosing}>
-                    Cancel
-                  </FilterButton>
-                  <FilterButton text="Confirm update" handleClick={handleFormSubmitClick}>
-                    Update
-                  </FilterButton>
+                  <FilterButton text="Cancel" handleClick={handleUpdateModalClosing} />
+                  <FilterButton text="Confirm update" handleClick={handleFormSubmitClick} />
                 </div>
               </div>
             </div>

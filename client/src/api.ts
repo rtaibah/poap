@@ -410,8 +410,9 @@ export async function qrCodesRangeAssign(
 
 export async function qrCodesListAssign(
   qrHashes: string[],
-  eventId: number
+  eventId: number | null
 ): Promise<QrCodesListAssignResponse> {
+  console.log(eventId);
   return secureFetch(`${API_BASE}/qr-code/list-assign`, {
     method: 'PUT',
     body: JSON.stringify({
