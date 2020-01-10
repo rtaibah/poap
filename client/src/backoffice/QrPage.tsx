@@ -1,5 +1,6 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useToasts } from 'react-toast-notifications';
+import { isAfter } from 'date-fns';
 
 /* Libraries */
 import ReactPaginate from 'react-paginate';
@@ -59,7 +60,6 @@ const QrPage: FC = () => {
   const [initialFetch, setInitialFetch] = useState<boolean>(true);
   const [passphrase, setPassphrase] = useState<string>('');
   const [passphraseError, setPassphraseError] = useState<boolean>(false);
-  const [isPassphraseValid, setIsPassphraseValid] = useState<boolean>(false);
   const [isAuthenticationModalOpen, setIsAuthenticationModalOpen] = useState<boolean>(true);
 
   const { addToast } = useToasts();
@@ -80,12 +80,6 @@ const QrPage: FC = () => {
     if (passphrase) fetchQrCodes();
   }, [passphrase]);
 
-  // PRESENTATIONAL
-  // useEffect(() => {
-  //   console.log(isPassphraseValid);
-  //   console.log(isAdmin || !isPassphraseValid);
-  // }, [isPassphraseValid]);
-
   useEffect(() => {
     if (!initialFetch) {
       cleanQrSelection();
@@ -102,7 +96,12 @@ const QrPage: FC = () => {
 
   const fetchEvents = async () => {
     const events = await getEvents();
-    setEvents(events);
+
+    if (isAdmin) setEvents(events);
+
+    const eventsForCommunity = events.filter(event => !event.from_admin);
+
+    setEvents(eventsForCommunity);
   };
 
   const fetchQrCodes = async () => {
@@ -128,7 +127,6 @@ const QrPage: FC = () => {
       );
       setQrCodes(response.qr_claims);
       setTotal(response.total);
-      setIsPassphraseValid(true);
       setIsAuthenticationModalOpen(false);
     } catch (e) {
       addToast(e.message, {
@@ -716,16 +714,24 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
               >
                 <option value="">{resolveSelectText()}</option>
                 {events &&
-                  events.map(event => {
-                    const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
-                      event.year
-                    }`;
-                    return (
-                      <option key={event.id} value={event.id}>
-                        {label}
-                      </option>
-                    );
-                  })}
+                  events
+                    .filter(event => {
+                      if (!isAdmin) {
+                        const todayDate = new Date();
+                        const eventDate = new Date(event.start_date);
+                        return isAfter(eventDate, todayDate);
+                      }
+                    })
+                    .map(event => {
+                      const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
+                        event.year
+                      }`;
+                      return (
+                        <option key={event.id} value={event.id}>
+                          {label}
+                        </option>
+                      );
+                    })}
               </select>
               <div className="modal-buttons-container">
                 <FilterChip
