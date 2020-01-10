@@ -22,6 +22,12 @@ export async function getEvents(): Promise<PoapEvent[]> {
   return res.map(replaceDates);
 }
 
+export async function getPublicEvents(): Promise<PoapEvent[]> {
+  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events WHERE from_admin = false ORDER BY start_date DESC');
+
+  return res.map(replaceDates);
+}
+
 export async function getUserEvents(event_host_id: number): Promise<PoapEvent[]> {
   const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events WHERE event_host_id  = $1 ORDER BY start_date DESC', [event_host_id]);
 
@@ -348,6 +354,11 @@ export async function createNotification(data: any): Promise<null | Notification
 
 export async function getEventHost(userId: string): Promise<null | eventHost> {
   const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE user_id=${userId} AND is_active = true', {userId});
+  return res;
+}
+
+export async function getEventHostByPassphrase(passphrase: string): Promise<null | eventHost> {
+  const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE passphrase=${passphrase} AND is_active = true', {passphrase});
   return res;
 }
 

@@ -9,6 +9,7 @@ import Ajv from 'ajv';
 import fastifyCompress from 'fastify-compress';
 
 import authPlugin from './plugins/auth-decorator';
+import optionalAuthPlugin from './plugins/optional-auth-decorator';
 import groupsPlugin from './plugins/groups-decorator';
 import routes from './routes';
 import transactionsMonitorCron  from './plugins/tx-monitor';
@@ -80,6 +81,7 @@ fastify.register(fastifySwagger, {
 })
 
 fastify.register(authPlugin);
+fastify.register(optionalAuthPlugin);
 fastify.register(groupsPlugin);
 fastify.register(routes);
 fastify.register(transactionsMonitorCron);

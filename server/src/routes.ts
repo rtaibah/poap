@@ -26,21 +26,20 @@ import {
   getTotalNotifications,
   createNotification,
   getEventHost,
-  getUserEvents,
   getRangeClaimedQr,
   updateEventOnQrRange,
   getEventHostQrRolls,
   getRangeNotOwnedQr,
-  // getQrRoll,
   getTotalQrClaims,
   getPaginatedQrClaims,
-  // getQrRolls,
   getClaimedQrsList,
   getNotOwnedQrList,
   updateQrClaims,
   updateQrScanned,
   getClaimedQrsHashList,
-  updateQrClaimsHashes
+  updateQrClaimsHashes,
+  getPublicEvents,
+  getEventHostByPassphrase
 } from './db';
 
 import {
@@ -904,6 +903,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/events',
     {
+      preValidation: [fastify.optionalAuthenticate, ],
       schema: {
         description: 'Endpoint to get all events',
         tags: ['Events', ],
@@ -927,24 +927,28 @@ export default async function routes(fastify: FastifyInstance) {
                 year: { type: 'number' },
                 start_date: { type: 'string' },
                 end_date: { type: 'string' },
-                created_date: { type: 'string' }
+                created_date: { type: 'string' },
+                from_admin: { type: 'boolean' },
               },
             }
           }
         }
       },
     },
-    async (req, res) => {
+    async (req: any, res) => {
       let events = []
-      const user_id = req.query.user_id || null;
-      if(user_id) {
-        const eventHost = await getEventHost(user_id);
-        if (!eventHost) {
-          return new createError.NotFound('You are not registered as an event host');
+      let is_admin = false;
+
+      if (req.user && req.user.hasOwnProperty('sub')) {
+        if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
+          is_admin = true
         }
-        events = await getUserEvents(eventHost.id);
-      } else {
+      }
+
+      if(is_admin) {
         events = await getEvents();
+      } else {
+        events = await getPublicEvents();
       }
 
       return events;
@@ -975,7 +979,8 @@ export default async function routes(fastify: FastifyInstance) {
               year: { type: 'number' },
               start_date: { type: 'string' },
               end_date: { type: 'string' },
-              created_date: { type: 'string' }
+              created_date: { type: 'string' },
+              from_admin: { type: 'boolean' }
             },
           }
         }
@@ -999,7 +1004,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/events',
     {
-      preValidation: [fastify.authenticate, validate_file],
+      preValidation: [fastify.optionalAuthenticate, validate_file, ],
       schema: {
         description: 'Endpoint to create new events',
         tags: ['Events', ],
@@ -1044,6 +1049,7 @@ export default async function routes(fastify: FastifyInstance) {
               event_url: { type: 'string' },
               image_url: { type: 'string' },
               event_host_id: { type: 'number' },
+              from_admin: { type: 'boolean' }
             },
           }
         },
@@ -1056,14 +1062,17 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req:any, res) => {
       const parsed_fancy_id = req.body.name.trim().replace(/\s+/g, '-').toLowerCase() + '-' + req.body.year;
+      let eventHost = null;
+      let is_admin:boolean = false;
 
-      const user_id = req.user.sub;
-      const eventHost = await getEventHost(user_id);
+      if (req.user && req.user.hasOwnProperty('sub')) {
+        const user_id = req.user.sub;
+        eventHost = await getEventHost(user_id);
 
-      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
-        if (!eventHost) {
-          return new createError.NotFound('You are not registered as an event host');
+        if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
+          is_admin = true
         }
+
       }
 
       const image = req.body[Symbol.for('image')][0];
@@ -1097,7 +1106,8 @@ export default async function routes(fastify: FastifyInstance) {
         year: req.body.year,
         event_url: req.body.event_url,
         image_url: google_image_url,
-        event_host_id: eventHost ? eventHost.id : null
+        event_host_id: eventHost ? eventHost.id : null,
+        from_admin: is_admin
       }
 
       const event = await createEvent(newEvent);
@@ -1111,7 +1121,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/events/:fancyid',
     {
-      preValidation: [fastify.authenticate, validate_file],
+      preValidation: [fastify.authenticate, fastify.isAdmin, validate_file],
       schema: {
         description: 'Endpoint to modify several attributes of selected event',
         tags: ['Events', ],
@@ -1649,7 +1659,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/qr-code',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.optionalAuthenticate],
       schema: {
         description: 'List paginated qr codes, you can filter by event_id, qr_roll_id, claimed',
         tags: ['Qr-claims', ],
@@ -1660,6 +1670,7 @@ export default async function routes(fastify: FastifyInstance) {
           qr_roll_id: { type: 'number' },
           claimed: { type: 'string' },
           scanned: { type: 'string' },
+          passphrase: { type: 'string' },
         },
       },
     },
@@ -1669,12 +1680,20 @@ export default async function routes(fastify: FastifyInstance) {
       const eventId = req.query.event_id || null;
       const claimed = req.query.claimed || null;
       const scanned = req.query.scanned || null;
+      const passphrase = req.query.passphrase || null;
+
       let qrRollId = req.query.qr_roll_id || null;
 
-      const user_id = req.user.sub;
+      if (req.user && req.user.hasOwnProperty('sub')) {
+        if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
+          return new createError.BadRequest('you are not an administrator');
+        }
+      } else {
+        if(!passphrase) {
+          return new createError.BadRequest('you need to send a passphrase');
+        }
 
-      if(getUserRoles(req.user).indexOf(UserRole.administrator) === -1){
-        const eventHost = await getEventHost(user_id);
+        const eventHost = await getEventHostByPassphrase(passphrase);
         if (!eventHost) {
           return new createError.NotFound('You are not registered as an event host');
         }
@@ -1727,7 +1746,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/qr-code/range-assign',
     {
-      preValidation: [fastify.authenticate, ],
+      preValidation: [fastify.optionalAuthenticate, ],
       schema: {
         description: 'Endpoint to assign event to several QR codes from a range of numeric_id',
         tags: ['Qr-claims', ],
@@ -1738,6 +1757,7 @@ export default async function routes(fastify: FastifyInstance) {
             numeric_id_min: { type: 'number' },
             numeric_id_max: { type: 'number' },
             event_id: { type: 'number' },
+            passphrase: { type: 'string' },
           },
         },
         response: {
@@ -1754,6 +1774,9 @@ export default async function routes(fastify: FastifyInstance) {
       const numericIdMin = parseInt(req.body.numeric_id_min);
       const numericIdMax = parseInt(req.body.numeric_id_max);
       let eventId = req.body.event_id || null;
+      const passphrase = req.body.passphrase || null;
+      let eventHost = null;
+      let is_admin:boolean = false;
 
       // Check range submitted
       if (numericIdMin >= numericIdMax) {
@@ -1763,11 +1786,22 @@ export default async function routes(fastify: FastifyInstance) {
       if (numericIdMin <= 0 || numericIdMax <= 0) {
         return new createError.BadRequest('Range numbers must be greater than 0');
       }
+      
+      if (req.user && req.user.hasOwnProperty('sub')) {
+        if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
+          return new createError.BadRequest('you are not an administrator');
+        }
+        const user_id = req.user.sub;
+        eventHost = await getEventHost(user_id);
+        is_admin = true;
 
-      // Check if user is an event host
-      const user_id = req.user.sub;
-      const eventHost = await getEventHost(user_id);
-      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
+      } else {
+        if(!passphrase) {
+          return new createError.BadRequest('you need to send a passphrase');
+        }
+
+        eventHost = await getEventHostByPassphrase(passphrase);
+
         if (!eventHost) {
           return new createError.NotFound('You are not registered as an event host');
         }
@@ -1783,6 +1817,7 @@ export default async function routes(fastify: FastifyInstance) {
         if (notOwnedQrs && notOwnedQrs[0]) {
           return new createError.BadRequest('You can not edit codes that were not assigned to your user');
         }
+
       }
 
       // Check if event exists
@@ -1794,7 +1829,7 @@ export default async function routes(fastify: FastifyInstance) {
         }
 
         // Is user is host, check if the event was created by the user
-        if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1 && eventHost) {
+        if (!is_admin && eventHost) {
           if(event.event_host_id !== eventHost.id) {
             return new createError.BadRequest('You can not assign an event that was created by another user');
           }
@@ -1821,7 +1856,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/qr-code/list-assign',
     {
-      preValidation: [fastify.authenticate, ],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to assign event to several qr from a range of numeric_id',
         tags: ['Qr-claims', ],
@@ -1846,11 +1881,6 @@ export default async function routes(fastify: FastifyInstance) {
     async (req: any, res) => {
       const qrCodeHashes:string[] = req.body.qr_code_hashes;
       let eventId = req.body.event_id || null;
-
-      // Check if user is an event host
-      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
-        return new createError.BadRequest('You are not an administrator');
-      }
 
       // Check if event exists
       if (eventId) {
@@ -1884,7 +1914,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/qr-code/update',
     {
-      preValidation: [fastify.authenticate, ],
+      preValidation: [fastify.optionalAuthenticate, ],
       schema: {
         description: 'Endpoint to assign event to several qr from a range of numeric_id',
         tags: ['Qr-claims', ],
@@ -1894,6 +1924,7 @@ export default async function routes(fastify: FastifyInstance) {
           properties: {
             event_ids: { type: 'array', items: { type: 'number' }},
             event_id: { type: 'number' },
+            passphrase: { type: 'string' },
           },
         },
         response: {
@@ -1909,11 +1940,26 @@ export default async function routes(fastify: FastifyInstance) {
     async (req: any, res) => {
       const qrCodeIds:number[] = req.body.qr_code_ids;
       let eventId = req.body.event_id || null;
+      const passphrase = req.body.passphrase || null;
+      let eventHost = null;
+      let is_admin:boolean = false;
 
-      // Check if user is an event host
-      const user_id = req.user.sub;
-      const eventHost = await getEventHost(user_id);
-      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
+      if (req.user && req.user.hasOwnProperty('sub')) {
+        if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
+          return new createError.BadRequest('you are not an administrator');
+        }
+        const user_id = req.user.sub;
+        eventHost = await getEventHost(user_id);
+        is_admin = true;
+
+      } else {
+
+        if(!passphrase) {
+          return new createError.BadRequest('you need to send a passphrase');
+        }
+
+        eventHost = await getEventHostByPassphrase(passphrase);
+
         if (!eventHost) {
           return new createError.NotFound('You are not registered as an event host');
         }
@@ -1941,7 +1987,7 @@ export default async function routes(fastify: FastifyInstance) {
         }
 
         // Is user is host, check if the event was created by the user
-        if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1 && eventHost) {
+        if (!is_admin && eventHost) {
           if(event.event_host_id !== eventHost.id) {
             return new createError.BadRequest('You can not assign an event that was created by another user');
           }
