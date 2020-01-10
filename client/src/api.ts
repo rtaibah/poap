@@ -21,10 +21,10 @@ export interface PoapEvent {
   signer_ip: string;
   name: string;
   description: string;
-  creator: string;
   city: string;
   country: string;
   event_url: string;
+  from_admin: boolean;
   image_url: string;
   year: number;
   start_date: string;
@@ -378,15 +378,19 @@ export function getNotifications(
 export async function getQrCodes(
   limit: number,
   offset: number,
+  passphrase: string,
   claimed?: boolean,
   scanned?: boolean,
   event_id?: number
 ): Promise<PaginatedQrCodes> {
+  const isAdmin = authClient.isAuthenticated();
   const params = queryString.stringify(
-    { limit, offset, claimed, event_id, scanned },
+    { limit, offset, claimed, event_id, scanned, passphrase },
     { sort: false }
   );
-  return secureFetch(`${API_BASE}/qr-code?${params}`);
+  return isAdmin
+    ? secureFetch(`${API_BASE}/qr-code?${params}`)
+    : fetchJson(`${API_BASE}/qr-code?${params}`);
 }
 
 export async function qrCodesRangeAssign(

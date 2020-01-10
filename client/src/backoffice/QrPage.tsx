@@ -4,7 +4,7 @@ import { useToasts } from 'react-toast-notifications';
 /* Libraries */
 import ReactPaginate from 'react-paginate';
 import ReactModal from 'react-modal';
-import { Formik, FormikActions } from 'formik';
+import { Formik, FormikActions, Form } from 'formik';
 
 /* Components */
 import { Loading } from '../components/Loading';
@@ -56,26 +56,38 @@ const QrPage: FC = () => {
   const [events, setEvents] = useState<PoapEvent[]>([]);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
   const [selectedQrs, setSelectedQrs] = useState<string[]>([]);
-  const [initialFetch, setInitialFetch] = useState<boolean>(false);
+  const [initialFetch, setInitialFetch] = useState<boolean>(true);
+  const [passphrase, setPassphrase] = useState<string>('');
+  const [passphraseError, setPassphraseError] = useState<boolean>(false);
+  const [isPassphraseValid, setIsPassphraseValid] = useState<boolean>(false);
+  const [isAuthenticationModalOpen, setIsAuthenticationModalOpen] = useState<boolean>(true);
 
   const { addToast } = useToasts();
 
-  const isAdmin = authClient.getRole() === 'administrator';
+  const isAdmin = authClient.isAuthenticated();
 
   useEffect(() => {
     fetchEvents();
-    if (!initialFetch) {
+    setInitialFetch(false);
+
+    if (isAdmin) {
+      setIsAuthenticationModalOpen(false);
       fetchQrCodes();
-      setInitialFetch(true);
     }
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    if (initialFetch) fetchQrCodes();
-  }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
+    if (passphrase) fetchQrCodes();
+  }, [passphrase]);
+
+  // PRESENTATIONAL
+  // useEffect(() => {
+  //   console.log(isPassphraseValid);
+  //   console.log(isAdmin || !isPassphraseValid);
+  // }, [isPassphraseValid]);
 
   useEffect(() => {
-    if (initialFetch) {
+    if (!initialFetch) {
       cleanQrSelection();
       setPage(0);
       fetchQrCodes();
@@ -106,15 +118,24 @@ const QrPage: FC = () => {
     if (claimScanned) _scanned = claimScanned === 'true';
 
     try {
-      const response = await getQrCodes(PAGE_SIZE, page * PAGE_SIZE, _status, _scanned, event_id);
-      if (!response) return;
+      const response = await getQrCodes(
+        PAGE_SIZE,
+        page * PAGE_SIZE,
+        passphrase,
+        _status,
+        _scanned,
+        event_id
+      );
       setQrCodes(response.qr_claims);
       setTotal(response.total);
+      setIsPassphraseValid(true);
+      setIsAuthenticationModalOpen(false);
     } catch (e) {
       addToast(e.message, {
         appearance: 'error',
         autoDismiss: true,
       });
+      setPassphraseError(true);
     } finally {
       setIsFetchingQrCodes(false);
     }
@@ -220,6 +241,14 @@ const QrPage: FC = () => {
             events={events}
           />
         </ReactModal>
+        <ReactModal
+          isOpen={isAuthenticationModalOpen}
+          shouldFocusAfterRender={true}
+          shouldCloseOnEsc={false}
+          shouldCloseOnOverlayClick={false}
+        >
+          <AuthenticationModal setPassphrase={setPassphrase} passphraseError={passphraseError} />
+        </ReactModal>
       </div>
 
       {isFetchingQrCodes && <Loading />}
@@ -320,6 +349,55 @@ const QrPage: FC = () => {
   );
 };
 
+type AuthenticationModalProps = {
+  setPassphrase: (passphrase: string) => void;
+  passphraseError: boolean;
+};
+
+type AuthenticationModalFormikValues = {
+  passphrase: string;
+};
+
+const AuthenticationModal: React.FC<AuthenticationModalProps> = ({
+  setPassphrase,
+  passphraseError,
+}) => {
+  const handleAuthenticationModalSubmit = (values: AuthenticationModalFormikValues, props: any) => {
+    setPassphrase(values.passphrase);
+    props.resetForm();
+  };
+
+  return (
+    <Formik
+      initialValues={{
+        passphrase: '',
+      }}
+      validateOnBlur={false}
+      validateOnChange={false}
+      onSubmit={handleAuthenticationModalSubmit}
+    >
+      {({ values, handleChange }) => {
+        return (
+          <Form className="authentication_modal_container">
+            <input
+              className={passphraseError ? 'modal-input-error' : ''}
+              placeholder={
+                passphraseError ? 'The passphrase you entered is incorrect' : 'Passphrase'
+              }
+              name="passphrase"
+              value={values.passphrase}
+              onChange={handleChange}
+            />
+            <button className="filter-base filter-button" type="submit">
+              Submit passphrase
+            </button>
+          </Form>
+        );
+      }}
+    </Formik>
+  );
+};
+
 type UpdateByRangeModalProps = {
   events: PoapEvent[];
   selectedQrs: string[];
@@ -352,7 +430,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   const [qrHashList, setQrHashList] = useState<string[]>([]);
   const { addToast } = useToasts();
 
-  const isAdmin = authClient.getRole() === 'administrator';
+  const isAdmin = authClient.isAuthenticated();
 
   const hasSelectedQrs = selectedQrs.length > 0;
   const hasIncorrectHashes = incorrectQrHashes.length > 0;
