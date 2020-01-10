@@ -16,6 +16,7 @@ import ReactPaginate from 'react-paginate';
 import { SubmitButton } from '../components/SubmitButton';
 import { Loading } from '../components/Loading';
 import FilterButton from '../components/FilterButton';
+import FilterSelect from '../components/FilterSelect';
 
 // constants
 import { ROUTES } from '../lib/constants';
@@ -64,6 +65,7 @@ type PaginateAction = {
 type EventTableProps = {
   initialEvents: PoapEvent[];
   criteria: string;
+  createdBy: string;
 };
 
 type EventFieldProps = {
@@ -355,6 +357,7 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
 
 export const EventList: React.FC = () => {
   const [criteria, setCriteria] = useState<string>('');
+  const [createdBy, setCreatedBy] = useState<string>('all');
 
   const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
 
@@ -364,30 +367,51 @@ export const EventList: React.FC = () => {
     setCriteria(value.toLowerCase());
   };
 
+  const handleCreatedByChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    const { value } = e.target;
+
+    setCreatedBy(value);
+  };
+
   return (
     <div className={'bk-container'}>
       <h2>Events</h2>
       <div className="event-top-bar-container">
-        <Link to="/admin/events/new">
-          <FilterButton text="Create New" />
-        </Link>
-        <input type="text" placeholder="Search by name" onChange={handleNameChange} />
+        <div className="left_content">
+          <input type="text" placeholder="Search by name" onChange={handleNameChange} />
+          <FilterSelect handleChange={handleCreatedByChange}>
+            <option value="all">All events</option>
+            <option value="admin">Created by admin</option>
+            <option value="community">Created by community</option>
+          </FilterSelect>
+        </div>
+        <div className="right_content">
+          <Link to="/admin/events/new">
+            <FilterButton text="Create New" />
+          </Link>
+        </div>
       </div>
       {fetchingEvents && <Loading />}
 
       {fetchEventsError && <div>There was a problem fetching events</div>}
 
-      {events && <EventTable criteria={criteria} initialEvents={events} />}
+      {events && <EventTable createdBy={createdBy} criteria={criteria} initialEvents={events} />}
     </div>
   );
 };
 
-const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
+const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, createdBy }) => {
   const [events, setEvents] = useState<PoapEvent[]>(initialEvents);
   const [total, setTotal] = useState<number>(events.length);
   const [page, setPage] = useState<number>(0);
 
-  const isAdmin = authClient.isAuthenticated();
+  useEffect(() => {
+    const eventsByCreator = events.filter(event => event.creator === createdBy);
+
+    setEvents(eventsByCreator);
+
+    if (createdBy === 'all') setEvents(initialEvents);
+  }, [createdBy]);
 
   useEffect(() => {
     setEvents(initialEvents.filter(handleCriteriaFilter));
@@ -400,6 +424,8 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
   useEffect(() => {
     setPage(0);
   }, [total]);
+
+  const isAdmin = authClient.isAuthenticated();
 
   const handlePageChange = (obj: PaginateAction) => {
     setPage(obj.selected);

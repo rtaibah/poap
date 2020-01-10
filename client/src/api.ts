@@ -21,6 +21,7 @@ export interface PoapEvent {
   signer_ip: string;
   name: string;
   description: string;
+  creator: string;
   city: string;
   country: string;
   event_url: string;

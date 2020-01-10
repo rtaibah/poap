@@ -298,7 +298,7 @@
       height: 20px;
     }
 
-    &.qr-table{
+    &.qr-table {
       @media (max-width: $bp-mw) {
         .status-icon {
           position: relative !important;
@@ -308,7 +308,6 @@
         }
       }
     }
-
   }
 
   .filters-container {
@@ -653,12 +652,31 @@
   align-items: center;
   margin-bottom: 15px;
 
-  @media (min-width: $bp-l) {
-    margin-bottom: 35px;
+  .left_content,
+  .right_content {
+    > * {
+      max-width: 250px;
+    }
   }
 
-  > * {
-    max-width: 250px;
+  .left_content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+
+    input {
+      margin-right: 20px;
+      margin-bottom: 0;
+    }
+
+    select {
+      height: 53px;
+    }
+  }
+
+  @media (min-width: $bp-l) {
+    margin-bottom: 35px;
   }
 }
 
