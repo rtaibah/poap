@@ -410,7 +410,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
   const [page, setPage] = useState<number>(0);
 
   useEffect(() => {
-    const eventsByCreator = events.filter(event =>
+    const eventsByCreator = initialEvents.filter(event =>
       createdBy === 'admin' ? event.from_admin : !event.from_admin
     );
 

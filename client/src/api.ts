@@ -137,9 +137,6 @@ const API_BASE =
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
-  if (res.ok) {
-    return await res.json();
-  }
   if (!res.ok) {
     const data = await res.json();
     if (data && data.message) throw new Error(data.message);
@@ -396,17 +393,31 @@ export async function getQrCodes(
 export async function qrCodesRangeAssign(
   from: number,
   to: number,
-  eventId: number | null
+  eventId: number | null,
+  passphrase?: string
 ): Promise<void> {
-  return secureFetchNoResponse(`${API_BASE}/qr-code/range-assign`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      numeric_id_min: from,
-      numeric_id_max: to,
-      event_id: eventId,
-    }),
-    headers: { 'Content-Type': 'application/json' },
-  });
+  const isAdmin = authClient.isAuthenticated();
+
+  return isAdmin
+    ? secureFetchNoResponse(`${API_BASE}/qr-code/range-assign`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          numeric_id_min: from,
+          numeric_id_max: to,
+          event_id: eventId,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+    : fetchJson(`${API_BASE}/qr-code/range-assign`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          numeric_id_min: from,
+          numeric_id_max: to,
+          event_id: eventId,
+          passphrase,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      });
 }
 
 export async function qrCodesListAssign(
@@ -426,16 +437,29 @@ export async function qrCodesListAssign(
 
 export async function qrCodesSelectionUpdate(
   qrCodesIds: string[],
-  eventId: number | null
+  eventId: number | null,
+  passphrase?: string
 ): Promise<void> {
-  return secureFetchNoResponse(`${API_BASE}/qr-code/update`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      qr_code_ids: qrCodesIds,
-      event_id: eventId,
-    }),
-    headers: { 'Content-Type': 'application/json' },
-  });
+  const isAdmin = authClient.isAuthenticated();
+
+  return isAdmin
+    ? secureFetchNoResponse(`${API_BASE}/qr-code/update`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          qr_code_ids: qrCodesIds,
+          event_id: eventId,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+    : fetchJson(`${API_BASE}/qr-code/update`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          qr_code_ids: qrCodesIds,
+          event_id: eventId,
+          passphrase,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      });
 }
 
 export function getTransactions(

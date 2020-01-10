@@ -97,11 +97,13 @@ const QrPage: FC = () => {
   const fetchEvents = async () => {
     const events = await getEvents();
 
-    if (isAdmin) setEvents(events);
+    if (isAdmin) {
+      setEvents(events);
+    } else {
+      const eventsForCommunity = events.filter(event => !event.from_admin);
 
-    const eventsForCommunity = events.filter(event => !event.from_admin);
-
-    setEvents(eventsForCommunity);
+      setEvents(eventsForCommunity);
+    }
   };
 
   const fetchQrCodes = async () => {
@@ -236,6 +238,7 @@ const QrPage: FC = () => {
             selectedQrs={selectedQrs}
             refreshQrs={fetchQrCodes}
             onSuccessAction={cleanQrSelection}
+            passphrase={passphrase}
             events={events}
           />
         </ReactModal>
@@ -402,6 +405,7 @@ type UpdateByRangeModalProps = {
   refreshQrs: () => void;
   onSuccessAction: () => void;
   handleUpdateModalClosing: () => void;
+  passphrase: string;
 };
 
 type UpdateModalFormikValues = {
@@ -418,6 +422,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   refreshQrs,
   onSuccessAction,
   handleUpdateModalClosing,
+  passphrase,
 }) => {
   const [isSelectionActive, setIsSelectionActive] = useState<boolean>(false);
   const [isRangeActive, setIsRangeActive] = useState<boolean>(false);
@@ -516,7 +521,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
 
     if (isRangeActive) {
       if (typeof from === 'number' && typeof to === 'number') {
-        qrCodesRangeAssign(from, to, _event)
+        qrCodesRangeAssign(from, to, _event, passphrase)
           .then(_ => {
             addToast('QR codes updated correctly', {
               appearance: 'success',
@@ -536,7 +541,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     }
 
     if (isSelectionActive) {
-      qrCodesSelectionUpdate(selectedQrs, _event)
+      qrCodesSelectionUpdate(selectedQrs, _event, passphrase)
         .then(_ => {
           addToast('QR codes updated correctly', {
             appearance: 'success',
@@ -546,12 +551,13 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
           refreshQrs();
           handleUpdateModalClosing();
         })
-        .catch(e =>
+        .catch(e => {
+          console.log(e);
           addToast(e.message, {
             appearance: 'error',
             autoDismiss: true,
-          })
-        );
+          });
+        });
     }
 
     if (isListActive) {
@@ -721,6 +727,8 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                         const eventDate = new Date(event.start_date);
                         return isAfter(eventDate, todayDate);
                       }
+
+                      return event;
                     })
                     .map(event => {
                       const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
