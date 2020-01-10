@@ -373,17 +373,21 @@ export const EventList: React.FC = () => {
     setCreatedBy(value);
   };
 
+  const isAdmin = authClient.isAuthenticated();
+
   return (
     <div className={'bk-container'}>
       <h2>Events</h2>
       <div className="event-top-bar-container">
         <div className="left_content">
           <input type="text" placeholder="Search by name" onChange={handleNameChange} />
-          <FilterSelect handleChange={handleCreatedByChange}>
-            <option value="all">All events</option>
-            <option value="admin">Created by admin</option>
-            <option value="community">Created by community</option>
-          </FilterSelect>
+          {isAdmin && (
+            <FilterSelect handleChange={handleCreatedByChange}>
+              <option value="all">All events</option>
+              <option value="admin">Created by admin</option>
+              <option value="community">Created by community</option>
+            </FilterSelect>
+          )}
         </div>
         <div className="right_content">
           <Link to="/admin/events/new">
