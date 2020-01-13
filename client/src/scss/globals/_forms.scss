@@ -418,6 +418,10 @@ textarea {
   height: 50px;
   justify-content: space-between;
 
+  &.creation-modal {
+    justify-content: flex-end;
+  }
+
   button {
     min-width: 96px;
   }
@@ -498,5 +502,51 @@ textarea {
   input,
   button {
     width: 100%;
+  }
+}
+
+.creation-modal-content {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+
+  padding: 20px 0;
+
+  > div {
+    width: 50%;
+
+    &:first-of-type {
+      margin-right: 10px;
+    }
+
+    textarea {
+      border: 2px solid $color-light-grey;
+      color: $color-primary;
+
+      &::placeholder {
+        color: $color-medium-violet;
+      }
+    }
+  }
+
+  span {
+    color: $color-primary;
+  }
+}
+
+.select-container {
+  margin-bottom: 20px;
+
+  select.select {
+    border: 2px solid $color-light-grey;
+
+    &.placeholder-option {
+      color: $color-medium-violet;
+    }
+  }
+
+  span {
+    color: $color-primary;
   }
 }

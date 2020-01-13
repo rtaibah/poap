@@ -22,6 +22,7 @@ import {
   qrCodesSelectionUpdate,
   QrCode,
   qrCodesListAssign,
+  qrCreateMassive,
 } from '../api';
 
 // lib
@@ -46,6 +47,47 @@ type PaginateAction = {
   selected: number;
 };
 
+// update modal types
+type UpdateByRangeModalProps = {
+  events: PoapEvent[];
+  selectedQrs: string[];
+  refreshQrs: () => void;
+  onSuccessAction: () => void;
+  handleUpdateModalClosing: () => void;
+  passphrase: string;
+};
+
+type UpdateModalFormikValues = {
+  from: number | string;
+  to: number | string;
+  event: number;
+  hashesList: string;
+  isUnassigning: boolean;
+};
+
+// authentication modal types
+type AuthenticationModalProps = {
+  setPassphrase: (passphrase: string) => void;
+  passphraseError: boolean;
+};
+
+type AuthenticationModalFormikValues = {
+  passphrase: string;
+};
+
+// creation modal types
+type CreationModalProps = {
+  handleCreationModalRequestClose: () => void;
+  refreshQrs: () => void;
+  events: PoapEvent[];
+};
+
+type CreationModalFormikValues = {
+  qrIds: string;
+  qrHashes: string;
+  event: string;
+};
+
 const QrPage: FC = () => {
   const [page, setPage] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
@@ -61,6 +103,7 @@ const QrPage: FC = () => {
   const [passphrase, setPassphrase] = useState<string>('');
   const [passphraseError, setPassphraseError] = useState<boolean>(false);
   const [isAuthenticationModalOpen, setIsAuthenticationModalOpen] = useState<boolean>(true);
+  const [isCreationModalOpen, setIsCreationModalOpen] = useState<boolean>(false);
 
   const { addToast } = useToasts();
 
@@ -174,7 +217,11 @@ const QrPage: FC = () => {
 
   const handleUpdateModalClick = (): void => setIsUpdateModalOpen(true);
 
+  const handleCreationModalClick = (): void => setIsCreationModalOpen(true);
+
   const handleUpdateModalRequestClose = (): void => setIsUpdateModalOpen(false);
+
+  const handleCreationModalRequestClose = (): void => setIsCreationModalOpen(false);
 
   return (
     <div className={'admin-table qr'}>
@@ -222,9 +269,15 @@ const QrPage: FC = () => {
           </div>
         </div>
 
-        <div className={'action-button-container col-md-5'}>
+        <div className={`action-button-container col-md-${isAdmin ? 2 : 5}`}>
           <FilterButton text="Update" handleClick={handleUpdateModalClick} />
         </div>
+
+        {isAdmin && (
+          <div className={'action-button-container col-md-2'}>
+            <FilterButton text="Create" handleClick={handleCreationModalClick} />
+          </div>
+        )}
 
         <ReactModal
           isOpen={isUpdateModalOpen}
@@ -249,6 +302,19 @@ const QrPage: FC = () => {
           shouldCloseOnOverlayClick={false}
         >
           <AuthenticationModal setPassphrase={setPassphrase} passphraseError={passphraseError} />
+        </ReactModal>
+        <ReactModal
+          isOpen={isCreationModalOpen}
+          onRequestClose={handleCreationModalRequestClose}
+          shouldFocusAfterRender={true}
+          shouldCloseOnEsc={true}
+          shouldCloseOnOverlayClick={true}
+        >
+          <CreationModal
+            events={events}
+            refreshQrs={fetchQrCodes}
+            handleCreationModalRequestClose={handleCreationModalRequestClose}
+          />
         </ReactModal>
       </div>
 
@@ -350,13 +416,170 @@ const QrPage: FC = () => {
   );
 };
 
-type AuthenticationModalProps = {
-  setPassphrase: (passphrase: string) => void;
-  passphraseError: boolean;
-};
+const CreationModal: React.FC<CreationModalProps> = ({
+  handleCreationModalRequestClose,
+  refreshQrs,
+  events,
+}) => {
+  const [incorrectQrHashes, setIncorrectQrHashes] = useState<string[]>([]);
+  const [incorrectQrIds, setIncorrectQrIds] = useState<string[]>([]);
+  const [qrIds, setQrsIds] = useState<string[]>([]);
+  const [qrHashes, setQrsHashes] = useState<string[]>([]);
 
-type AuthenticationModalFormikValues = {
-  passphrase: string;
+  const { addToast } = useToasts();
+
+  const hasSameQrsQuantity = qrHashes.length === qrIds.length;
+  const hasNoIncorrectQrs = incorrectQrHashes.length < 1 && incorrectQrIds.length < 1;
+
+  const handleCreationModalSubmit = (values: CreationModalFormikValues) => {
+    const { qrHashes, qrIds, event } = values;
+
+    const hashRegex = /^[a-zA-Z0-9]{6}$/;
+    const idRegex = /^[0-9]{6}$/;
+
+    const _incorrectQrHashes: string[] = [];
+    const _incorrectQrIds: string[] = [];
+
+    const _hasSameQrsQuantity = qrHashes.length === qrIds.length;
+    const _hasNoIncorrectQrs = incorrectQrHashes.length < 1 && incorrectQrIds.length < 1;
+    const _hasNoIds = qrHashes.length > 1 && qrIds.length < 1;
+
+    const qrHashesFormatted = qrHashes
+      .trim()
+      .split('\n')
+      .map(hash => hash.trim())
+      .filter(hash => {
+        if (!hash.match(hashRegex)) _incorrectQrHashes.push(hash);
+
+        return hash.match(hashRegex);
+      });
+
+    const qrIdsFormatted = qrIds
+      .trim()
+      .split('\n')
+      .map(id => id.trim())
+      .filter(id => {
+        if (!id.match(idRegex)) _incorrectQrIds.push(id);
+
+        return id.match(idRegex);
+      });
+
+    setQrsHashes(qrHashesFormatted);
+    setQrsIds(qrIdsFormatted);
+    setIncorrectQrHashes(_incorrectQrHashes);
+    setIncorrectQrIds(_incorrectQrIds);
+
+    if ((_hasSameQrsQuantity || _hasNoIds) && _hasNoIncorrectQrs) {
+      qrCreateMassive(qrHashesFormatted, qrIdsFormatted, event)
+        .then(_ => {
+          addToast('QR codes updated correctly', {
+            appearance: 'success',
+            autoDismiss: true,
+          });
+          refreshQrs();
+          handleCreationModalClosing();
+        })
+        .catch(e => {
+          console.log(e);
+          addToast(e.message, {
+            appearance: 'error',
+            autoDismiss: true,
+          });
+        });
+    }
+  };
+
+  const handleCreationModalClosing = () => handleCreationModalRequestClose();
+
+  return (
+    <Formik
+      initialValues={{
+        qrHashes: '',
+        qrIds: '',
+        event: '',
+      }}
+      validateOnBlur={false}
+      validateOnChange={false}
+      onSubmit={handleCreationModalSubmit}
+    >
+      {({ values, handleChange, handleSubmit }) => {
+        const isEventPlaceholder = !Boolean(values.event);
+
+        return (
+          <div className={'update-modal-container'}>
+            <div className={'modal-top-bar'}>
+              <h3>QR Create</h3>
+            </div>
+            <div className="creation-modal-content">
+              <div>
+                <textarea
+                  className="modal-textarea"
+                  name="qrHashes"
+                  value={values.qrHashes}
+                  onChange={handleChange}
+                  placeholder="QRs hashes list"
+                />
+                {incorrectQrHashes.length > 0 && (
+                  <span>
+                    The following hashes are not valid, please fix them or remove them to submit
+                    again: {`${incorrectQrHashes.join(', ')}`}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <textarea
+                  className="modal-textarea"
+                  value={values.qrIds}
+                  name="qrIds"
+                  onChange={handleChange}
+                  placeholder="QRs IDs list"
+                />
+                {incorrectQrIds.length > 0 && (
+                  <span>
+                    The following IDs are not valid, please fix them or remove them to submit again:{' '}
+                    {`${incorrectQrIds.join(', ')}`}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="select-container">
+              <select
+                value={values.event}
+                onChange={handleChange}
+                name="event"
+                className={`select ${isEventPlaceholder ? 'placeholder-option' : ''}`}
+              >
+                <option value="">Select an event</option>
+                {events &&
+                  events.map((event: PoapEvent) => {
+                    const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
+                      event.year
+                    }`;
+                    return (
+                      <option key={event.id} value={event.id}>
+                        {label}
+                      </option>
+                    );
+                  })}
+              </select>
+              {!hasSameQrsQuantity && hasNoIncorrectQrs && (
+                <span>Quantity of IDs and hashes must match</span>
+              )}
+            </div>
+            <div className="modal-content">
+              <div className="modal-buttons-container creation-modal">
+                <div className="modal-action-buttons-container">
+                  <FilterButton text="Cancel" handleClick={handleCreationModalClosing} />
+                  <FilterButton text="Create" handleClick={handleSubmit} />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }}
+    </Formik>
+  );
 };
 
 const AuthenticationModal: React.FC<AuthenticationModalProps> = ({
@@ -397,23 +620,6 @@ const AuthenticationModal: React.FC<AuthenticationModalProps> = ({
       }}
     </Formik>
   );
-};
-
-type UpdateByRangeModalProps = {
-  events: PoapEvent[];
-  selectedQrs: string[];
-  refreshQrs: () => void;
-  onSuccessAction: () => void;
-  handleUpdateModalClosing: () => void;
-  passphrase: string;
-};
-
-type UpdateModalFormikValues = {
-  from: number | string;
-  to: number | string;
-  event: number;
-  hashesList: string;
-  isUnassigning: boolean;
 };
 
 const UpdateModal: React.FC<UpdateByRangeModalProps> = ({

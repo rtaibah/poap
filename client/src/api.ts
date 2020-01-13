@@ -443,6 +443,27 @@ export async function qrCodesListAssign(
   });
 }
 
+export async function qrCreateMassive(
+  qrHashes: string[],
+  qrIds: string[],
+  event?: string
+): Promise<void> {
+  let unstringifiedBody = {
+    qr_list: qrHashes,
+    numeric_list: qrIds,
+  };
+
+  if (Number(event) !== 0) Object.assign(unstringifiedBody, { event_id: Number(event) });
+
+  const body = JSON.stringify(unstringifiedBody);
+
+  return secureFetchNoResponse(`${API_BASE}/qr-code/list-create`, {
+    method: 'POST',
+    body,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 export async function qrCodesSelectionUpdate(
   qrCodesIds: string[],
   eventId: number | null,
