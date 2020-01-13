@@ -39,7 +39,10 @@ import {
   getClaimedQrsHashList,
   updateQrClaimsHashes,
   getPublicEvents,
-  getEventHostByPassphrase
+  getEventHostByPassphrase,
+  createQrClaims,
+  checkNumericIdExists,
+  checkQrHashExists
 } from './db';
 
 import {
@@ -1858,7 +1861,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
-        description: 'Endpoint to assign event to several qr from a range of numeric_id',
+        description: 'Endpoint to assign event to several qr from a list of QR hashes',
         tags: ['Qr-claims', ],
         body: {
           type: 'object',
@@ -1911,12 +1914,108 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  fastify.post(
+    '/qr-code/list-create',
+    {
+      preValidation: [fastify.authenticate, fastify.isAdmin],
+      schema: {
+        description: 'Endpoint to create qr hashes and assign event to them',
+        tags: ['Qr-claims', ],
+        body: {
+          type: 'object',
+          required: ['qr_list', ],
+          properties: {
+            qr_list: { type: 'array', items: { type: 'string' }},
+            numeric_list: { type: 'array', items: { type: 'number' }},
+            event_id: { type: 'number' },
+          },
+        },
+        response: {
+          204: { type: 'string'},
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req: any, res) => {
+      const qrCodeHashes:string[] = req.body.qr_list;
+      const numericList:number[] = req.body.numeric_list;
+      let eventId = req.body.event_id || null;
+      let hashesToAdd: any[] = [];
+      let existingClaimedQrs:string[] = [];
+      let existingNumericIds:number[] = [];
+
+      if(numericList && qrCodeHashes.length != numericList.length) {
+        return new createError.BadRequest('qr_code_hashes list lenght is not equal to numeric_list list lenght');
+      }
+
+      const checkDuplicatedQrs = qrCodeHashes.filter((item, index) => qrCodeHashes.indexOf(item) != index)
+      const checkDuplicatedNumericIds = numericList ? numericList.filter((item, index) => numericList.indexOf(item) != index) : ""
+
+      if(checkDuplicatedQrs.length > 0) {
+        return new createError.BadRequest('qr_list has duplicated hashes, please fix this and send again: [' + checkDuplicatedQrs + ',]');
+      }
+      
+      if(checkDuplicatedNumericIds.length > 0) {
+        return new createError.BadRequest('numeric_list has duplicated ids, please fix this and send again: [' + checkDuplicatedNumericIds + ',]');
+      }
+
+      // Check if event exists
+      if (eventId) {
+        eventId = parseInt(eventId);
+        const event = await getEvent(eventId);
+        if (!event) {
+          return new createError.BadRequest('Event not found');
+        }
+      }
+
+      for (var i = 0; i < qrCodeHashes.length; i++) {
+        let qr_hash = qrCodeHashes[i];
+        const qrHashExists = await checkQrHashExists(qr_hash);
+        if (qrHashExists) {
+          existingClaimedQrs.push(qr_hash);
+          continue;
+        }
+
+        let numeric_id = null;
+        if(numericList) {
+          numeric_id = numericList[i];
+          
+          const checkNumericId = await checkNumericIdExists(numeric_id);
+          if (checkNumericId) {
+            existingNumericIds.push(numeric_id);
+            continue;
+          }
+        }
+
+        hashesToAdd.push(
+          {
+            event_id: eventId,
+            qr_hash: qr_hash,
+            numeric_id: numeric_id
+          }
+        )
+      }
+
+      const createdClaims = await createQrClaims(hashesToAdd);
+
+      return {
+        createdQrs: createdClaims.length,
+        existingClaimedQrs: existingClaimedQrs,
+        existingNumericIds: existingNumericIds,
+      };
+    }
+  );
+
   fastify.put(
     '/qr-code/update',
     {
       preValidation: [fastify.optionalAuthenticate, ],
       schema: {
-        description: 'Endpoint to assign event to several qr from a range of numeric_id',
+        description: 'Endpoint to assign event to several qr from a list of id',
         tags: ['Qr-claims', ],
         body: {
           type: 'object',

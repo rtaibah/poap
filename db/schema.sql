@@ -13,6 +13,7 @@ CREATE TABLE events (
   "start_date" date not null,
   "end_date" date not null,
   "event_host_id" integer,
+  "from_admin" boolean default false,
   "created_date" timestamp with time zone not null default now()
 );
 
@@ -57,7 +58,7 @@ CREATE TABLE qr_claims (
   "claimed_date" timestamp with time zone,
   "created_date" timestamp with time zone not null default now(),
   "qr_roll_id": integer,
-  "numeric_id": integer,
+  "numeric_id": integer UNIQUE,
   "is_active" boolean default true
 );
 
@@ -97,7 +98,8 @@ CREATE TABLE notifications (
 CREATE TABLE event_host (
     "id" SERIAL PRIMARY KEY,
     "user_id" varchar(256) UNIQUE,
-    "is_active" boolean default true
+    "is_active" boolean default true,
+    "passphrase" varchar(256) UNIQUE
 )
 
 CREATE TABLE qr_roll (

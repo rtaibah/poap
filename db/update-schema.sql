@@ -115,3 +115,6 @@ ADD COLUMN qr_roll_id INTEGER NULL,
 ADD COLUMN numeric_id INTEGER NULL;
 
 ALTER TABLE qr_claims ADD COLUMN scanned BOOLEAN DEFAULT false;
+
+create unique index qr_claims_numeric_id_uindex
+	on qr_claims (numeric_id);
