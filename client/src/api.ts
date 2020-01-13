@@ -145,6 +145,14 @@ async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> 
   return await res.json();
 }
 
+async function fetchJsonNoResponse<A>(input: RequestInfo, init?: RequestInit): Promise<void> {
+  const res = await fetch(input, init);
+  if (!res.ok) {
+    const data = await res.json();
+    if (data && data.message) throw new Error(data.message);
+  }
+}
+
 async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Promise<void> {
   const bearer = 'Bearer ' + (await authClient.getAPIToken());
   const res = await fetch(input, {
@@ -408,7 +416,7 @@ export async function qrCodesRangeAssign(
         }),
         headers: { 'Content-Type': 'application/json' },
       })
-    : fetchJson(`${API_BASE}/qr-code/range-assign`, {
+    : fetchJsonNoResponse(`${API_BASE}/qr-code/range-assign`, {
         method: 'PUT',
         body: JSON.stringify({
           numeric_id_min: from,
@@ -451,7 +459,7 @@ export async function qrCodesSelectionUpdate(
         }),
         headers: { 'Content-Type': 'application/json' },
       })
-    : fetchJson(`${API_BASE}/qr-code/update`, {
+    : fetchJsonNoResponse(`${API_BASE}/qr-code/update`, {
         method: 'PUT',
         body: JSON.stringify({
           qr_code_ids: qrCodesIds,
