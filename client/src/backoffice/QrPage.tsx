@@ -83,8 +83,8 @@ type CreationModalProps = {
 };
 
 type CreationModalFormikValues = {
-  qrIds: string;
-  qrHashes: string;
+  ids: string;
+  hashes: string;
   event: string;
 };
 
@@ -428,11 +428,19 @@ const CreationModal: React.FC<CreationModalProps> = ({
 
   const { addToast } = useToasts();
 
-  const hasSameQrsQuantity = qrHashes.length === qrIds.length;
-  const hasNoIncorrectQrs = incorrectQrHashes.length < 1 && incorrectQrIds.length < 1;
+  const hasSameQrsQuantity =
+    qrHashes.length === qrIds.length && qrHashes.length > 0 && qrIds.length > 0;
+  const hasNoIncorrectQrs =
+    incorrectQrHashes.length === 0 &&
+    incorrectQrIds.length === 0 &&
+    (qrIds.length > 0 || qrHashes.length > 0);
+  const hasHashesButNoIds = qrHashes.length > 0 && qrIds.length === 0;
+
+  const shouldShowMatchErrorMessage =
+    (!hasSameQrsQuantity || !hasHashesButNoIds) && hasNoIncorrectQrs;
 
   const handleCreationModalSubmit = (values: CreationModalFormikValues) => {
-    const { qrHashes, qrIds, event } = values;
+    const { hashes, ids, event } = values;
 
     const hashRegex = /^[a-zA-Z0-9]{6}$/;
     const idRegex = /^[0-9]{6}$/;
@@ -440,52 +448,57 @@ const CreationModal: React.FC<CreationModalProps> = ({
     const _incorrectQrHashes: string[] = [];
     const _incorrectQrIds: string[] = [];
 
-    const _hasSameQrsQuantity = qrHashes.length === qrIds.length;
-    const _hasNoIncorrectQrs = incorrectQrHashes.length < 1 && incorrectQrIds.length < 1;
-    const _hasNoIds = qrHashes.length > 1 && qrIds.length < 1;
-
-    const qrHashesFormatted = qrHashes
+    const qrHashesFormatted = hashes
       .trim()
       .split('\n')
       .map(hash => hash.trim())
       .filter(hash => {
-        if (!hash.match(hashRegex)) _incorrectQrHashes.push(hash);
+        if (!hash.match(hashRegex) && hash !== '') _incorrectQrHashes.push(hash);
 
         return hash.match(hashRegex);
       });
 
-    const qrIdsFormatted = qrIds
+    const qrIdsFormatted = ids
       .trim()
       .split('\n')
       .map(id => id.trim())
       .filter(id => {
-        if (!id.match(idRegex)) _incorrectQrIds.push(id);
+        if (!id.match(idRegex) && id !== '') _incorrectQrIds.push(id);
 
         return id.match(idRegex);
       });
+
+    const _hasSameQrsQuantity =
+      qrHashesFormatted.length === qrIdsFormatted.length &&
+      qrHashesFormatted.length > 0 &&
+      qrIdsFormatted.length > 0;
+    const _hasNoIncorrectQrs = _incorrectQrHashes.length === 0 && _incorrectQrIds.length === 0;
+    const _hasHashesButNoIds = qrHashesFormatted.length > 0 && qrIdsFormatted.length === 0;
 
     setQrsHashes(qrHashesFormatted);
     setQrsIds(qrIdsFormatted);
     setIncorrectQrHashes(_incorrectQrHashes);
     setIncorrectQrIds(_incorrectQrIds);
 
-    if ((_hasSameQrsQuantity || _hasNoIds) && _hasNoIncorrectQrs) {
-      qrCreateMassive(qrHashesFormatted, qrIdsFormatted, event)
-        .then(_ => {
-          addToast('QR codes updated correctly', {
-            appearance: 'success',
-            autoDismiss: true,
+    if (_hasNoIncorrectQrs) {
+      if (_hasHashesButNoIds || _hasSameQrsQuantity) {
+        qrCreateMassive(qrHashesFormatted, qrIdsFormatted, event)
+          .then(_ => {
+            addToast('QR codes updated correctly', {
+              appearance: 'success',
+              autoDismiss: true,
+            });
+            refreshQrs();
+            handleCreationModalClosing();
+          })
+          .catch(e => {
+            console.log(e);
+            addToast(e.message, {
+              appearance: 'error',
+              autoDismiss: true,
+            });
           });
-          refreshQrs();
-          handleCreationModalClosing();
-        })
-        .catch(e => {
-          console.log(e);
-          addToast(e.message, {
-            appearance: 'error',
-            autoDismiss: true,
-          });
-        });
+      }
     }
   };
 
@@ -494,8 +507,8 @@ const CreationModal: React.FC<CreationModalProps> = ({
   return (
     <Formik
       initialValues={{
-        qrHashes: '',
-        qrIds: '',
+        hashes: '',
+        ids: '',
         event: '',
       }}
       validateOnBlur={false}
@@ -514,8 +527,8 @@ const CreationModal: React.FC<CreationModalProps> = ({
               <div>
                 <textarea
                   className="modal-textarea"
-                  name="qrHashes"
-                  value={values.qrHashes}
+                  name="hashes"
+                  value={values.hashes}
                   onChange={handleChange}
                   placeholder="QRs hashes list"
                 />
@@ -530,8 +543,8 @@ const CreationModal: React.FC<CreationModalProps> = ({
               <div>
                 <textarea
                   className="modal-textarea"
-                  value={values.qrIds}
-                  name="qrIds"
+                  value={values.ids}
+                  name="ids"
                   onChange={handleChange}
                   placeholder="QRs IDs list"
                 />
@@ -563,8 +576,8 @@ const CreationModal: React.FC<CreationModalProps> = ({
                     );
                   })}
               </select>
-              {!hasSameQrsQuantity && hasNoIncorrectQrs && (
-                <span>Quantity of IDs and hashes must match</span>
+              {shouldShowMatchErrorMessage && (
+                <span>Quantity of IDs and hashes must match or send hashes with none IDs</span>
               )}
             </div>
             <div className="modal-content">
