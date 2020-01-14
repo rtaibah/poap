@@ -376,6 +376,11 @@
   version "0.0.0"
   resolved "https://registry.yarnpkg.com/@types/tz-offset/-/tz-offset-0.0.0.tgz#d58f1cebd794148d245420f8f0660305d320e565"
 
+"@types/unidecode@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@types/unidecode/-/unidecode-0.1.1.tgz#e403b69809a5ac521294753170f0fa22cdf57b27"
+  integrity sha512-ReYnWajSY+QnZk5dBpSztek+kHUtpHJkf0pSZBx2ZVIxcSBkRLY7m0caPwVKXC6WjE65G2fVU84EpiFbdJVDuQ==
+
 "@types/uuid@^3.4.6":
   version "3.4.6"
   resolved "https://registry.yarnpkg.com/@types/uuid/-/uuid-3.4.6.tgz#d2c4c48eb85a757bf2927f75f939942d521e3016"
@@ -2941,6 +2946,11 @@ typescript@^3.4.5:
 tz-offset@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/tz-offset/-/tz-offset-0.0.1.tgz#fef920257024d3583ed9072a767721a18bdb8a76"
+
+unidecode@^0.1.8:
+  version "0.1.8"
+  resolved "https://registry.yarnpkg.com/unidecode/-/unidecode-0.1.8.tgz#efbb301538bc45246a9ac8c559d72f015305053e"
+  integrity sha1-77swFTi8RSRqmsjFWdcvAVMFBT4=
 
 unique-string@^2.0.0:
   version "2.0.0"

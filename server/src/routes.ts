@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import unidecode  from 'unidecode';
 import createError from 'http-errors';
 import {
   getEvent,
@@ -38,7 +39,6 @@ import {
   updateQrScanned,
   getClaimedQrsHashList,
   updateQrClaimsHashes,
-  getPublicEvents,
   getEventHostByPassphrase,
   createQrClaims,
   checkNumericIdExists,
@@ -906,13 +906,9 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/events',
     {
-      preValidation: [fastify.optionalAuthenticate, ],
       schema: {
         description: 'Endpoint to get all events',
         tags: ['Events', ],
-        querystring: {
-          user_id: { type: 'string' },
-        },
         response: {
           200: {
             type: 'array',
@@ -939,22 +935,7 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req: any, res) => {
-      let events = []
-      let is_admin = false;
-
-      if (req.user && req.user.hasOwnProperty('sub')) {
-        if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
-          is_admin = true
-        }
-      }
-
-      if(is_admin) {
-        events = await getEvents();
-      } else {
-        events = await getPublicEvents();
-      }
-
-      return events;
+      return await getEvents();
     }
   );
 
@@ -1064,7 +1045,18 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req:any, res) => {
-      const parsed_fancy_id = req.body.name.trim().replace(/\s+/g, '-').toLowerCase() + '-' + req.body.year;
+
+      const unidecoded_slug = unidecode(req.body.name)
+          .replace(/^\s+|\s+$/g, "") // trim
+          .toLowerCase()
+          .replace(/[^a-z0-9 -]/g, "") // remove invalid chars
+          .replace(/\s+/g, "-") // collapse whitespace and replace by -
+          .replace(/-+/g, "-") // collapse dashes
+          .replace(/^-+/, "") // trim - from start of text
+          .replace(/-+$/, "");
+
+      const parsed_fancy_id = unidecoded_slug + '-' + req.body.year;
+
       let eventHost = null;
       let is_admin:boolean = false;
 
@@ -1818,7 +1810,7 @@ export default async function routes(fastify: FastifyInstance) {
         // Check if host is updating owned QR codes
         const notOwnedQrs = await getRangeNotOwnedQr(numericIdMax, numericIdMin, eventHostQrRolls);
         if (notOwnedQrs && notOwnedQrs[0]) {
-          return new createError.BadRequest('You can not edit codes that were not assigned to your user');
+          return new createError.BadRequest("You can't edit codes that were not assigned to your user");
         }
 
       }
@@ -1827,16 +1819,10 @@ export default async function routes(fastify: FastifyInstance) {
       if (eventId) {
         eventId = parseInt(eventId)
         const event = await getEvent(eventId);
-        if (!event) {
-          return new createError.BadRequest('Event not found');
-        }
+        if (!event) return new createError.BadRequest('Event not found');
 
-        // Is user is host, check if the event was created by the user
-        if (!is_admin && eventHost) {
-          if(event.event_host_id !== eventHost.id) {
-            return new createError.BadRequest('You can not assign an event that was created by another user');
-          }
-        }
+        // Is user is host, check if the event was created by an administrator
+        if (!is_admin && event.from_admin) return new createError.BadRequest('You can not assign an event that was created by an administrator');
       }
 
       // Check if QR codes were claimed
@@ -1947,20 +1933,21 @@ export default async function routes(fastify: FastifyInstance) {
       let hashesToAdd: any[] = [];
       let existingClaimedQrs:string[] = [];
       let existingNumericIds:number[] = [];
+      const numericListExists = numericList.length > 0;
 
-      if(numericList && qrCodeHashes.length != numericList.length) {
-        return new createError.BadRequest('qr_code_hashes list lenght is not equal to numeric_list list lenght');
+      if(numericListExists && qrCodeHashes.length != numericList.length) {
+        return new createError.BadRequest('qr_code_hashes list length is not equal to numeric_list list length');
       }
 
       const checkDuplicatedQrs = qrCodeHashes.filter((item, index) => qrCodeHashes.indexOf(item) != index)
-      const checkDuplicatedNumericIds = numericList ? numericList.filter((item, index) => numericList.indexOf(item) != index) : ""
+      const checkDuplicatedNumericIds = numericListExists ? numericList.filter((item, index) => numericList.indexOf(item) != index) : []
 
       if(checkDuplicatedQrs.length > 0) {
-        return new createError.BadRequest('qr_list has duplicated hashes, please fix this and send again: [' + checkDuplicatedQrs + ',]');
+        return new createError.BadRequest('QR Hash list include duplicated codes: ' + checkDuplicatedQrs);
       }
       
       if(checkDuplicatedNumericIds.length > 0) {
-        return new createError.BadRequest('numeric_list has duplicated ids, please fix this and send again: [' + checkDuplicatedNumericIds + ',]');
+        return new createError.BadRequest('Numeric list include duplicated numbers: ' + checkDuplicatedNumericIds);
       }
 
       // Check if event exists
@@ -2081,16 +2068,10 @@ export default async function routes(fastify: FastifyInstance) {
       if (eventId) {
         eventId = parseInt(eventId)
         const event = await getEvent(eventId);
-        if (!event) {
-          return new createError.BadRequest('Event not found');
-        }
+        if (!event) return new createError.BadRequest('Event not found');
 
-        // Is user is host, check if the event was created by the user
-        if (!is_admin && eventHost) {
-          if(event.event_host_id !== eventHost.id) {
-            return new createError.BadRequest('You can not assign an event that was created by another user');
-          }
-        }
+        // Is user is host, check if the event was created by an administrator
+        if (!is_admin && event.from_admin) return new createError.BadRequest('You can not assign an event that was created by an administrator');
       }
 
       // Check if QR codes were claimed

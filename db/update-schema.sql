@@ -118,3 +118,9 @@ ALTER TABLE qr_claims ADD COLUMN scanned BOOLEAN DEFAULT false;
 
 create unique index qr_claims_numeric_id_uindex
 	on qr_claims (numeric_id);
+
+alter table event_host
+	add passphrase varchar(256);
+
+create unique index event_host_passphrase_uindex_2
+	on event_host (passphrase);
