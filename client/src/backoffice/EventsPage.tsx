@@ -246,7 +246,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 disabledDays={
                   values.end_date
                     ? {
-                        from: new Date(dateFormatterString(values.end_date).getTime() + day),
+                        from: new Date(dateFormatterString(values.end_date).getTime() + day * 2),
                         to: veryFutureDate,
                       }
                     : undefined
@@ -262,7 +262,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                   values.start_date
                     ? {
                         from: veryOldDate,
-                        to: new Date(dateFormatterString(values.start_date).getTime() + day),
+                        to: new Date(dateFormatterString(values.start_date).getTime()),
                       }
                     : undefined
                 }
