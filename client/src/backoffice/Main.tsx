@@ -65,67 +65,59 @@ export const withAuthentication = <T extends Object>(
   return (props: T) => {
     const isAuthenticated = authClient.isAuthenticated();
 
-    if (!isAuthenticated) return <Redirect to="/admin" />;
+    if (!isAuthenticated) return <Redirect to="/admin/events" />;
 
     return <WrappedComponent {...props} />;
   };
 };
 
-const LabelWithAuthentication = withAuthentication(Label);
-const SidebarLinkWithAuthentication = withAuthentication(SidebarLink);
-
 const NavigationMenu = withRouter(({ history }) => {
-  const auth = useContext(AuthContext);
   const [isOpen, setIsOpen] = useState(false);
-  const closeMenu = useCallback(() => setIsOpen(false), []);
+  const auth = useContext(AuthContext);
+
+  const closeMenu = () => setIsOpen(false);
 
   const isAdmin = authClient.isAuthenticated();
-
-  useEffect(() => {
-    const userRole = authClient.getRole();
-
-    if (userRole === ROLES.eventHost) return;
-  }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
-
   return (
     <Menu isOpen={isOpen} onStateChange={state => setIsOpen(state.isOpen)} right disableAutoFocus>
-      <LabelWithAuthentication label={LABELS.issueBadges} />
+      {isAdmin && (
+        <>
+          <Label label={LABELS.issueBadges} />
+          <SidebarLink route={ROUTES.issueForEvent} handleClick={closeMenu} />
 
-      <SidebarLinkWithAuthentication route={ROUTES.issueForEvent} handleClick={closeMenu} />
+          <SidebarLink route={ROUTES.issueForUser} handleClick={closeMenu} />
+          <Label label={LABELS.inbox} />
 
-      <SidebarLinkWithAuthentication route={ROUTES.issueForUser} handleClick={closeMenu} />
-      <LabelWithAuthentication label={LABELS.inbox} />
+          <SidebarLink route={ROUTES.inbox} handleClick={closeMenu} />
 
-      <SidebarLinkWithAuthentication route={ROUTES.inbox} handleClick={closeMenu} />
+          <SidebarLink route={ROUTES.inboxList} handleClick={closeMenu} />
 
-      <SidebarLinkWithAuthentication route={ROUTES.inboxList} handleClick={closeMenu} />
+          <Label label={LABELS.otherTasks} />
 
-      <LabelWithAuthentication label={LABELS.otherTasks} />
+          <SidebarLink route={ROUTES.addressManagement} handleClick={closeMenu} />
+
+          <SidebarLink route={ROUTES.burn} handleClick={closeMenu} />
+
+          <SidebarLink route={ROUTES.transactions} handleClick={closeMenu} />
+
+          <a
+            className="bm-item"
+            href=""
+            onClick={() => {
+              auth.logout();
+              // history.push('/');
+            }}
+          >
+            Logout
+          </a>
+        </>
+      )}
 
       {!isAdmin && <Label label={LABELS.menu} />}
-
-      <SidebarLinkWithAuthentication route={ROUTES.addressManagement} handleClick={closeMenu} />
 
       <SidebarLink route={ROUTES.events} handleClick={closeMenu} />
 
       <SidebarLink route={ROUTES.qr} handleClick={closeMenu} />
-
-      <SidebarLinkWithAuthentication route={ROUTES.burn} handleClick={closeMenu} />
-
-      <SidebarLinkWithAuthentication route={ROUTES.transactions} handleClick={closeMenu} />
-
-      {isAdmin && (
-        <a
-          className="bm-item"
-          href=""
-          onClick={() => {
-            auth.logout();
-            // history.push('/');
-          }}
-        >
-          Logout
-        </a>
-      )}
     </Menu>
   );
 });
@@ -154,8 +146,6 @@ const AddressManagementPageWithAuthentication = withAuthentication(AddressManage
 
 export const BackOffice: React.FC = () => (
   <>
-    <NavigationMenu />
-
     <header id="site-header" role="banner">
       <div className="container">
         <div className="col-xs-6 col-sm-6 col-md-6">
@@ -171,11 +161,11 @@ export const BackOffice: React.FC = () => (
     <main className="app-content">
       <div className="container">
         <Switch>
-          <Route exact path={ROUTES.admin} component={Landing} />
+          <Route exact path={ROUTES.qr.path} render={() => <QrPage />} />
 
-          <Route exact path={ROUTES.qr.path} component={QrPage} />
+          <Route path={ROUTES.events.path} render={() => <EventsPage />} />
 
-          <Route path={ROUTES.events.path} component={EventsPage} />
+          <Route exact path={ROUTES.admin} render={() => <Landing />} />
 
           <Route
             exact
@@ -223,5 +213,7 @@ export const BackOffice: React.FC = () => (
         </Switch>
       </div>
     </main>
+
+    <NavigationMenu />
   </>
 );

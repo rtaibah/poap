@@ -176,7 +176,7 @@ const QrPage: FC = () => {
     } catch (e) {
       addToast(e.message, {
         appearance: 'error',
-        autoDismiss: true,
+        autoDismiss: false,
       });
       setPassphraseError(true);
     } finally {
@@ -443,7 +443,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
     const { hashes, ids, event } = values;
 
     const hashRegex = /^[a-zA-Z0-9]{6}$/;
-    const idRegex = /^[0-9]{6}$/;
+    const idRegex = /^[0-9]+$/;
 
     const _incorrectQrHashes: string[] = [];
     const _incorrectQrIds: string[] = [];
@@ -475,10 +475,13 @@ const CreationModal: React.FC<CreationModalProps> = ({
     const _hasNoIncorrectQrs = _incorrectQrHashes.length === 0 && _incorrectQrIds.length === 0;
     const _hasHashesButNoIds = qrHashesFormatted.length > 0 && qrIdsFormatted.length === 0;
 
-    setQrsHashes(qrHashesFormatted);
-    setQrsIds(qrIdsFormatted);
     setIncorrectQrHashes(_incorrectQrHashes);
     setIncorrectQrIds(_incorrectQrIds);
+
+    if (!_incorrectQrHashes && !_incorrectQrIds) {
+      setQrsHashes(qrHashesFormatted);
+      setQrsIds(qrIdsFormatted);
+    }
 
     if (_hasNoIncorrectQrs) {
       if (_hasHashesButNoIds || _hasSameQrsQuantity) {
@@ -495,7 +498,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
             console.log(e);
             addToast(e.message, {
               appearance: 'error',
-              autoDismiss: true,
+              autoDismiss: false,
             });
           });
       }
@@ -700,7 +703,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
           .catch(e =>
             addToast(e.message, {
               appearance: 'error',
-              autoDismiss: true,
+              autoDismiss: false,
             })
           );
       }
@@ -753,7 +756,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
           .catch(e =>
             addToast(e.message, {
               appearance: 'error',
-              autoDismiss: true,
+              autoDismiss: false,
             })
           );
       }
@@ -774,7 +777,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
           console.log(e);
           addToast(e.message, {
             appearance: 'error',
-            autoDismiss: true,
+            autoDismiss: false,
           });
         });
     }

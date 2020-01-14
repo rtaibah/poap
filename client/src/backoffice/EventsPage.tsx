@@ -197,12 +197,12 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
               actions.setErrors({ isFile: 'An image is required' });
             }
 
-            Object.entries(othersKeys).forEach(([key, value]) => {
-              formData.append(key, String(value));
-            });
+            Object.entries(othersKeys).forEach(([key, value]) =>
+              formData.append(key, typeof value === 'number' ? String(value) : value)
+            );
 
             if (create) {
-              console.log(formData);
+              console.log('final', formData);
               await createEvent(formData!);
             } else if (event) {
               await updateEvent(formData!, event.fancy_id);
