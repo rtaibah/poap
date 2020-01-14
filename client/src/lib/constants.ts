@@ -20,6 +20,10 @@ const LABELS = {
     roles: [ROLES.eventHost],
     title: 'Quick Links',
   },
+  menu: {
+    roles: [ROLES.eventHost],
+    title: 'Menu',
+  },
 };
 
 const ROUTES = {

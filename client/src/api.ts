@@ -338,7 +338,7 @@ export async function updateEvent(event: FormData, fancyId: string) {
 }
 
 export async function createEvent(event: FormData) {
-  return secureFetchNoResponse(`${API_BASE}/events`, {
+  return fetchJson(`${API_BASE}/events`, {
     method: 'POST',
     body: event,
   });

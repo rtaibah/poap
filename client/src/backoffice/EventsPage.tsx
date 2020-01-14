@@ -198,10 +198,11 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             }
 
             Object.entries(othersKeys).forEach(([key, value]) => {
-              formData.append(key, typeof value === 'number' ? value.toString() : value);
+              formData.append(key, String(value));
             });
 
             if (create) {
+              console.log(formData);
               await createEvent(formData!);
             } else if (event) {
               await updateEvent(formData!, event.fancy_id);

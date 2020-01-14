@@ -79,13 +79,12 @@ const NavigationMenu = withRouter(({ history }) => {
   const [isOpen, setIsOpen] = useState(false);
   const closeMenu = useCallback(() => setIsOpen(false), []);
 
+  const isAdmin = authClient.isAuthenticated();
+
   useEffect(() => {
     const userRole = authClient.getRole();
 
     if (userRole === ROLES.eventHost) return;
-
-    const { pathname } = history.location;
-    if (pathname === '/admin' || pathname === '/admin/') setIsOpen(true);
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   return (
@@ -103,28 +102,30 @@ const NavigationMenu = withRouter(({ history }) => {
 
       <LabelWithAuthentication label={LABELS.otherTasks} />
 
-      <LabelWithAuthentication label={LABELS.quickLinks} />
+      {!isAdmin && <Label label={LABELS.menu} />}
 
       <SidebarLinkWithAuthentication route={ROUTES.addressManagement} handleClick={closeMenu} />
 
-      <SidebarLinkWithAuthentication route={ROUTES.events} handleClick={closeMenu} />
+      <SidebarLink route={ROUTES.events} handleClick={closeMenu} />
 
-      <SidebarLinkWithAuthentication route={ROUTES.qr} handleClick={closeMenu} />
+      <SidebarLink route={ROUTES.qr} handleClick={closeMenu} />
 
       <SidebarLinkWithAuthentication route={ROUTES.burn} handleClick={closeMenu} />
 
       <SidebarLinkWithAuthentication route={ROUTES.transactions} handleClick={closeMenu} />
 
-      <a
-        className="bm-item"
-        href=""
-        onClick={() => {
-          auth.logout();
-          // history.push('/');
-        }}
-      >
-        Logout
-      </a>
+      {isAdmin && (
+        <a
+          className="bm-item"
+          href=""
+          onClick={() => {
+            auth.logout();
+            // history.push('/');
+          }}
+        >
+          Logout
+        </a>
+      )}
     </Menu>
   );
 });

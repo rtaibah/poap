@@ -68,13 +68,7 @@ export class AuthService {
       this.user = await this.client.getUser();
     }
 
-    if (result.appState) {
-      const resultPath = localStorage.getItem(result.appState) || '/';
-      localStorage.removeItem(result.appState);
-      return resultPath;
-    } else {
-      return '/';
-    }
+    return '/admin';
   }
 
   async getAPIToken() {
