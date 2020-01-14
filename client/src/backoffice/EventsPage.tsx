@@ -6,6 +6,7 @@ import DayPickerInput from 'react-day-picker/DayPickerInput';
 import 'react-day-picker/lib/style.css';
 import { format } from 'date-fns';
 import { useToasts } from 'react-toast-notifications';
+import { useHistory } from 'react-router-dom';
 
 import { authClient } from '../auth';
 
@@ -119,6 +120,7 @@ export const EditEventForm: React.FC<RouteComponentProps<{
 };
 
 const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
+  const history = useHistory();
   const veryOldDate = new Date('1900-01-01');
   const veryFutureDate = new Date('2200-01-01');
   const dateFormatter = (day: Date | number) => format(day, 'MM-dd-yyyy');
@@ -202,12 +204,12 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             );
 
             if (create) {
-              console.log('final', formData);
               await createEvent(formData!);
             } else if (event) {
               await updateEvent(formData!, event.fancy_id);
             }
-            window.location.reload();
+
+            history.push('/admin/events');
           } catch (err) {
             actions.setSubmitting(false);
             addToast(err.message, {

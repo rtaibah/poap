@@ -17,7 +17,7 @@ const App: React.FC<AppProps> = ({ auth }) => (
     <Router>
       <Switch>
         <Route exact path={ROUTES.callback} component={Callback} />
-        <Route exact path={ROUTES.adminLogin} component={AdminLoginPage} />
+        <Route exact path={ROUTES.adminLogin.path} component={AdminLoginPage} />
         <Route path={ROUTES.admin} component={BackOffice} />
         <Route path={ROUTES.signerClaimPage} component={SignerClaimPage} />
         <Route path={ROUTES.codeClaimPageHash} component={CodeClaimPage} />

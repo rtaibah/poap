@@ -1,6 +1,6 @@
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 import React, { useCallback, useContext, useState, useEffect } from 'react';
-import { Link, Redirect, Route, withRouter, Switch } from 'react-router-dom';
+import { Link, Redirect, Route, withRouter, Switch, useHistory } from 'react-router-dom';
 import { slide as Menu } from 'react-burger-menu';
 
 // lib
@@ -29,7 +29,7 @@ export const MintersPage = () => <div> This is a MintersPage </div>;
 
 type RouteProps = {
   path: string;
-  roles: string[];
+  roles?: string[];
   title?: string;
 };
 
@@ -65,7 +65,7 @@ export const withAuthentication = <T extends Object>(
   return (props: T) => {
     const isAuthenticated = authClient.isAuthenticated();
 
-    if (!isAuthenticated) return <Redirect to="/admin/events" />;
+    if (!isAuthenticated) return <Redirect to="/admin" />;
 
     return <WrappedComponent {...props} />;
   };
@@ -99,17 +99,6 @@ const NavigationMenu = withRouter(({ history }) => {
           <SidebarLink route={ROUTES.burn} handleClick={closeMenu} />
 
           <SidebarLink route={ROUTES.transactions} handleClick={closeMenu} />
-
-          <a
-            className="bm-item"
-            href=""
-            onClick={() => {
-              auth.logout();
-              // history.push('/');
-            }}
-          >
-            Logout
-          </a>
         </>
       )}
 
@@ -118,6 +107,20 @@ const NavigationMenu = withRouter(({ history }) => {
       <SidebarLink route={ROUTES.events} handleClick={closeMenu} />
 
       <SidebarLink route={ROUTES.qr} handleClick={closeMenu} />
+
+      {!isAdmin && <SidebarLink route={ROUTES.adminLogin} handleClick={closeMenu} />}
+
+      {isAdmin && (
+        <a
+          className="bm-item"
+          href=""
+          onClick={() => {
+            auth.logout();
+          }}
+        >
+          Logout
+        </a>
+      )}
     </Menu>
   );
 });
