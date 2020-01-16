@@ -649,7 +649,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   const [isSelectionActive, setIsSelectionActive] = useState<boolean>(false);
   const [isRangeActive, setIsRangeActive] = useState<boolean>(false);
   const [isListActive, setIsListActive] = useState<boolean>(false);
-  const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<number | null | 'unassign'>(null);
   const [incorrectQrHashes, setIncorrectQrHashes] = useState<string[]>([]);
   const [isSendingHashList, setIsSendingHashList] = useState<boolean>(false);
   const [qrHashList, setQrHashList] = useState<string[]>([]);
@@ -671,10 +671,15 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     setIsSendingHashList(false);
   }, [hasIncorrectHashes, isSendingHashList, selectedEvent]);
 
+  useEffect(() => {
+    if (isListActive) setIsSendingHashList(true);
+  }, [selectedEvent]);
+
   const assignHashList = () => {
     if (isListActive) {
       if (!hasIncorrectHashes) {
-        qrCodesListAssign(qrHashList, selectedEvent)
+        const event = selectedEvent === 'unassign' ? null : selectedEvent;
+        qrCodesListAssign(qrHashList, event)
           .then(res => {
             console.log(res);
             const hasAlreadyClaimedHashes = res.alreadyclaimedQrs.length > 0;
@@ -783,8 +788,9 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     }
 
     if (isListActive) {
-      setIsSendingHashList(true);
-      setSelectedEvent(_event);
+      const event = _event === null ? 'unassign' : _event;
+      // setIsSendingHashList(true);
+      setSelectedEvent(event);
     }
   };
 
