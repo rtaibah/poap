@@ -1,6 +1,6 @@
 /* eslint jsx-a11y/anchor-is-valid: 0 */
-import React, { useCallback, useContext, useState, useEffect } from 'react';
-import { Link, Redirect, Route, withRouter, Switch, useHistory } from 'react-router-dom';
+import React, { useContext, useState } from 'react';
+import { Link, Redirect, Route, withRouter, Switch } from 'react-router-dom';
 import { slide as Menu } from 'react-burger-menu';
 
 // lib
@@ -12,7 +12,7 @@ import Calendar from '../images/calendar.svg';
 import Qr from '../images/qr-code.svg';
 
 /* Constants */
-import { ROUTES, ROLES, LABELS } from '../lib/constants';
+import { ROUTES, LABELS } from '../lib/constants';
 
 /* Components */
 import { BurnPage } from './BurnPage';

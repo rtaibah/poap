@@ -399,9 +399,9 @@
     }
 
     &.qr {
+      margin-bottom: 0;
       @media (max-width: $bp-mw) {
         flex-direction: column;
-        margin-bottom: 15px;
       }
 
       .filter {
@@ -556,6 +556,21 @@
     span.visible-sm {
       font-weight: bold;
     }
+
+    .secondary-filters {
+      margin-bottom: 25px;
+      flex-direction: column;
+
+      select {
+        margin-left: 15px;
+        width: auto;
+        height: 30px;
+        padding: 0 20px;
+        background-image: none;
+        text-align: center;
+      }
+    }
+
   }
 }
 

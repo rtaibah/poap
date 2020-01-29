@@ -196,10 +196,11 @@ export default async function routes(fastify: FastifyInstance) {
           name: { type: 'string' },
         },
         response: {
-          200: { 
+          200: {
             type: 'object',
             properties: {
               valid: {type: 'boolean'},
+              address:  {type: 'string'},
               ens:  {type: 'string'}
             }
           }
@@ -219,6 +220,7 @@ export default async function routes(fastify: FastifyInstance) {
         return {
           valid: true,
           ens: resolvedAddress,
+          address: resolvedAddress
         };
       }
     }

@@ -41,8 +41,6 @@ import {
   UpdateModalWithFormikListSchema,
 } from '../lib/schemas';
 
-const PAGE_SIZE = 10;
-
 type PaginateAction = {
   selected: number;
 };
@@ -90,6 +88,7 @@ type CreationModalFormikValues = {
 
 const QrPage: FC = () => {
   const [page, setPage] = useState<number>(0);
+  const [limit, setLimit] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
   const [isFetchingQrCodes, setIsFetchingQrCodes] = useState<null | boolean>(null);
   const [qrCodes, setQrCodes] = useState<null | QrCode[]>(null);
@@ -125,6 +124,12 @@ const QrPage: FC = () => {
 
   useEffect(() => {
     if (!initialFetch) {
+      fetchQrCodes()
+    }
+  }, [page]);
+
+  useEffect(() => {
+    if (!initialFetch) {
       cleanQrSelection();
       setPage(0);
       fetchQrCodes();
@@ -133,6 +138,7 @@ const QrPage: FC = () => {
     selectedEvent,
     claimStatus,
     claimScanned,
+    limit
   ]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const cleanQrSelection = () => setSelectedQrs([]);
@@ -163,8 +169,8 @@ const QrPage: FC = () => {
 
     try {
       const response = await getQrCodes(
-        PAGE_SIZE,
-        page * PAGE_SIZE,
+        limit,
+        page * limit,
         passphrase,
         _status,
         _scanned,
@@ -203,6 +209,7 @@ const QrPage: FC = () => {
   };
 
   const handlePageChange = (obj: PaginateAction) => {
+    console.log(obj);
     setPage(obj.selected);
   };
 
@@ -214,6 +221,13 @@ const QrPage: FC = () => {
       ? setSelectedQrs(selectedQrs => selectedQrs.filter((qrId: string) => qrId !== stringifiedId))
       : setSelectedQrs(selectedQrs => [...selectedQrs, stringifiedId]);
   };
+
+  const handleLimitChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ): void => {
+    const { value } = e.target;
+    setLimit(parseInt(value, 10));
+  }
 
   const handleUpdateModalClick = (): void => setIsUpdateModalOpen(true);
 
@@ -248,7 +262,6 @@ const QrPage: FC = () => {
             </FilterSelect>
           </div>
         </div>
-
         <div className={'filter col-md-3'}>
           <div className={'filter-group'}>
             <FilterSelect handleChange={handleStatusChange}>
@@ -258,7 +271,6 @@ const QrPage: FC = () => {
             </FilterSelect>
           </div>
         </div>
-
         <div className={'filter col-md-3'}>
           <div className={'filter-group'}>
             <FilterSelect handleChange={handleScannedChange}>
@@ -268,17 +280,14 @@ const QrPage: FC = () => {
             </FilterSelect>
           </div>
         </div>
-
         <div className={`action-button-container col-md-${isAdmin ? 2 : 5}`}>
           <FilterButton text="Update" handleClick={handleUpdateModalClick} />
         </div>
-
         {isAdmin && (
           <div className={'action-button-container col-md-2'}>
             <FilterButton text="Create" handleClick={handleCreationModalClick} />
           </div>
         )}
-
         <ReactModal
           isOpen={isUpdateModalOpen}
           onRequestClose={handleUpdateModalRequestClose}
@@ -317,11 +326,19 @@ const QrPage: FC = () => {
           />
         </ReactModal>
       </div>
+      <div className={'secondary-filters'}>
+        Results per page:
+        <select onChange={handleLimitChange}>
+          <option value={10}>10</option>
+          <option value={100}>100</option>
+          <option value={1000}>1000</option>
+        </select>
+      </div>
 
       {isFetchingQrCodes && <Loading />}
 
       {qrCodes && qrCodes.length !== 0 && !isFetchingQrCodes && (
-        <div>
+        <div className={'qr-table-section'}>
           <div className={'row table-header visible-md'}>
             <div className={'col-md-1 center'}>-</div>
             <div className={'col-md-2'}>QR Hash</div>
@@ -397,7 +414,7 @@ const QrPage: FC = () => {
           {total > 10 && (
             <div className={'pagination'}>
               <ReactPaginate
-                pageCount={Math.ceil(total / PAGE_SIZE)}
+                pageCount={Math.ceil(total / limit)}
                 marginPagesDisplayed={2}
                 pageRangeDisplayed={5}
                 activeClassName={'active'}
@@ -972,7 +989,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
               <div className="modal-buttons-container">
                 <FilterChip
                   name="isUnassigning"
-                  text="Unasign QRs"
+                  text="Unassign QRs"
                   isActive={values.isUnassigning}
                   handleOnClick={(e: React.ChangeEvent) =>
                     handleChipClick(e, setFieldValue, values)
