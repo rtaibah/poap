@@ -37,13 +37,13 @@ export async function getUserEvents(event_host_id: number): Promise<PoapEvent[]>
 export async function getTransactions(limit: number, offset: number, statusList: string[]): Promise<Transaction[]> {
   let query = "SELECT * FROM server_transactions WHERE status IN (${statusList:csv}) ORDER BY created_date DESC" +
     " LIMIT ${limit} OFFSET ${offset}";
-  const res = await db.manyOrNone<Transaction>(query, {statusList, limit, offset});
+  const res = await db.manyOrNone<Transaction>(query, { statusList, limit, offset });
   return res
 }
 
 export async function getTotalTransactions(statusList: string[]): Promise<number> {
   let query = 'SELECT COUNT(*) FROM server_transactions WHERE status IN (${statusList:csv})'
-  const res = await db.result(query, {statusList});
+  const res = await db.result(query, { statusList });
   return res.rows[0].count;
 }
 
@@ -62,9 +62,9 @@ export async function getPoapSettingByName(name: string): Promise<null | PoapSet
   return res;
 }
 
-export async function updatePoapSettingByName(name:string, type:string, value:string): Promise<boolean> {
+export async function updatePoapSettingByName(name: string, type: string, value: string): Promise<boolean> {
   let query = 'update poap_settings set type=${type}, value=${value} where name=${name}';
-  let values = {type, value, name};
+  let values = { type, value, name };
   const res = await db.result(query, values);
   return res.rowCount === 1;
 }
@@ -75,9 +75,9 @@ export async function getSigner(address: string): Promise<null | Signer> {
 }
 
 export async function getAvailableHelperSigners(): Promise<null | Signer[]> {
-  const res = await db.manyOrNone  (`
+  const res = await db.manyOrNone(`
     SELECT s.id, s.signer, SUM(case when st.status = 'pending' then 1 else 0 end) as pending_txs
-    FROM signers s LEFT JOIN server_transactions st on s.signer = st.signer
+    FROM signers s LEFT JOIN server_transactions st on LOWER(s.signer) = LOWER(st.signer)
     WHERE s.role != 'administrator'
     GROUP BY s.id, s.signer
     ORDER BY pending_txs, s.id ASC
@@ -98,20 +98,20 @@ export async function getPendingTxs(): Promise<Transaction[]> {
 export async function getPendingTxsAmount(signer: Signer): Promise<Signer> {
   const signer_address = signer.signer
   const status = TransactionStatus.pending;
-  const res = await db.result('SELECT COUNT(*) FROM server_transactions WHERE status = ${status} AND signer = ${signer_address}', 
-  {
-    status,
-    signer_address
-  });
+  const res = await db.result('SELECT COUNT(*) FROM server_transactions WHERE status = ${status} AND signer ILIKE ${signer_address}',
+    {
+      status,
+      signer_address
+    });
   signer.pending_tx = res.rows[0].count;
   return signer
 }
 
 export async function getEvent(id: number | string): Promise<null | PoapEvent> {
-  const res = await db.oneOrNone<PoapEvent>('SELECT * FROM events WHERE id = ${id}', 
-  {
-    id: id
-  });
+  const res = await db.oneOrNone<PoapEvent>('SELECT * FROM events WHERE id = ${id}',
+    {
+      id: id
+    });
   return res ? replaceDates(res) : res;
 }
 
@@ -122,7 +122,7 @@ export async function getEventByFancyId(fancyid: string): Promise<null | PoapEve
 
 export async function updateEvent(
   fancyId: string,
-  changes: Pick<PoapEvent, 'event_url' | 'image_url' | 'name' | 'description' | 'city' | 'country' | 'start_date' | 'end_date' >
+  changes: Pick<PoapEvent, 'event_url' | 'image_url' | 'name' | 'description' | 'city' | 'country' | 'start_date' | 'end_date'>
 ): Promise<boolean> {
   const res = await db.result(
     'UPDATE EVENTS SET ' +
@@ -170,10 +170,10 @@ export async function createEvent(event: Omit<PoapEvent, 'id'>): Promise<PoapEve
   };
 }
 
-export async function saveTransaction(hash: string, nonce: number, operation: string, params: string, signer: Address, status: string, gas_price: string ): Promise<boolean>{
+export async function saveTransaction(hash: string, nonce: number, operation: string, params: string, signer: Address, status: string, gas_price: string): Promise<boolean> {
   let query = "INSERT INTO server_transactions(tx_hash, nonce, operation, arguments, signer, status, gas_price) VALUES (${hash}, ${nonce}, ${operation}, ${params}, ${signer}, ${status}, ${gas_price})";
-  let values = {hash, nonce, operation, params: params.substr(0, 950), signer, status, gas_price};
-  try{
+  let values = { hash, nonce, operation, params: params.substr(0, 950), signer, status, gas_price };
+  try {
     const res = await db.result(query, values);
     return res.rowCount === 1;
   } catch (e) {
@@ -196,12 +196,12 @@ export async function updateTransactionStatus(hash: string, status: TransactionS
 }
 
 export async function getQrClaim(qrHash: string): Promise<null | ClaimQR> {
-  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash=${qrHash} AND is_active = true', {qrHash});
+  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash=${qrHash} AND is_active = true', { qrHash });
   return res;
 }
 
 export async function updateQrScanned(qrHash: string) {
-  const res = await db.result('UPDATE qr_claims SET scanned = true WHERE qr_hash=${qrHash} AND is_active = true', {qrHash});
+  const res = await db.result('UPDATE qr_claims SET scanned = true WHERE qr_hash=${qrHash} AND is_active = true', { qrHash });
   return res.rowCount === 1;
 }
 
@@ -237,24 +237,24 @@ export async function unclaimQrClaim(qrHash: string) {
   return res.rowCount === 1;
 }
 
-export async function updateQrClaim(qrHash: string, beneficiary:string, tx: ContractTransaction) {
+export async function updateQrClaim(qrHash: string, beneficiary: string, tx: ContractTransaction) {
   const tx_hash = tx.hash
   const signer = tx.from
 
   const res = await db.result('update qr_claims set tx_hash=${tx_hash}, beneficiary=${beneficiary}, signer=${signer} where qr_hash = ${qrHash}',
-  {
-    tx_hash,
-    beneficiary,
-    signer,
-    qrHash
-  });
+    {
+      tx_hash,
+      beneficiary,
+      signer,
+      qrHash
+    });
   return res.rowCount === 1;
 }
 
 export async function getTaskCreator(apiKey: string): Promise<null | TaskCreator> {
   const res = await db.oneOrNone<TaskCreator>(
     'SELECT * FROM task_creators WHERE api_key=${apiKey} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
-    {apiKey}
+    { apiKey }
   );
   return res;
 }
@@ -262,64 +262,64 @@ export async function getTaskCreator(apiKey: string): Promise<null | TaskCreator
 export async function createTask(data: any, taskName: string): Promise<null | Task> {
   const task = await db.one(
     'INSERT INTO tasks(name, task_data) VALUES(${taskName}, ${data}) RETURNING id, name, task_data, status, return_data',
-    {taskName, data}
+    { taskName, data }
   );
 
   return task;
 }
 
-export async function getPendingTasks(): Promise<Task[]>{
+export async function getPendingTasks(): Promise<Task[]> {
   const res = await db.manyOrNone<Task>('SELECT * FROM tasks WHERE status=\'PENDING\'');
   return res;
 }
 
-export async function hasToken(unlockTask: UnlockTask): Promise<boolean>{
+export async function hasToken(unlockTask: UnlockTask): Promise<boolean> {
   const taskId = unlockTask.id;
   const address = unlockTask.task_data.accountAddress;
   const unlockProtocol = Services.unlockProtocol
   const res = await db.result(
     'SELECT * FROM tasks WHERE status<>\'FINISH_WITH_ERROR\' AND id < ${taskId} AND name=${unlockProtocol} AND task_data ->> \'accountAddress\' = ${address}',
-    {taskId, address, unlockProtocol})
+    { taskId, address, unlockProtocol })
   return res.rowCount > 0;
 }
 
-export async function finishTaskWithErrors(errors: string, taskId: number){
+export async function finishTaskWithErrors(errors: string, taskId: number) {
   await db.result(
     'UPDATE tasks SET status=\'FINISH_WITH_ERROR\', return_data=${errors} where id=${taskId}',
-    {errors, taskId}
+    { errors, taskId }
   );
 }
 
-export async function setInProcessTask(taskId: number){
+export async function setInProcessTask(taskId: number) {
   await db.result(
     'UPDATE tasks SET status=\'IN_PROCESS\' where id=${taskId}',
-    {taskId}
+    { taskId }
   );
 }
 
-export async function setPendingTask(taskId: number){
+export async function setPendingTask(taskId: number) {
   await db.result(
     'UPDATE tasks SET status=\'PENDING\' where id=${taskId}',
-    {taskId}
+    { taskId }
   );
 }
 
-export async function finishTask(txHash: string | undefined, taskId: number){
+export async function finishTask(txHash: string | undefined, taskId: number) {
   await db.result(
     'UPDATE tasks SET status=\'FINISH\', return_data=${txHash} where id=${taskId}',
-    {txHash, taskId}
+    { txHash, taskId }
   );
 }
 
-export async function getNotifications(limit: number, offset: number, typeList: string[]|null, eventIds: number[] | null, addressFilter: boolean): Promise<Notification[]> {
-  if(!typeList) {
+export async function getNotifications(limit: number, offset: number, typeList: string[] | null, eventIds: number[] | null, addressFilter: boolean): Promise<Notification[]> {
+  if (!typeList) {
     typeList = [NotificationType.inbox, NotificationType.push]
   }
 
   let condition = '';
 
   if (eventIds === null) {
-    condition =  "AND event_id IS NULL "
+    condition = "AND event_id IS NULL "
   } else if (eventIds.length > 0) {
     condition = "AND event_id IN (${eventIds:csv}) "
   }
@@ -331,19 +331,19 @@ export async function getNotifications(limit: number, offset: number, typeList: 
   let query = "SELECT * FROM notifications WHERE type IN (${typeList:csv}) " + condition +
     " ORDER BY created_date DESC LIMIT ${limit} OFFSET ${offset}";
 
-  const res = await db.manyOrNone(query, {limit, offset, typeList, eventIds});
+  const res = await db.manyOrNone(query, { limit, offset, typeList, eventIds });
   return res
 }
 
-export async function getTotalNotifications(typeList: string[]|null, eventIds:number[]| null, addressFilter: boolean): Promise<number> {
+export async function getTotalNotifications(typeList: string[] | null, eventIds: number[] | null, addressFilter: boolean): Promise<number> {
   if (!typeList) {
     typeList = [NotificationType.inbox, NotificationType.push]
   }
 
   let condition = '';
-  if(eventIds === null) {
+  if (eventIds === null) {
     condition = "AND event_id IS NULL "
-  } else if(eventIds.length > 0) {
+  } else if (eventIds.length > 0) {
     condition = "AND event_id IN (${eventIds:csv}) "
   }
 
@@ -353,26 +353,26 @@ export async function getTotalNotifications(typeList: string[]|null, eventIds:nu
 
   let query = "SELECT COUNT(*) FROM notifications WHERE type IN (${typeList:csv}) " + condition
 
-  const res = await db.result(query, {typeList, eventIds});
+  const res = await db.result(query, { typeList, eventIds });
   return res.rows[0].count;
 }
 
 export async function createNotification(data: any): Promise<null | Notification> {
   const notification = await db.one(
     'INSERT INTO notifications(title, description, type, event_id) VALUES(${title}, ${description}, ${type}, ${event_id}) RETURNING id, title, description, type, event_id, created_date',
-    {...data}
+    { ...data }
   );
 
   return notification;
 }
 
 export async function getEventHost(userId: string): Promise<null | eventHost> {
-  const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE user_id=${userId} AND is_active = true', {userId});
+  const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE user_id=${userId} AND is_active = true', { userId });
   return res;
 }
 
 export async function getEventHostByPassphrase(passphrase: string): Promise<null | eventHost> {
-  const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE passphrase=${passphrase} AND is_active = true', {passphrase});
+  const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE passphrase=${passphrase} AND is_active = true', { passphrase });
   return res;
 }
 
@@ -401,12 +401,12 @@ export async function getClaimedQrsHashList(qrHashIds: string[]): Promise<null |
   return res;
 }
 
-export async function createQrClaims(hashesToAdd:any[]){
+export async function createQrClaims(hashesToAdd: any[]) {
   // https://stackoverflow.com/questions/36233566/inserting-multiple-records-with-pg-promise
 
   const res = await db.tx(t => {
     const queries = hashesToAdd.map(qr_claim => {
-        return t.one('INSERT INTO qr_claims(qr_hash, numeric_id, event_id) VALUES(${qr_hash}, ${numeric_id}, ${event_id}) RETURNING id', qr_claim, a => +a.id);
+      return t.one('INSERT INTO qr_claims(qr_hash, numeric_id, event_id) VALUES(${qr_hash}, ${numeric_id}, ${event_id}) RETURNING id', qr_claim, a => +a.id);
     });
     return t.batch(queries);
   });
@@ -443,7 +443,7 @@ export async function getNotOwnedQrList(numericIdMax: number[], eventHostQrRolls
   return res;
 }
 
-export async function updateEventOnQrRange(numericIdMax: number, numericIdMin: number, eventId: number){
+export async function updateEventOnQrRange(numericIdMax: number, numericIdMin: number, eventId: number) {
   await db.result('UPDATE qr_claims SET event_id=${eventId} where numeric_id<=${numericIdMax} AND numeric_id>=${numericIdMin}', {
     numericIdMax,
     numericIdMin,
@@ -451,14 +451,14 @@ export async function updateEventOnQrRange(numericIdMax: number, numericIdMin: n
   });
 }
 
-export async function updateQrClaims(qrCodeIds:number[], eventId: number){
+export async function updateQrClaims(qrCodeIds: number[], eventId: number) {
   await db.result('UPDATE qr_claims SET event_id=${eventId} where id IN (${qrCodeIds:csv})', {
     qrCodeIds,
     eventId
   });
 }
 
-export async function updateQrClaimsHashes(qrCodeHashes:string[], eventId: number){
+export async function updateQrClaimsHashes(qrCodeHashes: string[], eventId: number) {
   await db.result('UPDATE qr_claims SET event_id=${eventId} where qr_hash IN (${qrCodeHashes:csv}) AND claimed = false', {
     qrCodeHashes,
     eventId
@@ -480,53 +480,53 @@ export async function getQrRolls(): Promise<null | qrRoll[]> {
 }
 
 export async function getQrRoll(qrRollId: string): Promise<null | eventHost> {
-  const res = await db.oneOrNone<eventHost>('SELECT * FROM qr_roll WHERE id=${qrRollId} AND is_active = true', {qrRollId});
+  const res = await db.oneOrNone<eventHost>('SELECT * FROM qr_roll WHERE id=${qrRollId} AND is_active = true', { qrRollId });
   return res;
 }
 
 
 
-export async function getPaginatedQrClaims(limit: number, offset: number, eventId:number, qrRollId:number, claimed:string|null, scanned:string|null): Promise<ClaimQR[]> {
+export async function getPaginatedQrClaims(limit: number, offset: number, eventId: number, qrRollId: number, claimed: string | null, scanned: string | null): Promise<ClaimQR[]> {
   let query = 'SELECT * FROM qr_claims WHERE is_active = true '
 
-  if(eventId) {
+  if (eventId) {
     query = query + `AND event_id = ${eventId} `
   }
 
-  if(qrRollId) {
+  if (qrRollId) {
     query = query + `AND qr_roll_id = ${qrRollId} `
   }
 
-  if(claimed && ['true', 'false'].indexOf(claimed) > -1) {
+  if (claimed && ['true', 'false'].indexOf(claimed) > -1) {
     query = query + 'AND claimed = ' + claimed + ' '
   }
 
-  if(scanned && ['true', 'false'].indexOf(scanned) > -1) {
+  if (scanned && ['true', 'false'].indexOf(scanned) > -1) {
     query = query + 'AND scanned = ' + scanned + ' '
   }
 
   query = query + 'ORDER BY created_date DESC LIMIT ${limit} OFFSET ${offset}';
 
-  const res = await db.manyOrNone<ClaimQR>(query, {limit, offset});
+  const res = await db.manyOrNone<ClaimQR>(query, { limit, offset });
   return res
 }
 
-export async function getTotalQrClaims(eventId:number, qrRollId:number, claimed:string|null, scanned:string|null): Promise<number> {
+export async function getTotalQrClaims(eventId: number, qrRollId: number, claimed: string | null, scanned: string | null): Promise<number> {
   let query = 'SELECT * FROM qr_claims WHERE is_active = true '
 
-  if(eventId) {
+  if (eventId) {
     query = query + `AND event_id = ${eventId} `
   }
 
-  if(qrRollId) {
+  if (qrRollId) {
     query = query + `AND qr_roll_id = ${qrRollId} `
   }
 
-  if(claimed && ['true', 'false'].indexOf(claimed) > -1) {
+  if (claimed && ['true', 'false'].indexOf(claimed) > -1) {
     query = query + 'AND claimed = ' + claimed + ' '
   }
 
-  if(scanned && ['true', 'false'].indexOf(scanned) > -1) {
+  if (scanned && ['true', 'false'].indexOf(scanned) > -1) {
     query = query + 'AND scanned = ' + scanned + ' '
   }
 

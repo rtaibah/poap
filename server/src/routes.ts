@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import unidecode  from 'unidecode';
+import unidecode from 'unidecode';
 import createError from 'http-errors';
 import {
   getEvent,
@@ -42,7 +42,7 @@ import {
   getEventHostByPassphrase,
   createQrClaims,
   checkNumericIdExists,
-  checkQrHashExists
+  checkQrHashExists,
 } from './db';
 
 import {
@@ -132,7 +132,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Get metadata json',
-        tags: ['Metadata', ],
+        tags: ['Metadata',],
         params: {
           eventId: {
             type: 'string',
@@ -142,7 +142,7 @@ export default async function routes(fastify: FastifyInstance) {
           },
         },
         response: {
-          200: { 
+          200: {
             type: 'object',
             properties: {
               description: { type: 'string' },
@@ -151,10 +151,10 @@ export default async function routes(fastify: FastifyInstance) {
               image_url: { type: 'string' },
               name: { type: 'string' },
               year: { type: 'number' },
-              tags:  { type: 'array', items: { type: 'string' }},
-              attributes: { 
+              tags: { type: 'array', items: { type: 'string' } },
+              attributes: {
                 type: 'array',
-                items: { 
+                items: {
                   type: 'object',
                   properties: {
                     trait_type: { type: 'string' },
@@ -162,9 +162,9 @@ export default async function routes(fastify: FastifyInstance) {
                   }
                 }
               },
-              properties: { 
+              properties: {
                 type: 'array',
-                items: { 
+                items: {
                   type: 'number',
                 }
               },
@@ -180,7 +180,7 @@ export default async function routes(fastify: FastifyInstance) {
       }
       const tokenUrl = `https://api.poap.xyz/metadata/${req.params.eventId}/${req.params.tokenId}`;
       return buildMetadataJson(tokenUrl, event);
-  });
+    });
 
   //********************************************************************
   // ACTIONS
@@ -191,7 +191,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Validate and resolve ENS',
-        tags: ['Actions', ],
+        tags: ['Actions',],
         querystring: {
           name: { type: 'string' },
         },
@@ -199,9 +199,9 @@ export default async function routes(fastify: FastifyInstance) {
           200: {
             type: 'object',
             properties: {
-              valid: {type: 'boolean'},
-              address:  {type: 'string'},
-              ens:  {type: 'string'}
+              valid: { type: 'boolean' },
+              address: { type: 'string' },
+              ens: { type: 'string' }
             }
           }
         }
@@ -231,18 +231,18 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Validate ENS',
-        tags: ['Actions', ],
+        tags: ['Actions',],
         params: {
           address: {
             type: 'string',
           },
         },
         response: {
-          200: { 
+          200: {
             type: 'object',
             properties: {
-              valid: {type: 'boolean'},
-              ens:  {type: 'string'}
+              valid: { type: 'boolean' },
+              ens: { type: 'string' }
             }
           }
         }
@@ -275,7 +275,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'get all address tokens',
-        tags: ['Actions', ],
+        tags: ['Actions',],
         params: {
           address: 'address#',
         },
@@ -288,24 +288,24 @@ export default async function routes(fastify: FastifyInstance) {
                 event: {
                   type: 'object',
                   properties: {
-                    id: { type: 'number'},
-                    fancy_id: { type: 'string'},
-                    name: { type: 'string'},
-                    event_url: { type: 'string'},
-                    image_url: { type: 'string'},
-                    country: { type: 'string'},
-                    city: { type: 'string'},
-                    description: { type: 'string'},
-                    year: { type: 'number'},
-                    start_date: { type: 'string'},
-                    end_date: { type: 'string'},
-                    created_date: { type: 'string'},
-                    supply: { type: 'number'},
+                    id: { type: 'number' },
+                    fancy_id: { type: 'string' },
+                    name: { type: 'string' },
+                    event_url: { type: 'string' },
+                    image_url: { type: 'string' },
+                    country: { type: 'string' },
+                    city: { type: 'string' },
+                    description: { type: 'string' },
+                    year: { type: 'number' },
+                    start_date: { type: 'string' },
+                    end_date: { type: 'string' },
+                    created_date: { type: 'string' },
+                    supply: { type: 'number' },
                   }
                 },
-                tokenId: { type: 'string'},
-                owner: { type: 'string'},
-                supply: { type: 'number'},
+                tokenId: { type: 'string' },
+                owner: { type: 'string' },
+                supply: { type: 'number' },
               }
             }
           }
@@ -321,7 +321,7 @@ export default async function routes(fastify: FastifyInstance) {
         let token_asset = assets.find(asset => asset.token_id === token.tokenId)
         let supply = 1;
         if (token_asset) {
-          let min_trait_count = token_asset.traits.reduce((min:number, trait:any) => {
+          let min_trait_count = token_asset.traits.reduce((min: number, trait: any) => {
             if (trait.trait_count) {
               return min ? Math.min(trait.trait_count, min) : trait.trait_count
             }
@@ -329,7 +329,7 @@ export default async function routes(fastify: FastifyInstance) {
           }, null);
           supply = min_trait_count ? min_trait_count : supply;
         }
-        return {...token, event: {...token.event, supply: supply}}
+        return { ...token, event: { ...token.event, supply: supply } }
 
       })
 
@@ -343,19 +343,19 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to mint a event to several users',
-        tags: ['Actions', ],
+        tags: ['Actions',],
         body: {
           type: 'object',
           required: ['eventId', 'addresses', 'signer_address'],
           properties: {
             eventId: { type: 'integer', minimum: 1 },
             addresses: { type: 'array', minItems: 1, items: { type: 'string' } },
-            address: {type: 'string'},
-            signer: {type: 'string'}
+            address: { type: 'string' },
+            signer: { type: 'string' }
           },
         },
         response: {
-          204: { 
+          204: {
             type: 'string',
           }
         },
@@ -391,18 +391,18 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to mint a user several events',
-        tags: ['Actions', ],
+        tags: ['Actions',],
         body: {
           type: 'object',
           required: ['eventIds', 'address', 'signer_address'],
           properties: {
             eventIds: { type: 'array', minItems: 1, items: { type: 'integer', minimum: 1 } },
-            address: {type: 'string'},
-            signer: {type: 'string'}
+            address: { type: 'string' },
+            signer: { type: 'string' }
           },
         },
         response: {
-          204: { 
+          204: {
             type: 'string',
           }
         },
@@ -433,7 +433,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'POST claim',
-        tags: ['Actions', ],
+        tags: ['Actions',],
         body: {
           type: 'object',
           required: ['claimId', 'eventId', 'proof', 'claimer', 'claimerSignature'],
@@ -446,7 +446,7 @@ export default async function routes(fastify: FastifyInstance) {
           },
         },
         response: {
-          204: { 
+          204: {
             type: 'string',
           }
         }
@@ -469,45 +469,45 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'In this endpoint you can ask for the status of a claim, also you have to use this endpoint to get the secret that is needed in the post endpoint',
-        tags: ['Actions', ],
+        tags: ['Actions',],
         querystring: {
           qr_hash: { type: 'string' },
         },
         response: {
-          200: { 
+          200: {
             type: 'object',
             properties: {
-              id:  { type: 'number'},
-              qr_hash: { type: 'string'},
-              tx_hash: { type: 'string'},
-              event_id: { type: 'number'},
-              beneficiary: { type: 'string'},
-              signer: { type: 'string'},
-              claimed: { type: 'boolean'},
-              claimed_date: { type: 'string'},
-              created_date: { type: 'string'},
-              is_active: { type: 'boolean'},
-              secret: { type: 'string'},
+              id: { type: 'number' },
+              qr_hash: { type: 'string' },
+              tx_hash: { type: 'string' },
+              event_id: { type: 'number' },
+              beneficiary: { type: 'string' },
+              signer: { type: 'string' },
+              claimed: { type: 'boolean' },
+              claimed_date: { type: 'string' },
+              created_date: { type: 'string' },
+              is_active: { type: 'boolean' },
+              secret: { type: 'string' },
               event: {
                 type: 'object',
                 properties: {
-                  id: { type: 'number'},
-                  fancy_id: { type: 'string'},
-                  signer_ip: { type: 'string'},
-                  signer: { type: 'string'},
-                  name: { type: 'string'},
-                  event_url: { type: 'string'},
-                  image_url: { type: 'string'},
-                  country: { type: 'string'},
-                  city: { type: 'string'},
-                  description: { type: 'string'},
-                  year: { type: 'number'},
-                  start_date: { type: 'string'},
-                  end_date: { type: 'string'},
-                  created_date: { type: 'string'}
+                  id: { type: 'number' },
+                  fancy_id: { type: 'string' },
+                  signer_ip: { type: 'string' },
+                  signer: { type: 'string' },
+                  name: { type: 'string' },
+                  event_url: { type: 'string' },
+                  image_url: { type: 'string' },
+                  country: { type: 'string' },
+                  city: { type: 'string' },
+                  description: { type: 'string' },
+                  year: { type: 'number' },
+                  start_date: { type: 'string' },
+                  end_date: { type: 'string' },
+                  created_date: { type: 'string' }
                 }
               },
-              tx_status: { type: 'string'}
+              tx_status: { type: 'string' }
             }
           }
         }
@@ -538,7 +538,7 @@ export default async function routes(fastify: FastifyInstance) {
       qr_claim.tx_status = null;
       if (qr_claim.tx_hash) {
         const transaction_status = await getTransaction(qr_claim.tx_hash);
-        if(transaction_status) {
+        if (transaction_status) {
           qr_claim.tx_status = transaction_status.status;
         }
       }
@@ -557,50 +557,50 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Using a qr code in this endpoint you can mint and transfer a poap token to a wallet',
-        tags: ['Actions', ],
+        tags: ['Actions',],
         body: {
           type: 'object',
           required: ['address', 'qr_hash', 'secret'],
           properties: {
-            address: { type: 'string'},
-            qr_hash: { type: 'string'},
-            secret: { type: 'string'},
+            address: { type: 'string' },
+            qr_hash: { type: 'string' },
+            secret: { type: 'string' },
           }
         },
         response: {
-          200: { 
+          200: {
             type: 'object',
             properties: {
-              id:  { type: 'number'},
-              qr_hash: { type: 'string'},
-              tx_hash: { type: 'string'},
-              event_id: { type: 'number'},
-              beneficiary: { type: 'string'},
-              signer: { type: 'string'},
-              claimed: { type: 'boolean'},
-              claimed_date: { type: 'string'},
-              created_date: { type: 'string'},
-              is_active: { type: 'boolean'},
+              id: { type: 'number' },
+              qr_hash: { type: 'string' },
+              tx_hash: { type: 'string' },
+              event_id: { type: 'number' },
+              beneficiary: { type: 'string' },
+              signer: { type: 'string' },
+              claimed: { type: 'boolean' },
+              claimed_date: { type: 'string' },
+              created_date: { type: 'string' },
+              is_active: { type: 'boolean' },
               event: {
                 type: 'object',
                 properties: {
-                  id: { type: 'number'},
-                  fancy_id: { type: 'string'},
-                  signer_ip: { type: 'string'},
-                  signer: { type: 'string'},
-                  name: { type: 'string'},
-                  event_url: { type: 'string'},
-                  image_url: { type: 'string'},
-                  country: { type: 'string'},
-                  city: { type: 'string'},
-                  description: { type: 'string'},
-                  year: { type: 'number'},
-                  start_date: { type: 'string'},
-                  end_date: { type: 'string'},
-                  created_date: { type: 'string'}
+                  id: { type: 'number' },
+                  fancy_id: { type: 'string' },
+                  signer_ip: { type: 'string' },
+                  signer: { type: 'string' },
+                  name: { type: 'string' },
+                  event_url: { type: 'string' },
+                  image_url: { type: 'string' },
+                  country: { type: 'string' },
+                  city: { type: 'string' },
+                  description: { type: 'string' },
+                  year: { type: 'number' },
+                  start_date: { type: 'string' },
+                  end_date: { type: 'string' },
+                  created_date: { type: 'string' }
                 }
               },
-              tx_status: { type: 'string'}
+              tx_status: { type: 'string' }
             }
           }
         }
@@ -610,7 +610,7 @@ export default async function routes(fastify: FastifyInstance) {
       const env = getEnv();
       const secret = crypto.createHmac('sha256', env.secretKey).update(req.body.qr_hash).digest('hex');
 
-      if(req.body.secret != secret) {
+      if (req.body.secret != secret) {
         await sleep(1000)
         return new createError.NotFound('Invalid secret');
       }
@@ -674,7 +674,7 @@ export default async function routes(fastify: FastifyInstance) {
 
       if (qr_claim.tx_hash) {
         const transaction_status = await getTransaction(qr_claim.tx_hash);
-        if(transaction_status) {
+        if (transaction_status) {
           qr_claim.tx_status = transaction_status.status
         }
 
@@ -690,17 +690,17 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to bump a transaction',
-        tags: ['Actions', ],
+        tags: ['Actions',],
         body: {
           type: 'object',
           required: ['txHash', 'gasPrice'],
           properties: {
             txHash: { type: 'string' },
-            gasPrice: { type: 'string'},
+            gasPrice: { type: 'string' },
           },
         },
         response: {
-          200: { 
+          200: {
             type: 'string',
           }
         },
@@ -724,35 +724,35 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Endpoint to get an specific token',
-        tags: ['Token', ],
+        tags: ['Token',],
         params: {
           tokenId: { type: 'integer' },
         },
         response: {
-          200: { 
+          200: {
             type: 'object',
             properties: {
               event: {
                 type: 'object',
                 properties: {
-                  id: { type: 'number'},
-                  fancy_id: { type: 'string'},
-                  signer_ip: { type: 'string'},
-                  signer: { type: 'string'},
-                  name: { type: 'string'},
-                  event_url: { type: 'string'},
-                  image_url: { type: 'string'},
-                  country: { type: 'string'},
-                  city: { type: 'string'},
-                  description: { type: 'string'},
-                  year: { type: 'number'},
-                  start_date: { type: 'string'},
-                  end_date: { type: 'string'},
-                  created_date: { type: 'string'}
+                  id: { type: 'number' },
+                  fancy_id: { type: 'string' },
+                  signer_ip: { type: 'string' },
+                  signer: { type: 'string' },
+                  name: { type: 'string' },
+                  event_url: { type: 'string' },
+                  image_url: { type: 'string' },
+                  country: { type: 'string' },
+                  city: { type: 'string' },
+                  description: { type: 'string' },
+                  year: { type: 'number' },
+                  start_date: { type: 'string' },
+                  end_date: { type: 'string' },
+                  created_date: { type: 'string' }
                 }
               },
-              tokenId: { type: 'string'},
-              owner: { type: 'string'}
+              tokenId: { type: 'string' },
+              owner: { type: 'string' }
             }
           }
         }
@@ -771,12 +771,12 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Burn Token ID',
-        tags: ['Token', ],
+        tags: ['Token',],
         params: {
           tokenId: { type: 'integer' },
         },
         response: {
-          204: { type: 'string'},
+          204: { type: 'string' },
         },
         security: [
           {
@@ -803,18 +803,18 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Endpoint that list all poap settings',
-        tags: ['Settings', ],
+        tags: ['Settings',],
         response: {
-          200: { 
+          200: {
             type: 'array',
-            items: { 
+            items: {
               type: 'object',
               properties: {
-                id: { type: 'number'},
-                name: { type: 'string'},
-                type: { type: 'string'},
-                value: { type: 'string'},
-                created_date: { type: 'string'}
+                id: { type: 'number' },
+                name: { type: 'string' },
+                type: { type: 'string' },
+                value: { type: 'string' },
+                created_date: { type: 'string' }
               }
             },
           }
@@ -831,19 +831,19 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Endpoint to get an specific poap setting',
-        tags: ['Settings', ],
+        tags: ['Settings',],
         params: {
           name: { type: 'string' },
         },
         response: {
-          200: { 
+          200: {
             type: 'object',
             properties: {
-              id: { type: 'number'},
-              name: { type: 'string'},
-              type: { type: 'string'},
-              value: { type: 'string'},
-              created_date: { type: 'string'}
+              id: { type: 'number' },
+              name: { type: 'string' },
+              type: { type: 'string' },
+              value: { type: 'string' },
+              created_date: { type: 'string' }
             }
           },
         }
@@ -865,13 +865,13 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to edit POAP settings',
-        tags: ['Settings', ],
+        tags: ['Settings',],
         params: {
           name: { type: 'string' },
           value: { type: 'string' },
         },
         response: {
-          200: { type: 'string'},
+          200: { type: 'string' },
         },
         security: [
           {
@@ -910,7 +910,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Endpoint to get all events',
-        tags: ['Events', ],
+        tags: ['Events',],
         response: {
           200: {
             type: 'array',
@@ -946,12 +946,12 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Endpoint to get an specific event',
-        tags: ['Events', ],
+        tags: ['Events',],
         params: {
           fancyid: { type: 'string' },
         },
         response: {
-          200: { 
+          200: {
             type: 'object',
             properties: {
               id: { type: 'number' },
@@ -982,7 +982,7 @@ export default async function routes(fastify: FastifyInstance) {
   );
 
   async function validate_file(req: any) {
-    const image = {...req.body.image};
+    const image = { ...req.body.image };
     req.body.image = '@image';
     req.body[Symbol.for('image')] = image;
   }
@@ -990,10 +990,10 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/events',
     {
-      preValidation: [fastify.optionalAuthenticate, validate_file, ],
+      preValidation: [fastify.optionalAuthenticate, validate_file,],
       schema: {
         description: 'Endpoint to create new events',
-        tags: ['Events', ],
+        tags: ['Events',],
         body: {
           type: 'object',
           required: [
@@ -1020,7 +1020,7 @@ export default async function routes(fastify: FastifyInstance) {
           },
         },
         response: {
-          200: { 
+          200: {
             type: 'object',
             properties: {
               id: { type: 'number' },
@@ -1046,21 +1046,21 @@ export default async function routes(fastify: FastifyInstance) {
         ]
       },
     },
-    async (req:any, res) => {
+    async (req: any, res) => {
 
       const unidecoded_slug = unidecode(req.body.name)
-          .replace(/^\s+|\s+$/g, "") // trim
-          .toLowerCase()
-          .replace(/[^a-z0-9 -]/g, "") // remove invalid chars
-          .replace(/\s+/g, "-") // collapse whitespace and replace by -
-          .replace(/-+/g, "-") // collapse dashes
-          .replace(/^-+/, "") // trim - from start of text
-          .replace(/-+$/, "");
+        .replace(/^\s+|\s+$/g, "") // trim
+        .toLowerCase()
+        .replace(/[^a-z0-9 -]/g, "") // remove invalid chars
+        .replace(/\s+/g, "-") // collapse whitespace and replace by -
+        .replace(/-+/g, "-") // collapse dashes
+        .replace(/^-+/, "") // trim - from start of text
+        .replace(/-+$/, "");
 
       const parsed_fancy_id = unidecoded_slug + '-' + req.body.year;
 
       let eventHost = null;
-      let is_admin:boolean = false;
+      let is_admin: boolean = false;
 
       if (req.user && req.user.hasOwnProperty('sub')) {
         const user_id = req.user.sub;
@@ -1077,7 +1077,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('An image is required');
       }
 
-      if(image.mimetype != 'image/png'){
+      if (image.mimetype != 'image/png') {
         return new createError.BadRequest('Image must be png');
       }
 
@@ -1086,7 +1086,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Event with this name already exists, please try another one');
       }
 
-      const filename = parsed_fancy_id + '-logo-'+(new Date().getTime())+'.png'
+      const filename = parsed_fancy_id + '-logo-' + (new Date().getTime()) + '.png'
       const google_image_url = await uploadFile(filename, image.mimetype, image.data);
       if (!google_image_url) {
         return new createError.InternalServerError('Error uploading image');
@@ -1121,13 +1121,13 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin, validate_file],
       schema: {
         description: 'Endpoint to modify several attributes of selected event',
-        tags: ['Events', ],
+        tags: ['Events',],
         params: {
           fancyid: { type: 'string' },
         },
         body: {
           type: 'object',
-          required: ['event_url', ],
+          required: ['event_url',],
           properties: {
             name: { type: 'string' },
             description: { type: 'string' },
@@ -1140,7 +1140,7 @@ export default async function routes(fastify: FastifyInstance) {
           },
         },
         response: {
-          204: { type: 'string'},
+          204: { type: 'string' },
         },
         security: [
           {
@@ -1166,18 +1166,18 @@ export default async function routes(fastify: FastifyInstance) {
         }
 
         // Check if user is editing owned event
-        if(event.event_host_id !== eventHost.id) {
+        if (event.event_host_id !== eventHost.id) {
           return new createError.BadRequest('You can not edit an event that was created by another user');
         }
       }
 
       const image = req.body[Symbol.for('image')][0];
-      let google_image_url:null|string = null;
+      let google_image_url: null | string = null;
       if (image) {
-        if(image.mimetype != 'image/png'){
+        if (image.mimetype != 'image/png') {
           return new createError.BadRequest('Image must be png');
         }
-        const filename = req.params.fancyid + '-logo-'+(new Date().getTime())+'.png'
+        const filename = req.params.fancyid + '-logo-' + (new Date().getTime()) + '.png'
         google_image_url = await uploadFile(filename, image.mimetype, image.data);
         if (!google_image_url) {
           return new createError.InternalServerError('Error uploading image');
@@ -1212,7 +1212,7 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Paginates endpoint of transactions, you can filter by status',
-        tags: ['Transactions', ],
+        tags: ['Transactions',],
         querystring: {
           limit: { type: 'number' },
           offset: { type: 'number' },
@@ -1225,20 +1225,20 @@ export default async function routes(fastify: FastifyInstance) {
               limit: { type: 'number' },
               offset: { type: 'number' },
               total: { type: 'number' },
-              transactions: { 
+              transactions: {
                 type: 'array',
                 items: {
                   type: 'object',
                   properties: {
-                    id: { type: 'number'},
-                    tx_hash: { type: 'string'},
-                    nonce: { type: 'number'},
-                    signer: { type: 'string'},
-                    operation: { type: 'string'},
-                    arguments: { type: 'string'},
-                    status: { type: 'string'},
-                    gas_price: { type: 'string'},
-                    created_date: { type: 'string'}
+                    id: { type: 'number' },
+                    tx_hash: { type: 'string' },
+                    nonce: { type: 'number' },
+                    signer: { type: 'string' },
+                    operation: { type: 'string' },
+                    arguments: { type: 'string' },
+                    status: { type: 'string' },
+                    gas_price: { type: 'string' },
+                    created_date: { type: 'string' }
                   }
                 }
               },
@@ -1284,34 +1284,34 @@ export default async function routes(fastify: FastifyInstance) {
 
   fastify.get(
     '/signers', {
-      preValidation: [fastify.authenticate],
-      schema: {
-        description: 'List of all the available signers',
-        tags: ['Signers', ],
-        response: {
-          200: { 
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                id: { type: 'number' },
-                signer: { type: 'string' },
-                role: { type: 'string' },
-                gas_price: { type: 'string' },
-                created_date: { type: 'string' },
-                pending_tx: { type: 'string' },
-                balance: { type: 'string' }
-              },
-            }
+    preValidation: [fastify.authenticate],
+    schema: {
+      description: 'List of all the available signers',
+      tags: ['Signers',],
+      response: {
+        200: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              signer: { type: 'string' },
+              role: { type: 'string' },
+              gas_price: { type: 'string' },
+              created_date: { type: 'string' },
+              pending_tx: { type: 'string' },
+              balance: { type: 'string' }
+            },
           }
-        },
-        security: [
-          {
-            "authorization": []
-          }
-        ]
-      }
-    },
+        }
+      },
+      security: [
+        {
+          "authorization": []
+        }
+      ]
+    }
+  },
     async (req, res) => {
       let signers = await getSigners();
 
@@ -1330,7 +1330,7 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'In this endpoint you can modify the signer gas_price',
-        tags: ['Signers', ],
+        tags: ['Signers',],
         params: {
           id: { type: 'string' },
         },
@@ -1342,7 +1342,7 @@ export default async function routes(fastify: FastifyInstance) {
           required: ['gas_price'],
         },
         response: {
-          200: { type: 'string'},
+          200: { type: 'string' },
         },
         security: [
           {
@@ -1366,12 +1366,12 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Response an image url of the tokenId you send',
-        tags: ['Token', ],
+        tags: ['Token',],
         params: {
           tokenId: { type: 'integer' },
         },
         response: {
-          200: { type: 'string'},
+          200: { type: 'string' },
         }
       },
     },
@@ -1400,7 +1400,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'Create a task that mints a POAP nft in the background',
-        tags: ['Tasks', ],
+        tags: ['Tasks',],
         headers: {
           required: ['Authorization'],
           type: 'object',
@@ -1415,11 +1415,11 @@ export default async function routes(fastify: FastifyInstance) {
           200: {
             type: 'object',
             properties: {
-              id:  { type: 'number' },
-              name:  { type: 'string' },
-              task_data: {type: 'object',},
-              status:  { type: 'string' },
-              return_data:  { type: 'string' }
+              id: { type: 'number' },
+              name: { type: 'string' },
+              task_data: { type: 'object', },
+              status: { type: 'string' },
+              return_data: { type: 'string' }
             }
           }
         }
@@ -1448,7 +1448,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       schema: {
         description: 'List paginated notifications, you can filter by type, event_id, and address',
-        tags: ['Notifications', ],
+        tags: ['Notifications',],
         querystring: {
           limit: { type: 'number' },
           offset: { type: 'number' },
@@ -1463,35 +1463,35 @@ export default async function routes(fastify: FastifyInstance) {
               limit: { type: 'number' },
               offset: { type: 'number' },
               total: { type: 'number' },
-              notifications: { 
+              notifications: {
                 type: 'array',
                 items: {
                   type: 'object',
                   properties: {
-                    id: { type: 'number'},
-                    title: { type: 'string'},
-                    description: { type: 'string'},
-                    type: { type: 'string'},
-                    event_id: { type: 'number'},
+                    id: { type: 'number' },
+                    title: { type: 'string' },
+                    description: { type: 'string' },
+                    type: { type: 'string' },
+                    event_id: { type: 'number' },
                     event: {
                       type: 'object',
                       properties: {
-                        id: { type: 'number'},
-                        fancy_id: { type: 'string'},
-                        signer: { type: 'string'},
-                        signer_ip: { type: 'string'},
-                        name: { type: 'string'},
-                        description: { type: 'string'},
-                        city: { type: 'string'},
-                        country: { type: 'string'},
-                        event_url: { type: 'string'},
-                        image_url: { type: 'string'},
-                        year: { type: 'number'},
-                        start_date: { type: 'string'},
-                        end_date: { type: 'string'},
+                        id: { type: 'number' },
+                        fancy_id: { type: 'string' },
+                        signer: { type: 'string' },
+                        signer_ip: { type: 'string' },
+                        name: { type: 'string' },
+                        description: { type: 'string' },
+                        city: { type: 'string' },
+                        country: { type: 'string' },
+                        event_url: { type: 'string' },
+                        image_url: { type: 'string' },
+                        year: { type: 'number' },
+                        start_date: { type: 'string' },
+                        end_date: { type: 'string' },
                       }
                     },
-                    created_date: { type: 'string'}
+                    created_date: { type: 'string' }
                   }
                 }
               },
@@ -1520,7 +1520,7 @@ export default async function routes(fastify: FastifyInstance) {
           return new createError.BadRequest('Event not found');
         }
         event_ids.push(event.id)
-      } else if(event_id === null && typeof event_id !== 'undefined') {
+      } else if (event_id === null && typeof event_id !== 'undefined') {
         event_ids = null;
       }
 
@@ -1537,13 +1537,13 @@ export default async function routes(fastify: FastifyInstance) {
 
       const allEvents = await getEvents();
 
-      let indexedEvents: { [id: number] : PoapEvent; } = {}
+      let indexedEvents: { [id: number]: PoapEvent; } = {}
       for (let event of allEvents) {
         indexedEvents[event.id] = event;
       }
 
       notifications = notifications.map((notification: Notification) => {
-        return {...notification, event: indexedEvents[notification.event_id]};
+        return { ...notification, event: indexedEvents[notification.event_id] };
       });
 
       return {
@@ -1561,45 +1561,45 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Create notification and send push notification',
-        tags: ['Notifications', ],
+        tags: ['Notifications',],
         body: {
           type: 'object',
           required: ['title', 'description', 'type', 'event_id'],
           properties: {
-            title: {type: 'string'},
-            description: {type: 'string'},
-            type: {type: 'string'},
-            event_id: {type: 'number'}
+            title: { type: 'string' },
+            description: { type: 'string' },
+            type: { type: 'string' },
+            event_id: { type: 'number' }
           },
         },
         response: {
           200: {
             type: 'object',
             properties: {
-              id: { type: 'number'},
-              title: { type: 'string'},
-              description: { type: 'string'},
-              type: { type: 'string'},
-              event_id: { type: 'number'},
+              id: { type: 'number' },
+              title: { type: 'string' },
+              description: { type: 'string' },
+              type: { type: 'string' },
+              event_id: { type: 'number' },
               event: {
                 type: 'object',
                 properties: {
-                  id: { type: 'number'},
-                  fancy_id: { type: 'string'},
-                  signer: { type: 'string'},
-                  signer_ip: { type: 'string'},
-                  name: { type: 'string'},
-                  description: { type: 'string'},
-                  city: { type: 'string'},
-                  country: { type: 'string'},
-                  event_url: { type: 'string'},
-                  image_url: { type: 'string'},
-                  year: { type: 'number'},
-                  start_date: { type: 'string'},
-                  end_date: { type: 'string'},
+                  id: { type: 'number' },
+                  fancy_id: { type: 'string' },
+                  signer: { type: 'string' },
+                  signer_ip: { type: 'string' },
+                  name: { type: 'string' },
+                  description: { type: 'string' },
+                  city: { type: 'string' },
+                  country: { type: 'string' },
+                  event_url: { type: 'string' },
+                  image_url: { type: 'string' },
+                  year: { type: 'number' },
+                  start_date: { type: 'string' },
+                  end_date: { type: 'string' },
                 }
               },
-              created_date: { type: 'string'}
+              created_date: { type: 'string' }
             }
           }
         },
@@ -1613,17 +1613,17 @@ export default async function routes(fastify: FastifyInstance) {
     async (req, res) => {
       const event_id = req.body.event_id && req.body.event_id > 0 ? req.body.event_id : null;
 
-      if([NotificationType.inbox, NotificationType.push].indexOf(req.body.type) == -1) {
+      if ([NotificationType.inbox, NotificationType.push].indexOf(req.body.type) == -1) {
         return new createError.BadRequest('Notification type must be in Inbox or Push');
       }
 
-      const notification = await createNotification({...req.body, event_id});
+      const notification = await createNotification({ ...req.body, event_id });
       if (!notification) {
         return new createError.BadRequest('Couldn\'t create the notification');
       }
-      
+
       let topic = 'all';
-      if(event_id) {
+      if (event_id) {
         const event = await getEvent(req.body.event_id);
         if (!event) {
           return new createError.BadRequest('Event not found');
@@ -1641,7 +1641,7 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       // Send a message to devices subscribed to the provided topic.
-      admin.messaging().send(message).then((response) => {}).catch((error) => {
+      admin.messaging().send(message).then((response) => { }).catch((error) => {
         return new createError.InternalServerError('Error sending push notification: ' + error);
       });
 
@@ -1659,7 +1659,7 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.optionalAuthenticate],
       schema: {
         description: 'List paginated qr codes, you can filter by event_id, qr_roll_id, claimed',
-        tags: ['Qr-claims', ],
+        tags: ['Qr-claims',],
         querystring: {
           limit: { type: 'number' },
           offset: { type: 'number' },
@@ -1686,7 +1686,7 @@ export default async function routes(fastify: FastifyInstance) {
           return new createError.BadRequest('you are not an administrator');
         }
       } else {
-        if(!passphrase) {
+        if (!passphrase) {
           return new createError.BadRequest('you need to send a passphrase');
         }
 
@@ -1722,13 +1722,13 @@ export default async function routes(fastify: FastifyInstance) {
 
       const allEvents = await getEvents();
 
-      let indexedEvents: { [id: number] : PoapEvent; } = {}
+      let indexedEvents: { [id: number]: PoapEvent; } = {}
       for (let event of allEvents) {
         indexedEvents[event.id] = event;
       }
 
       qrClaims = qrClaims.map((qrclaim: ClaimQR) => {
-        return {...qrclaim, event:indexedEvents[qrclaim.event_id]};
+        return { ...qrclaim, event: indexedEvents[qrclaim.event_id] };
       });
 
       return {
@@ -1743,10 +1743,10 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/qr-code/range-assign',
     {
-      preValidation: [fastify.optionalAuthenticate, ],
+      preValidation: [fastify.optionalAuthenticate,],
       schema: {
         description: 'Endpoint to assign event to several QR codes from a range of numeric_id',
-        tags: ['Qr-claims', ],
+        tags: ['Qr-claims',],
         body: {
           type: 'object',
           required: ['numeric_id_min', 'numeric_id_max'],
@@ -1758,7 +1758,7 @@ export default async function routes(fastify: FastifyInstance) {
           },
         },
         response: {
-          204: { type: 'string'},
+          204: { type: 'string' },
         },
         security: [
           {
@@ -1773,7 +1773,7 @@ export default async function routes(fastify: FastifyInstance) {
       let eventId = req.body.event_id || null;
       const passphrase = req.body.passphrase || null;
       let eventHost = null;
-      let is_admin:boolean = false;
+      let is_admin: boolean = false;
 
       // Check range submitted
       if (numericIdMin >= numericIdMax) {
@@ -1783,7 +1783,7 @@ export default async function routes(fastify: FastifyInstance) {
       if (numericIdMin <= 0 || numericIdMax <= 0) {
         return new createError.BadRequest('Range numbers must be greater than 0');
       }
-      
+
       if (req.user && req.user.hasOwnProperty('sub')) {
         if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
           return new createError.BadRequest('you are not an administrator');
@@ -1793,7 +1793,7 @@ export default async function routes(fastify: FastifyInstance) {
         is_admin = true;
 
       } else {
-        if(!passphrase) {
+        if (!passphrase) {
           return new createError.BadRequest('you need to send a passphrase');
         }
 
@@ -1850,17 +1850,17 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to assign event to several qr from a list of QR hashes',
-        tags: ['Qr-claims', ],
+        tags: ['Qr-claims',],
         body: {
           type: 'object',
           required: ['qr_code_hashes', 'event_id'],
           properties: {
-            qr_code_hashes: { type: 'array', items: { type: 'string' }},
+            qr_code_hashes: { type: 'array', items: { type: 'string' } },
             event_id: { type: 'number' },
           },
         },
         response: {
-          204: { type: 'string'},
+          204: { type: 'string' },
         },
         security: [
           {
@@ -1870,7 +1870,7 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req: any, res) => {
-      const qrCodeHashes:string[] = req.body.qr_code_hashes;
+      const qrCodeHashes: string[] = req.body.qr_code_hashes;
       let eventId = req.body.event_id || null;
 
       // Check if event exists
@@ -1884,7 +1884,7 @@ export default async function routes(fastify: FastifyInstance) {
 
       // Check if QR codes were claimed
       const claimedQrs = await getClaimedQrsHashList(qrCodeHashes);
-      let alreadyClaimedQrs:string[] = [];
+      let alreadyClaimedQrs: string[] = [];
       if (claimedQrs && claimedQrs[0]) {
         let ids = [];
         for (let claimedQr of claimedQrs) {
@@ -1908,18 +1908,18 @@ export default async function routes(fastify: FastifyInstance) {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to create qr hashes and assign event to them',
-        tags: ['Qr-claims', ],
+        tags: ['Qr-claims',],
         body: {
           type: 'object',
-          required: ['qr_list', ],
+          required: ['qr_list',],
           properties: {
-            qr_list: { type: 'array', items: { type: 'string' }},
-            numeric_list: { type: 'array', items: { type: 'number' }},
+            qr_list: { type: 'array', items: { type: 'string' } },
+            numeric_list: { type: 'array', items: { type: 'number' } },
             event_id: { type: 'number' },
           },
         },
         response: {
-          204: { type: 'string'},
+          204: { type: 'string' },
         },
         security: [
           {
@@ -1929,26 +1929,26 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req: any, res) => {
-      const qrCodeHashes:string[] = req.body.qr_list;
-      const numericList:number[] = req.body.numeric_list;
+      const qrCodeHashes: string[] = req.body.qr_list;
+      const numericList: number[] = req.body.numeric_list;
       let eventId = req.body.event_id || null;
       let hashesToAdd: any[] = [];
-      let existingClaimedQrs:string[] = [];
-      let existingNumericIds:number[] = [];
+      let existingClaimedQrs: string[] = [];
+      let existingNumericIds: number[] = [];
       const numericListExists = numericList.length > 0;
 
-      if(numericListExists && qrCodeHashes.length != numericList.length) {
+      if (numericListExists && qrCodeHashes.length != numericList.length) {
         return new createError.BadRequest('qr_code_hashes list length is not equal to numeric_list list length');
       }
 
       const checkDuplicatedQrs = qrCodeHashes.filter((item, index) => qrCodeHashes.indexOf(item) != index)
       const checkDuplicatedNumericIds = numericListExists ? numericList.filter((item, index) => numericList.indexOf(item) != index) : []
 
-      if(checkDuplicatedQrs.length > 0) {
+      if (checkDuplicatedQrs.length > 0) {
         return new createError.BadRequest('QR Hash list include duplicated codes: ' + checkDuplicatedQrs);
       }
-      
-      if(checkDuplicatedNumericIds.length > 0) {
+
+      if (checkDuplicatedNumericIds.length > 0) {
         return new createError.BadRequest('Numeric list include duplicated numbers: ' + checkDuplicatedNumericIds);
       }
 
@@ -1970,9 +1970,9 @@ export default async function routes(fastify: FastifyInstance) {
         }
 
         let numeric_id = null;
-        if(numericList) {
+        if (numericList) {
           numeric_id = numericList[i];
-          
+
           const checkNumericId = await checkNumericIdExists(numeric_id);
           if (checkNumericId) {
             existingNumericIds.push(numeric_id);
@@ -2002,21 +2002,21 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/qr-code/update',
     {
-      preValidation: [fastify.optionalAuthenticate, ],
+      preValidation: [fastify.optionalAuthenticate,],
       schema: {
         description: 'Endpoint to assign event to several qr from a list of id',
-        tags: ['Qr-claims', ],
+        tags: ['Qr-claims',],
         body: {
           type: 'object',
           required: ['qr_code_ids', 'event_id'],
           properties: {
-            event_ids: { type: 'array', items: { type: 'number' }},
+            event_ids: { type: 'array', items: { type: 'number' } },
             event_id: { type: 'number' },
             passphrase: { type: 'string' },
           },
         },
         response: {
-          204: { type: 'string'},
+          204: { type: 'string' },
         },
         security: [
           {
@@ -2026,11 +2026,11 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req: any, res) => {
-      const qrCodeIds:number[] = req.body.qr_code_ids;
+      const qrCodeIds: number[] = req.body.qr_code_ids;
       let eventId = req.body.event_id || null;
       const passphrase = req.body.passphrase || null;
       let eventHost = null;
-      let is_admin:boolean = false;
+      let is_admin: boolean = false;
 
       if (req.user && req.user.hasOwnProperty('sub')) {
         if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
@@ -2042,7 +2042,7 @@ export default async function routes(fastify: FastifyInstance) {
 
       } else {
 
-        if(!passphrase) {
+        if (!passphrase) {
           return new createError.BadRequest('you need to send a passphrase');
         }
 
