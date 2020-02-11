@@ -138,7 +138,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
       return {
         ...event,
         start_date: event.start_date.replace(dateRegex, '-'),
-        end_date: event.start_date.replace(dateRegex, '-'),
+        end_date: event.end_date.replace(dateRegex, '-'),
         isFile: false,
       };
     } else {
