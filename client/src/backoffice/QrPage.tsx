@@ -92,6 +92,7 @@ const QrPage: FC = () => {
   const [total, setTotal] = useState<number>(0);
   const [isFetchingQrCodes, setIsFetchingQrCodes] = useState<null | boolean>(null);
   const [qrCodes, setQrCodes] = useState<null | QrCode[]>(null);
+  const [checkedAllQrs, setCheckedAllQrs] = useState<boolean>(false);
   const [claimStatus, setClaimStatus] = useState<string>('');
   const [claimScanned, setClaimScanned] = useState<string>('');
   const [selectedEvent, setSelectedEvent] = useState<number | undefined>(undefined);
@@ -125,14 +126,16 @@ const QrPage: FC = () => {
   useEffect(() => {
     if (!initialFetch) {
       fetchQrCodes()
+      setCheckedAllQrs(false)
     }
   }, [page]);
 
   useEffect(() => {
     if (!initialFetch) {
-      cleanQrSelection();
-      setPage(0);
-      fetchQrCodes();
+      cleanQrSelection()
+      setPage(0)
+      fetchQrCodes()
+      setCheckedAllQrs(false)
     }
   }, [
     selectedEvent,
@@ -209,7 +212,6 @@ const QrPage: FC = () => {
   };
 
   const handlePageChange = (obj: PaginateAction) => {
-    console.log(obj);
     setPage(obj.selected);
   };
 
@@ -221,6 +223,28 @@ const QrPage: FC = () => {
       ? setSelectedQrs(selectedQrs => selectedQrs.filter((qrId: string) => qrId !== stringifiedId))
       : setSelectedQrs(selectedQrs => [...selectedQrs, stringifiedId]);
   };
+
+  const handleQrCheckboxChangeAll = () => {
+
+    if (qrCodes && qrCodes.length > 0) {
+      const unclaimedCodes = qrCodes.filter(code => !code.claimed)
+      let newSelectedQrs = [...selectedQrs]
+      unclaimedCodes.forEach(code => {
+        const stringifiedId = String(code.id);
+        const included = selectedQrs.includes(stringifiedId)
+        if (!included && !checkedAllQrs) {
+          newSelectedQrs = [...newSelectedQrs, stringifiedId]
+        }
+
+        if (included && checkedAllQrs) {
+          newSelectedQrs = newSelectedQrs.filter((qrId: string) => qrId !== stringifiedId)
+        }
+
+      })
+      setSelectedQrs(newSelectedQrs);
+      setCheckedAllQrs(!checkedAllQrs);
+    }
+  }
 
   const handleLimitChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -251,7 +275,7 @@ const QrPage: FC = () => {
                 events.map(event => {
                   const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
                     event.year
-                  }`;
+                    }`;
 
                   return (
                     <option key={event.id} value={event.id}>
@@ -340,7 +364,15 @@ const QrPage: FC = () => {
       {qrCodes && qrCodes.length !== 0 && !isFetchingQrCodes && (
         <div className={'qr-table-section'}>
           <div className={'row table-header visible-md'}>
-            <div className={'col-md-1 center'}>-</div>
+            <div className={'col-md-1 center'}>
+              {isAdmin ? (
+                <input
+                  type="checkbox"
+                  onChange={handleQrCheckboxChangeAll}
+                  checked={checkedAllQrs}
+                />
+              ) : "-"}
+            </div>
             <div className={'col-md-2'}>QR Hash</div>
             <div className={'col-md-4'}>Event</div>
             <div className={'col-md-1 center'}>Status</div>
@@ -588,7 +620,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
                   events.map((event: PoapEvent) => {
                     const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
                       event.year
-                    }`;
+                      }`;
                     return (
                       <option key={event.id} value={event.id}>
                         {label}
@@ -894,8 +926,8 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                   {hasSelectedQrs ? (
                     <span>{`You have ${selectedQrs.length} QR's selected`}</span>
                   ) : (
-                    <span className="grey-text">You have no selected QRs</span>
-                  )}
+                      <span className="grey-text">You have no selected QRs</span>
+                    )}
                 </div>
               </div>
               <div className="option-container">
@@ -978,7 +1010,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                     .map(event => {
                       const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
                         event.year
-                      }`;
+                        }`;
                       return (
                         <option key={event.id} value={event.id}>
                           {label}

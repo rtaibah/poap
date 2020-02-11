@@ -505,7 +505,7 @@ export async function getPaginatedQrClaims(limit: number, offset: number, eventI
     query = query + 'AND scanned = ' + scanned + ' '
   }
 
-  query = query + 'ORDER BY created_date DESC LIMIT ${limit} OFFSET ${offset}';
+  query = query + 'ORDER BY created_date, id DESC LIMIT ${limit} OFFSET ${offset}';
 
   const res = await db.manyOrNone<ClaimQR>(query, { limit, offset });
   return res
