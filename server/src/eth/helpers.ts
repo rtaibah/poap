@@ -10,6 +10,7 @@ import {
   saveTransaction,
   getSigner,
   getAvailableHelperSigners,
+  getLastSignerTransaction,
   getTransaction,
   updateTransactionStatus
 } from '../db';
@@ -51,16 +52,15 @@ export async function getHelperSigner(requiredBalance: number = 0): Promise<null
     signers = await Promise.all(signers.map(signer => getAddressBalance(signer)));
     let sorted_signers: Signer[] = signers.sort((a, b) => {
       if (a.pending_tx === b.pending_tx) {
-        return (parseInt(b.balance) - parseInt(a.balance));
-      } else if (a.pending_tx > b.pending_tx) {
-        return 1;
+        return parseInt(b.balance, 10) - parseInt(a.balance, 10);
+      } else if (a.pending_tx < b.pending_tx) {
+        return -1;
       }
-      return -1;
+      return 1;
     });
 
     for (let signer of sorted_signers) {
       if (!wallet) {
-        console.log('signerWithBalance: ', signer);
         if (+signer.balance > requiredBalance) {
           wallet = env.poapHelpers[signer.signer.toLowerCase()];
         }
@@ -94,7 +94,7 @@ export async function getSignerWallet(address: Address): Promise<Wallet> {
 export function estimateMintingGas(n: number) {
   const delta = 136907;
   const baseCost = 35708;
-  return (baseCost + n * delta) * 1.5;
+  return Math.ceil((baseCost + n * delta) * 1.5);
 }
 
 /**
@@ -157,6 +157,12 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
 
   if (extraParams && extraParams.nonce) {
     transactionParams.nonce = extraParams.nonce;
+  } else  {
+    const lastTransaction = await getLastSignerTransaction(signerWallet.address);
+    if (lastTransaction && lastTransaction.nonce > 0) {
+      console.log(`>> Last tx: ${lastTransaction.tx_hash} (${lastTransaction.nonce})`);
+      transactionParams.nonce = lastTransaction.nonce + 1
+    }
   }
 
   return {
@@ -215,7 +221,7 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
 
   switch (transaction.operation) {
     case OperationType.burnToken: {
-      const [tokenId] = txJSON
+      const tokenId = txJSON
       await burnToken(tokenId, {
         signer: transaction.signer,
         gas_price: gasPrice,
@@ -227,7 +233,8 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
       await mintEventToManyUsers(eventId, toAddresses, {
         signer: transaction.signer,
         gas_price: gasPrice,
-        nonce: transaction.nonce
+        nonce: transaction.nonce,
+        estimate_mint_gas: toAddresses.length
       })
       break;
     }
@@ -241,11 +248,12 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
       break;
     }
     case OperationType.mintUserToManyEvents: {
-      const [eventIds, toAddr] = txJSON
+      const {eventIds, toAddr} = txJSON
       await mintUserToManyEvents(eventIds, toAddr, {
         signer: transaction.signer,
         gas_price: gasPrice,
-        nonce: transaction.nonce
+        nonce: transaction.nonce,
+        estimate_mint_gas: eventIds.length
       })
       break;
     }
@@ -434,8 +442,8 @@ export async function verifyClaim(claim: Claim): Promise<string | boolean> {
 }
 
 export async function getAddressBalance(signer: Signer): Promise<Signer> {
-  let provider = getDefaultProvider();
-  let balance = await provider.getBalance(signer.signer);
+  const env = getEnv();
+  let balance = await env.provider.getBalance(signer.signer);
 
   signer.balance = balance.toString();
 

@@ -324,6 +324,13 @@ const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: Image
       className={classNames(Boolean(errors.image) && 'error')}
       onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue)}
     />
+    <div className="input-field-helper">
+      Badge specs:
+      <ul>
+        <li>Mandatory: PNG format</li>
+        <li>Recommended: measures 500x500px, round shape, size less than 200KB</li>
+      </ul>
+    </div>
     <ErrorMessage name="image" component="p" className="bk-error" />
   </div>
 );

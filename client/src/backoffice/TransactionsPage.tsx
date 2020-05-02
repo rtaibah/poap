@@ -16,6 +16,7 @@ import { Loading } from '../components/Loading';
 import { SubmitButton } from '../components/SubmitButton';
 /* Assets */
 import gas from '../images/gas-station.svg';
+import bump from '../images/increase.svg';
 import checked from '../images/checked.svg';
 import error from '../images/error.svg';
 import clock from '../images/clock.svg';
@@ -59,6 +60,7 @@ const TransactionsPage: FC = () => {
     [TX_STATUS.pending]: clock,
     [TX_STATUS.failed]: error,
     [TX_STATUS.passed]: checked,
+    [TX_STATUS.bumped]: bump,
   };
 
   const fetchTransactions = () => {

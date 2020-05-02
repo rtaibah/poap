@@ -1,4 +1,6 @@
 dist/
 .env
 app.yaml
+dev.yaml
+staging.yaml
 service-account-file.json

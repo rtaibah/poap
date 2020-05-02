@@ -70,7 +70,7 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
 
     let error = false;
     addresses.forEach(address => {
-      if (address.indexOf('.eth') === -1 && !address.match(/^0x[0-9a-fA-F]{40}$/)) error = true;
+      if (address.indexOf('.') === -1 && !address.match(/^0x[0-9a-fA-F]{40}$/)) error = true;
     });
     if (error) {
       actions.setStatus({

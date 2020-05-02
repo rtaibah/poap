@@ -550,3 +550,14 @@ textarea {
     color: $color-primary;
   }
 }
+
+.input-field-helper {
+  color: $color-primary;
+
+  ul {
+    li {
+      color: $color-primary;
+      margin: 5px 0;
+    }
+  }
+}

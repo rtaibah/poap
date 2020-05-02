@@ -75,11 +75,11 @@ import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
 import { getAssets } from './plugins/opensea-utils';
 
-function buildMetadataJson(tokenUrl: string, ev: PoapEvent) {
+function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
     description: ev.description,
     external_url: tokenUrl,
-    home_url: tokenUrl,
+    home_url: homeUrl,
     image_url: ev.image_url,
     name: ev.name,
     year: ev.year,
@@ -178,8 +178,9 @@ export default async function routes(fastify: FastifyInstance) {
       if (!event) {
         throw new createError.NotFound('Invalid Event');
       }
+      const homeUrl = `https://app.poap.xyz/token/${req.params.tokenId}`;
       const tokenUrl = `https://api.poap.xyz/metadata/${req.params.eventId}/${req.params.tokenId}`;
-      return buildMetadataJson(tokenUrl, event);
+      return buildMetadataJson(homeUrl, tokenUrl, event);
     });
 
   //********************************************************************
@@ -1259,7 +1260,12 @@ export default async function routes(fastify: FastifyInstance) {
       if (status) {
         status = status.split(',');
       } else {
-        status = [TransactionStatus.failed, TransactionStatus.passed, TransactionStatus.pending];
+        status = [
+          TransactionStatus.failed,
+          TransactionStatus.passed,
+          TransactionStatus.pending,
+          TransactionStatus.bumped
+        ];
       }
 
       const transactions = await getTransactions(limit, offset, status);

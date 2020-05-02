@@ -113,6 +113,7 @@ const TX_STATUS = {
   failed: 'failed',
   passed: 'passed',
   pending: 'pending',
+  bumped: 'bumped',
 };
 
 const etherscanLinks = {

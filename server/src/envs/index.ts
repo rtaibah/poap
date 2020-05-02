@@ -58,7 +58,7 @@ export default function getEnv(): EnvVariables {
     provider = new InfuraProvider(infuraNet, infuraPK);
 
   } else if(envProvider == 'local') {
-    provider = new JsonRpcProvider('http://localhost:7545');
+    provider = new JsonRpcProvider('http://localhost:9545');
 
   } else {
     const network = ensureEnvVariable('ETH_NETWORK');

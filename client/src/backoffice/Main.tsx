@@ -161,7 +161,7 @@ export const BackOffice: React.FC = () => (
         </div>
       </div>
     </header>
-    <main className="app-content">
+    <main className="app-content backoffice">
       <div className="container">
         <Switch>
           <Route exact path={ROUTES.qr.path} render={() => <QrPage />} />

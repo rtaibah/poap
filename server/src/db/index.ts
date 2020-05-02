@@ -76,13 +76,20 @@ export async function getSigner(address: string): Promise<null | Signer> {
 
 export async function getAvailableHelperSigners(): Promise<null | Signer[]> {
   const res = await db.manyOrNone(`
-    SELECT s.id, s.signer, SUM(case when st.status = 'pending' then 1 else 0 end) as pending_txs
+    SELECT s.id, s.signer, SUM(case when st.status = 'pending' then 1 else 0 end) as pending_tx
     FROM signers s LEFT JOIN server_transactions st on LOWER(s.signer) = LOWER(st.signer)
     WHERE s.role != 'administrator'
     GROUP BY s.id, s.signer
-    ORDER BY pending_txs, s.id ASC
+    ORDER BY pending_tx, s.id ASC
   `);
   return res;
+}
+
+export async function getLastSignerTransaction(signer: string): Promise<null | Transaction> {
+  const res = await db.oneOrNone<Transaction>(`
+  SELECT * FROM server_transactions
+  WHERE signer ILIKE $1 ORDER BY nonce DESC LIMIT 1`, [signer]);
+  return res
 }
 
 export async function getTransaction(tx_hash: string): Promise<null | Transaction> {
@@ -150,7 +157,7 @@ export async function updateSignerGasPrice(
   const res = await db.result(
     'update signers set gas_price=${gas_price} where id = ${id}',
     {
-      gas_price: GasPrice,
+      gas_price: parseInt(GasPrice),
       id: Id
     }
   );
@@ -483,8 +490,6 @@ export async function getQrRoll(qrRollId: string): Promise<null | eventHost> {
   const res = await db.oneOrNone<eventHost>('SELECT * FROM qr_roll WHERE id=${qrRollId} AND is_active = true', { qrRollId });
   return res;
 }
-
-
 
 export async function getPaginatedQrClaims(limit: number, offset: number, eventId: number, qrRollId: number, claimed: string | null, scanned: string | null): Promise<ClaimQR[]> {
   let query = 'SELECT * FROM qr_claims WHERE is_active = true '
