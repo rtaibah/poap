@@ -22,8 +22,6 @@ import error from '../images/error.svg';
 import clock from '../images/clock.svg';
 import FilterChip from '../components/FilterChip';
 
-const PAGE_SIZE = 10;
-
 type PaginateAction = {
   selected: number;
 };
@@ -34,6 +32,7 @@ type GasPriceFormValues = {
 
 const TransactionsPage: FC = () => {
   const [page, setPage] = useState<number>(0);
+  const [limit, setLimit] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
   const [statusList, setStatusList] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
@@ -50,11 +49,12 @@ const TransactionsPage: FC = () => {
 
   useEffect(() => {
     fetchTransactions();
-  }, [page, statusList]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     setPage(0);
-  }, [statusList]);
+    fetchTransactions();
+  }, [statusList, limit]);
 
   const txStatus = {
     [TX_STATUS.pending]: clock,
@@ -67,7 +67,7 @@ const TransactionsPage: FC = () => {
     setIsFetchingTx(true);
     setTransactions(null);
 
-    getTransactions(PAGE_SIZE, page * PAGE_SIZE, statusList.join(','))
+    getTransactions(limit, page * limit, statusList.join(','))
       .then(response => {
         if (!response) return;
         setTransactions(response.transactions);
@@ -137,6 +137,13 @@ const TransactionsPage: FC = () => {
     setIsPendingSelected(!isPendingSelected);
   };
 
+  const handleLimitChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ): void => {
+    const { value } = e.target;
+    setLimit(parseInt(value, 10));
+  }
+
   return (
     <div className={'admin-table transactions'}>
       <h2>Transactions</h2>
@@ -149,6 +156,14 @@ const TransactionsPage: FC = () => {
             isActive={isPendingSelected}
             handleOnClick={handlePendingClick}
           />
+        </div>
+        <div className={'secondary-filters'}>
+          Results per page:
+          <select onChange={handleLimitChange}>
+            <option value={10}>10</option>
+            <option value={100}>100</option>
+            <option value={1000}>1000</option>
+          </select>
         </div>
       </div>
       <div className={'row table-header visible-md'}>
@@ -212,7 +227,7 @@ const TransactionsPage: FC = () => {
       {total > 10 && (
         <div className={'pagination'}>
           <ReactPaginate
-            pageCount={Math.ceil(total / PAGE_SIZE)}
+            pageCount={Math.ceil(total / limit)}
             marginPagesDisplayed={2}
             pageRangeDisplayed={5}
             forcePage={page}

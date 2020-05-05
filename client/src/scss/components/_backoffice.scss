@@ -398,10 +398,6 @@
 
     &.transactions {
       margin-bottom: 15px;
-
-      @media (min-width: $bp-l) {
-        margin-bottom: 0;
-      }
     }
 
     &.qr {
@@ -647,6 +643,10 @@
 .filter-chip {
   color: $color-primary;
   background-color: white;
+
+  @media (max-width: $bp-m) {
+    min-width: 100px;
+  }
 
   @media (min-width: $bp-l) {
     margin-right: 8px;
