@@ -8,6 +8,11 @@
     ],
     "redirects": [
       {
+        "source": "/form",
+        "destination": "https://forms.gle/XQLMEajkGtnvh5iD8",
+        "type": 302
+      },
+      {
         "source": "/tombola",
         "destination": "https://poap.xyz/#tombola",
         "type": 302
@@ -49,12 +54,12 @@
       },
       {
         "source": "/claim/:id*",
-        "destination": "https://poapapp.web.app/claim/:id",
+        "destination": "https://app.poap.xyz/claim/:id",
         "type": 301
       },
       {
         "source": "/claim",
-        "destination": "https://poapapp.web.app/claim",
+        "destination": "https://app.poap.xyz/claim",
         "type": 301
       }
     ]
