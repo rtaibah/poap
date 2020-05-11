@@ -24,13 +24,13 @@ import { ROUTES } from '../lib/constants';
 
 // assets
 import { ReactComponent as EditIcon } from '../images/edit.svg';
+import sort_down from '../images/sort-down.png';
+import sort_up from '../images/sort-up.png';
 
 /* Helpers */
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
 import { PoapEvent, getEvent, getEvents, updateEvent, createEvent } from '../api';
-
-const PAGE_SIZE = 10;
 
 type EventEditValues = {
   name: string;
@@ -67,6 +67,7 @@ type EventTableProps = {
   initialEvents: PoapEvent[];
   criteria: string;
   createdBy: string;
+  limit: number;
 };
 
 type EventFieldProps = {
@@ -367,6 +368,7 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
 
 export const EventList: React.FC = () => {
   const [criteria, setCriteria] = useState<string>('');
+  const [limit, setLimit] = useState<number>(10);
   const [createdBy, setCreatedBy] = useState<string>('all');
 
   const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
@@ -382,6 +384,13 @@ export const EventList: React.FC = () => {
 
     setCreatedBy(value);
   };
+
+  const handleLimitChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ): void => {
+    const { value } = e.target;
+    setLimit(parseInt(value, 10));
+  }
 
   const isAdmin = authClient.isAuthenticated();
 
@@ -405,19 +414,29 @@ export const EventList: React.FC = () => {
           </Link>
         </div>
       </div>
+      <div className={'secondary-filters'}>
+        Results per page:
+        <select onChange={handleLimitChange}>
+          <option value={10}>10</option>
+          <option value={100}>100</option>
+          <option value={1000}>1000</option>
+        </select>
+      </div>
       {fetchingEvents && <Loading />}
 
       {fetchEventsError && <div>There was a problem fetching events</div>}
 
-      {events && <EventTable createdBy={createdBy} criteria={criteria} initialEvents={events} />}
+      {events && <EventTable createdBy={createdBy} criteria={criteria} initialEvents={events} limit={limit} />}
     </div>
   );
 };
 
-const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, createdBy }) => {
+const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, createdBy, limit }) => {
   const [events, setEvents] = useState<PoapEvent[]>(initialEvents);
   const [total, setTotal] = useState<number>(events.length);
   const [page, setPage] = useState<number>(0);
+  const [idSort, setIdSort] = useState<number>(0);
+  const [nameSort, setNameSort] = useState<number>(0);
 
   useEffect(() => {
     const eventsByCreator = initialEvents.filter(event =>
@@ -448,12 +467,40 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
   };
 
   const eventsToShowManager = (events: PoapEvent[]): PoapEvent[] => {
+    if (idSort !== 0) {
+      events = events.sort((a, b) => {
+        return a.id > b.id ? idSort : (-1 * idSort);
+      })
+    }
+    if (nameSort !== 0) {
+      events = events.sort((a, b) => {
+        return a.name > b.name ? nameSort : (-1 * nameSort);
+      })
+    }
     if (events.length <= 10) return events;
-    return events.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+    return events.slice(page * limit, page * limit + limit);
   };
 
   const handleCriteriaFilter = (event: PoapEvent): boolean =>
     event.name.toLowerCase().includes(criteria);
+
+  const handleIdSort = () => {
+    if (idSort === 0) {
+      setIdSort(1);
+    } else {
+      setIdSort(-1 * idSort);
+    }
+    setNameSort(0);
+  };
+
+  const handleNameSort = () => {
+    if (nameSort === 0) {
+      setNameSort(1);
+    } else {
+      setNameSort(-1 * nameSort);
+    }
+    setIdSort(0);
+  };
 
   const nameColumnLength = isAdmin ? 4 : 5;
 
@@ -461,8 +508,14 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
     <div>
       <div className={'admin-table transactions'}>
         <div className={'row table-header visible-md'}>
-          <div className={'col-md-1 center'}>#</div>
-          <div className={`col-md-${nameColumnLength}`}>Name</div>
+          <div className={'col-md-1 center pointer'} onClick={handleIdSort}>
+            #
+            {idSort !== 0 && <img className={'img-sort'} src={idSort > 0 ? sort_up : sort_down} alt={'sort'} />}
+          </div>
+          <div className={`col-md-${nameColumnLength} pointer`} onClick={handleNameSort}>
+            Name
+            {nameSort !== 0 && <img className={'img-sort'} src={nameSort > 0 ? sort_up : sort_down} alt={'sort'} />}
+          </div>
           <div className={'col-md-2 center'}>Start Date</div>
           <div className={'col-md-2 center'}>End Date</div>
           <div className={'col-md-2 center'}>Image</div>
@@ -505,9 +558,9 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
         <div className={'pagination'}>
           {events && events.length > 10 && (
             <ReactPaginate
-              pageCount={Math.ceil(total / PAGE_SIZE)}
+              pageCount={Math.ceil(total / limit)}
               marginPagesDisplayed={2}
-              pageRangeDisplayed={PAGE_SIZE}
+              pageRangeDisplayed={limit}
               forcePage={page}
               activeClassName={'active'}
               onPageChange={handlePageChange}

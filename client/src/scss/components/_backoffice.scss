@@ -403,7 +403,7 @@
     &.qr {
       margin-bottom: 0;
       @media (max-width: $bp-mw) {
-        flex-direction: column;
+        display: block;
       }
 
       .filter {
@@ -441,10 +441,6 @@
               cursor: pointer;
             }
 
-            select {
-              max-width: auto;
-            }
-
             label {
               margin-bottom: 0;
             }
@@ -461,12 +457,12 @@
         display: flex;
         justify-content: flex-end;
         align-items: center;
+        margin: 0 0 15px 0;
 
         height: 50px;
 
         @media (min-width: $bp-l) {
-          margin-top: 10px;
-          margin-top: 10px;
+          margin: 10px 0 0;
         }
 
         .action-button {
@@ -559,20 +555,12 @@
       font-weight: bold;
     }
 
-    .secondary-filters {
-      margin-bottom: 25px;
-      flex-direction: column;
-
-      select {
-        margin-left: 15px;
-        width: auto;
-        height: 30px;
-        padding: 0 20px;
-        background-image: none;
-        text-align: center;
-      }
+    .img-sort {
+      width: 10px;
+      position: absolute;
+      right: 15px;
+      top: 5px;
     }
-
   }
 }
 
@@ -673,10 +661,15 @@
   align-items: center;
   margin-bottom: 15px;
 
+  @media (max-width: $bp-m) {
+    flex-direction: column;
+  }
+
   .left_content,
   .right_content {
-    > * {
-      max-width: 250px;
+    @media (max-width: $bp-m) {
+      margin-top: 15px;
+      width: 100%;
     }
   }
 
@@ -689,16 +682,19 @@
     input {
       margin-right: 20px;
       margin-bottom: 0;
+      @media (max-width: $bp-m) {
+        width: 50%;
+      }
     }
 
     select {
       height: 53px;
+      @media (max-width: $bp-m) {
+        width: 50%;
+      }
     }
   }
 
-  @media (min-width: $bp-l) {
-    margin-bottom: 35px;
-  }
 }
 
 .event-edit-icon-container {
@@ -732,4 +728,18 @@
 
 .relative {
   position: relative;
+}
+
+.secondary-filters {
+  margin-bottom: 25px;
+  flex-direction: column;
+
+  select {
+    margin-left: 15px;
+    width: auto;
+    height: 30px;
+    padding: 0 20px;
+    background-image: none;
+    text-align: center;
+  }
 }

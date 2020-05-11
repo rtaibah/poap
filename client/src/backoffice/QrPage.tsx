@@ -286,7 +286,7 @@ const QrPage: FC = () => {
             </FilterSelect>
           </div>
         </div>
-        <div className={'filter col-md-3'}>
+        <div className={'filter col-md-3 col-xs-6'}>
           <div className={'filter-group'}>
             <FilterSelect handleChange={handleStatusChange}>
               <option value="">Filter by status</option>
@@ -295,7 +295,7 @@ const QrPage: FC = () => {
             </FilterSelect>
           </div>
         </div>
-        <div className={'filter col-md-3'}>
+        <div className={'filter col-md-3 col-xs-6'}>
           <div className={'filter-group'}>
             <FilterSelect handleChange={handleScannedChange}>
               <option value="">Filter by scanned</option>
@@ -304,11 +304,11 @@ const QrPage: FC = () => {
             </FilterSelect>
           </div>
         </div>
-        <div className={`action-button-container col-md-${isAdmin ? 2 : 5}`}>
+        <div className={`action-button-container ${isAdmin ? 'col-md-2 col-xs-6' : 'col-md-5 col-xs-12'}`}>
           <FilterButton text="Update" handleClick={handleUpdateModalClick} />
         </div>
         {isAdmin && (
-          <div className={'action-button-container col-md-2'}>
+          <div className={'action-button-container col-md-2 col-xs-6'}>
             <FilterButton text="Create" handleClick={handleCreationModalClick} />
           </div>
         )}
