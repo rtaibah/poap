@@ -61,7 +61,7 @@ export class AuthService {
   }
 
   async handleCallback() {
-    const result = await this.client.handleRedirectCallback();
+    await this.client.handleRedirectCallback();
     this._isAuthenticated = await this.client.isAuthenticated();
 
     if (this._isAuthenticated) {

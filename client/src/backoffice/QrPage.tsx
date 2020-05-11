@@ -1,15 +1,18 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useToasts } from 'react-toast-notifications';
+import { OptionTypeBase } from 'react-select';
 import { isAfter } from 'date-fns';
 
 /* Libraries */
 import ReactPaginate from 'react-paginate';
 import ReactModal from 'react-modal';
-import { Formik, FormikActions, Form } from 'formik';
+import { Formik, FormikActions, Form, Field } from 'formik';
 
 /* Components */
 import { Loading } from '../components/Loading';
+import FormSelect from '../components/FormSelect';
 import FilterSelect from '../components/FilterSelect';
+import FilterReactSelect from '../components/FilterReactSelect';
 import FilterButton from '../components/FilterButton';
 import FilterChip from '../components/FilterChip';
 
@@ -45,9 +48,16 @@ type PaginateAction = {
   selected: number;
 };
 
+// React Select types
+type eventOptionType = {
+  value: number;
+  label: string;
+  start_date: string;
+}
+
 // update modal types
 type UpdateByRangeModalProps = {
-  events: PoapEvent[];
+  events: eventOptionType[];
   selectedQrs: string[];
   refreshQrs: () => void;
   onSuccessAction: () => void;
@@ -77,7 +87,7 @@ type AuthenticationModalFormikValues = {
 type CreationModalProps = {
   handleCreationModalRequestClose: () => void;
   refreshQrs: () => void;
-  events: PoapEvent[];
+  events: eventOptionType[];
 };
 
 type CreationModalFormikValues = {
@@ -193,10 +203,8 @@ const QrPage: FC = () => {
     }
   };
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
-    const { value } = e.target;
-    const numericValue = Number(value);
-    setSelectedEvent(numericValue);
+  const handleSelectChange = (option: OptionTypeBase): void => {
+    setSelectedEvent(option.value);
   };
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
@@ -261,29 +269,25 @@ const QrPage: FC = () => {
 
   const handleCreationModalRequestClose = (): void => setIsCreationModalOpen(false);
 
+  let eventOptions: eventOptionType[] = [];
+  if (events) {
+    eventOptions = events.map(event => {
+      const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${event.year}`;
+      return {value: event.id, label: label, start_date: event.start_date};
+    })
+  }
+
   return (
     <div className={'admin-table qr'}>
       <h2>QR Codes</h2>
       <div className={'filters-container qr'}>
         <div className={'filter col-md-4'}>
           <div className="filter-option">
-            <FilterSelect handleChange={handleSelectChange}>
-              <option key={'initialValue'} value={-1}>
-                Filter by event
-              </option>
-              {events &&
-                events.map(event => {
-                  const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
-                    event.year
-                    }`;
-
-                  return (
-                    <option key={event.id} value={event.id}>
-                      {label}
-                    </option>
-                  );
-                })}
-            </FilterSelect>
+            <FilterReactSelect
+              options={eventOptions}
+              onChange={handleSelectChange}
+              placeholder={'Filter by Event'}
+            />
           </div>
         </div>
         <div className={'filter col-md-3 col-xs-6'}>
@@ -325,7 +329,7 @@ const QrPage: FC = () => {
             refreshQrs={fetchQrCodes}
             onSuccessAction={cleanQrSelection}
             passphrase={passphrase}
-            events={events}
+            events={eventOptions}
           />
         </ReactModal>
         <ReactModal
@@ -344,7 +348,7 @@ const QrPage: FC = () => {
           shouldCloseOnOverlayClick={true}
         >
           <CreationModal
-            events={events}
+            events={eventOptions}
             refreshQrs={fetchQrCodes}
             handleCreationModalRequestClose={handleCreationModalRequestClose}
           />
@@ -591,7 +595,6 @@ const CreationModal: React.FC<CreationModalProps> = ({
                   </span>
                 )}
               </div>
-
               <div>
                 <textarea
                   className="modal-textarea"
@@ -609,25 +612,12 @@ const CreationModal: React.FC<CreationModalProps> = ({
               </div>
             </div>
             <div className="select-container">
-              <select
-                value={values.event}
-                onChange={handleChange}
-                name="event"
-                className={`select ${isEventPlaceholder ? 'placeholder-option' : ''}`}
-              >
-                <option value="">Select an event</option>
-                {events &&
-                  events.map((event: PoapEvent) => {
-                    const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
-                      event.year
-                      }`;
-                    return (
-                      <option key={event.id} value={event.id}>
-                        {label}
-                      </option>
-                    );
-                  })}
-              </select>
+              <Field
+                component={FormSelect}
+                name={"event"}
+                options={events}
+                placeholder={'Select an event'}
+              />
               {shouldShowMatchErrorMessage && (
                 <span>Quantity of IDs and hashes must match or send hashes with none IDs</span>
               )}
@@ -866,6 +856,12 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     setIsListActive(true);
   };
 
+  const eventOptions = isAdmin ? events : events.filter(event => {
+    const todayDate = new Date();
+    const eventDate = new Date(event.start_date);
+    return isAfter(eventDate, todayDate);
+  });
+
   return (
     <Formik
       initialValues={{
@@ -989,35 +985,24 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                   </div>
                 </div>
               )}
-              <select
-                className={resolveSelectClass()}
-                disabled={values.isUnassigning}
-                name="event"
-                onChange={handleChange}
-              >
-                <option value="">{resolveSelectText()}</option>
-                {events &&
-                  events
-                    .filter(event => {
-                      if (!isAdmin) {
-                        const todayDate = new Date();
-                        const eventDate = new Date(event.start_date);
-                        return isAfter(eventDate, todayDate);
-                      }
-
-                      return event;
-                    })
-                    .map(event => {
-                      const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
-                        event.year
-                        }`;
-                      return (
-                        <option key={event.id} value={event.id}>
-                          {label}
-                        </option>
-                      );
-                    })}
-              </select>
+              {values.isUnassigning &&
+                <select
+                  disabled={true}
+                  className={resolveSelectClass()}
+                >
+                  <option value="">{resolveSelectText()}</option>
+                </select>
+              }
+              {!values.isUnassigning &&
+                <div className={'select-container'}>
+                  <Field
+                    component={FormSelect}
+                    name={"event"}
+                    options={eventOptions}
+                    placeholder={'Select an event'}
+                  />
+                </div>
+              }
               <div className="modal-buttons-container">
                 <FilterChip
                   name="isUnassigning"

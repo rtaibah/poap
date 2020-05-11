@@ -15,6 +15,7 @@ import {
 } from '../api';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
+import FormSelect from '../components/FormSelect';
 
 interface IssueForEventPageState {
   events: PoapEvent[];
@@ -99,9 +100,15 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
   };
 
   render() {
-    if (this.state.events.length === 0) {
+    let { events } = this.state;
+    if (events.length === 0) {
       return <div className="bk-msg-error">No Events</div>;
     }
+
+    const eventOptions = events.map(event => {
+      const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${event.year}`;
+      return {value: event.id, label: label};
+    })
 
     return (
       <div className={'bk-container'}>
@@ -115,16 +122,12 @@ export class IssueForEventPage extends React.Component<{}, IssueForEventPageStat
               <Form>
                 <div className="bk-form-row">
                   <label htmlFor="eventId">Choose Event:</label>
-                  <Field name="eventId" component="select">
-                    {this.state.events.map(event => {
-                      const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
-                      return (
-                        <option key={event.id} value={event.id}>
-                          {label}
-                        </option>
-                      );
-                    })}
-                  </Field>
+                  <Field
+                    component={FormSelect}
+                    name={"eventId"}
+                    options={eventOptions}
+                    placeholder={'Select an event'}
+                  />
                   <ErrorMessage name="eventId" component="p" className="bk-error" />
                 </div>
                 <div className="bk-form-row">
