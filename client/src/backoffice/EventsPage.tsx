@@ -225,7 +225,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             {create ? (
               <>
                 <h2>Create Event</h2>
-                <EventField disabled={!create} title="Name" name="name" />
+                <EventField disabled={!create} title="Name of the POAP" name="name" />
               </>
             ) : (
               <>
@@ -275,7 +275,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             <EventField title="Website" name="event_url" />
 
             <ImageContainer
-              text="Upload Image:"
+              text="Image of the POAP:"
               handleFileChange={handleFileChange}
               setFieldValue={setFieldValue}
               errors={errors}
@@ -410,7 +410,7 @@ export const EventList: React.FC = () => {
         </div>
         <div className="right_content">
           <Link to="/admin/events/new">
-            <FilterButton text="Create New" />
+            <FilterButton text="Create new POAP" />
           </Link>
         </div>
       </div>
@@ -513,7 +513,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
             {idSort !== 0 && <img className={'img-sort'} src={idSort > 0 ? sort_up : sort_down} alt={'sort'} />}
           </div>
           <div className={`col-md-${nameColumnLength} pointer`} onClick={handleNameSort}>
-            Name
+            Name of the POAP
             {nameSort !== 0 && <img className={'img-sort'} src={nameSort > 0 ? sort_up : sort_down} alt={'sort'} />}
           </div>
           <div className={'col-md-2 center'}>Start Date</div>
@@ -529,7 +529,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
                 {event.id}
               </div>
               <div className={`col-md-${nameColumnLength}`}>
-                <span className={'visible-sm'}>Name: </span>
+                <span className={'visible-sm'}>Name of the POAP: </span>
                 <a href={event.event_url} target="_blank" rel="noopener noreferrer">
                   {event.name}
                 </a>

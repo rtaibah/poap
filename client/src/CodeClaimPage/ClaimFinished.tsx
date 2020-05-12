@@ -5,6 +5,7 @@ import { HashClaim } from '../api';
 
 /* Components */
 import { LinkButton } from '../components/LinkButton';
+import ClaimFooterMessage from './ClaimFooterMessage';
 
 /*
 * @dev: Component to show minted token
@@ -24,6 +25,7 @@ const ClaimFinished: React.FC<{claim: HashClaim}> = ({claim}) => {
         text={'Check my badges'}
         link={appLink}
         extraClass={'link-btn'} />
+      <ClaimFooterMessage />
     </div>
   )
 };

@@ -377,7 +377,7 @@ export default async function routes(fastify: FastifyInstance) {
         parsed_addresses.push(parsed_address);
       }
 
-      await mintEventToManyUsers(req.body.eventId, parsed_addresses, {
+      await mintEventToManyUsers(req.body.eventId, parsed_addresses, false, {
         'signer': req.body.signer_address,
         'estimate_mint_gas': parsed_addresses.length
       });
@@ -420,7 +420,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      await mintUserToManyEvents(req.body.eventIds, parsed_address, {
+      await mintUserToManyEvents(req.body.eventIds, parsed_address, false, {
         'signer': req.body.signer_address,
         'estimate_mint_gas': req.body.eventIds.length
       });
@@ -457,7 +457,7 @@ export default async function routes(fastify: FastifyInstance) {
       const claim: Claim = req.body;
       const isValid = await verifyClaim(claim);
       if (isValid) {
-        await mintToken(claim.eventId, claim.claimer);
+        await mintToken(claim.eventId, claim.claimer, false);
         res.status(204);
       } else {
         throw new createError.BadRequest('Invalid Claim');
@@ -787,7 +787,7 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const isOk = await burnToken(req.params.tokenId);
+      const isOk = await burnToken(req.params.tokenId, false);
       if (!isOk) {
         return new createError.NotFound('Invalid token or action');
       }
@@ -1702,7 +1702,7 @@ export default async function routes(fastify: FastifyInstance) {
         }
         let eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
         // TODO - Support multiple Rolls
-        if (eventHostQrRolls) {
+        if (eventHostQrRolls && eventHostQrRolls.length > 0) {
           qrRollId = eventHostQrRolls[0].id
         } else {
           return new createError.NotFound('You dont have any QR codes assigned');

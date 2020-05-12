@@ -116,6 +116,7 @@ export type QrCode = {
   qr_hash: string;
   qr_roll_id: number;
   tx_hash: string;
+  tx_status: string | null;
   event: PoapEvent;
 };
 

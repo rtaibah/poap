@@ -492,25 +492,28 @@ export async function getQrRoll(qrRollId: string): Promise<null | eventHost> {
 }
 
 export async function getPaginatedQrClaims(limit: number, offset: number, eventId: number, qrRollId: number, claimed: string | null, scanned: string | null): Promise<ClaimQR[]> {
-  let query = 'SELECT * FROM qr_claims WHERE is_active = true '
+  let query = `SELECT q.id, q.qr_hash, q.tx_hash, q.event_id, q.beneficiary,
+  q.claimed, q.scanned, tx.status as tx_status
+  FROM qr_claims q LEFT JOIN server_transactions tx on q.tx_hash = tx.tx_hash
+  WHERE q.is_active = true `
 
   if (eventId) {
-    query = query + `AND event_id = ${eventId} `
+    query = query + `AND q.event_id = ${eventId} `
   }
 
   if (qrRollId) {
-    query = query + `AND qr_roll_id = ${qrRollId} `
+    query = query + `AND q.qr_roll_id = ${qrRollId} `
   }
 
   if (claimed && ['true', 'false'].indexOf(claimed) > -1) {
-    query = query + 'AND claimed = ' + claimed + ' '
+    query = query + 'AND q.claimed = ' + claimed + ' '
   }
 
   if (scanned && ['true', 'false'].indexOf(scanned) > -1) {
-    query = query + 'AND scanned = ' + scanned + ' '
+    query = query + 'AND q.scanned = ' + scanned + ' '
   }
 
-  query = query + 'ORDER BY created_date, id DESC LIMIT ${limit} OFFSET ${offset}';
+  query = query + 'ORDER BY q.created_date DESC, q.id DESC LIMIT ${limit} OFFSET ${offset}';
 
   const res = await db.manyOrNone<ClaimQR>(query, { limit, offset });
   return res

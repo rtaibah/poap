@@ -15,6 +15,7 @@ import FilterSelect from '../components/FilterSelect';
 import FilterReactSelect from '../components/FilterReactSelect';
 import FilterButton from '../components/FilterButton';
 import FilterChip from '../components/FilterChip';
+import { TxStatus } from '../components/TxStatus';
 
 /* Helpers */
 import {
@@ -437,17 +438,21 @@ const QrPage: FC = () => {
                     />
                   </div>
 
-                  <div className={'col-md-3 center'}>
+                  <div className={'col-md-2 center'}>
                     <span className={'visible-sm'}>Tx Hash: </span>
                     <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
                       {qr.tx_hash && reduceAddress(qr.tx_hash)}
                     </a>
                   </div>
+
+                  <div className={'col-md-1 center'}>
+                    {qr.tx_status && <TxStatus status={qr.tx_status}/>}
+                  </div>
                 </div>
               );
             })}
           </div>
-          {total > 10 && (
+          {total > limit && (
             <div className={'pagination'}>
               <ReactPaginate
                 pageCount={Math.ceil(total / limit)}

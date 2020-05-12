@@ -9,6 +9,7 @@ import { AddressSchema } from '../lib/schemas';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
+import ClaimFooterMessage from './ClaimFooterMessage';
 
 type QRFormValues = {
   address: string;
@@ -84,7 +85,7 @@ const ClaimForm: React.FC<{
                         type="text"
                         autoComplete="off"
                         className={classNames(!!form.errors[field.name] && 'error')}
-                        placeholder={'Paste your Address or ENS'}
+                        placeholder={'Input your Ethereum address or ENS name'}
                         {...field}
                       />
                     );
@@ -93,7 +94,6 @@ const ClaimForm: React.FC<{
                 <ErrorMessage name="gasPrice" component="p" className="bk-error" />
                 {status && <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>}
                 <div className={'web3-browser'}>
-                  <div>Please complete the input above to continue</div>
                   {enabledWeb3 && (
                     <div>
                       Web3 browser? <span onClick={getAddress}>Get my address</span>
@@ -101,7 +101,7 @@ const ClaimForm: React.FC<{
                   )}
                 </div>
                 <SubmitButton
-                  text="Claim my badge"
+                  text="Claim POAP token"
                   isSubmitting={isSubmitting}
                   canSubmit={isValid && enabledWeb3 !== null}
                 />
@@ -110,6 +110,7 @@ const ClaimForm: React.FC<{
           }}
         </Formik>
       </div>
+      <ClaimFooterMessage />
     </div>
   );
 };

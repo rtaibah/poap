@@ -125,18 +125,23 @@ const NavigationMenu = withRouter(({ history }) => {
   );
 });
 
-const Landing = () => (
-  <div className={'cards-container'}>
-    <Link to={ROUTES.events.path} className={'card card-link'}>
-      <h3>Manage Events</h3>
-      <img className={'icon'} src={Calendar} alt={'Manage Events'} />
-    </Link>
-    <Link to={ROUTES.qr.path} className={'card card-link'}>
-      <h3>Manage QR Codes</h3>
-      <img className={'icon'} src={Qr} alt={'Manage QR Codes'} />
-    </Link>
-  </div>
-);
+const Landing = () => {
+  const isAdmin = authClient.isAuthenticated();
+  return (
+    <div className={'cards-container'}>
+      <Link to={ROUTES.events.path} className={'card card-link'}>
+        <h3>Manage Events</h3>
+        <img className={'icon'} src={Calendar} alt={'Manage Events'} />
+      </Link>
+      {isAdmin &&
+        <Link to={ROUTES.qr.path} className={'card card-link'}>
+          <h3>Manage QR Codes</h3>
+          <img className={'icon'} src={Qr} alt={'Manage QR Codes'} />
+        </Link>
+      }
+    </div>
+  );
+}
 
 const IssueForEventPageWithAuthentication = withAuthentication(IssueForEventPage);
 const IssueForUserPageWithAuthentication = withAuthentication(IssueForUserPage);

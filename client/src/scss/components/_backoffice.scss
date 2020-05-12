@@ -314,6 +314,16 @@
         }
       }
     }
+
+    .nonce {
+      margin-left: 10px;
+      font-size: 12px;
+      background: $color-grey;
+      color: white;
+      border-radius: 4px;
+      padding: 2px 5px;
+      width: 20px;
+    }
   }
 
   .filters-container {
@@ -695,6 +705,11 @@
     }
   }
 
+  .right_content {
+    button {
+      min-width: 180px;
+    }
+  }
 }
 
 .event-edit-icon-container {

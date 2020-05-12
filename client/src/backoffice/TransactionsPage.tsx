@@ -14,6 +14,7 @@ import { convertFromGWEI, convertToGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
 import { Loading } from '../components/Loading';
 import { SubmitButton } from '../components/SubmitButton';
+import { TxStatus } from '../components/TxStatus';
 /* Assets */
 import gas from '../images/gas-station.svg';
 import bump from '../images/increase.svg';
@@ -55,13 +56,6 @@ const TransactionsPage: FC = () => {
     setPage(0);
     fetchTransactions();
   }, [statusList, limit]);
-
-  const txStatus = {
-    [TX_STATUS.pending]: clock,
-    [TX_STATUS.failed]: error,
-    [TX_STATUS.passed]: checked,
-    [TX_STATUS.bumped]: bump,
-  };
 
   const fetchTransactions = () => {
     setIsFetchingTx(true);
@@ -196,13 +190,14 @@ const TransactionsPage: FC = () => {
                   <a href={etherscanLinks.address(tx.signer)} target={'_blank'}>
                     {tx.signer && reduceAddress(tx.signer)}
                   </a>
+                  <span className={'nonce'} title={'Nonce'}>{tx.nonce}</span>
                 </div>
                 <div className={'col-md-2 capitalize'}>
                   <span className={'visible-sm'}>Operation: </span>
                   {tx.operation}
                 </div>
                 <div className={'col-md-1 center'}>
-                  <img src={txStatus[tx.status]} className={'status-icon'} alt={tx.status} />
+                  <TxStatus status={tx.status} />
                 </div>
                 <div className={'col-md-2 center'}>
                   <span className={'visible-sm'}>Gas Price (GWei): </span>

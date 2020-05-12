@@ -7,6 +7,7 @@ import { Formik, Form, Field, FieldProps } from 'formik';
 import { ClaimHashSchema } from '../lib/schemas';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
+import ClaimFooterMessage from './ClaimFooterMessage';
 
 type HashFormValues = {
   hash: string;
@@ -58,7 +59,7 @@ const QRHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash:
                   </p>
                 )}
                 <SubmitButton
-                  text="Claim my badge"
+                  text="Continue"
                   isSubmitting={loading}
                   canSubmit={isValid && dirty}
                 />
@@ -67,6 +68,7 @@ const QRHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash:
           }}
         </Formik>
       </div>
+      <ClaimFooterMessage />
     </div>
   );
 };
