@@ -29,7 +29,7 @@ fastify.register(fastifyHelmet, {
 });
 
 fastify.register(fastifyRateLimit, {
-  max: 1000,
+  max: 100,
   timeWindow: 60000
 });
 

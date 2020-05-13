@@ -408,6 +408,11 @@
 
     &.transactions {
       margin-bottom: 15px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      @media (max-width: $bp-mw) {
+        grid-template-columns: 1fr;
+      }
     }
 
     &.qr {

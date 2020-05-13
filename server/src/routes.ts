@@ -1218,6 +1218,7 @@ export default async function routes(fastify: FastifyInstance) {
           limit: { type: 'number' },
           offset: { type: 'number' },
           status: { type: 'string' },
+          signer: { type: 'string' },
         },
         response: {
           200: {
@@ -1257,6 +1258,7 @@ export default async function routes(fastify: FastifyInstance) {
       const limit = parseInt(req.query.limit) || 10;
       const offset = parseInt(req.query.offset) || 0;
       let status = req.query.status || null;
+      let signer = req.query.signer || null;
       if (status) {
         status = status.split(',');
       } else {
@@ -1268,8 +1270,8 @@ export default async function routes(fastify: FastifyInstance) {
         ];
       }
 
-      const transactions = await getTransactions(limit, offset, status);
-      const totalTransactions = await getTotalTransactions(status);
+      const transactions = await getTransactions(limit, offset, status, signer);
+      const totalTransactions = await getTotalTransactions(status, signer);
 
       if (!transactions) {
         return new createError.NotFound('Transactions not found');

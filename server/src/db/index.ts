@@ -34,16 +34,23 @@ export async function getUserEvents(event_host_id: number): Promise<PoapEvent[]>
   return res.map(replaceDates);
 }
 
-export async function getTransactions(limit: number, offset: number, statusList: string[]): Promise<Transaction[]> {
-  let query = "SELECT * FROM server_transactions WHERE status IN (${statusList:csv}) ORDER BY created_date DESC" +
+export async function getTransactions(limit: number, offset: number, statusList: string[], signer: string | null): Promise<Transaction[]> {
+  let signerCondition = '';
+  if (signer) { signerCondition = ' AND signer ILIKE ${signer}'; }
+  let query = "SELECT * FROM server_transactions WHERE status IN (${statusList:csv}) " +
+    signerCondition +
+    " ORDER BY created_date DESC" +
     " LIMIT ${limit} OFFSET ${offset}";
-  const res = await db.manyOrNone<Transaction>(query, { statusList, limit, offset });
+  const res = await db.manyOrNone<Transaction>(query, { statusList, limit, offset, signer });
   return res
 }
 
-export async function getTotalTransactions(statusList: string[]): Promise<number> {
-  let query = 'SELECT COUNT(*) FROM server_transactions WHERE status IN (${statusList:csv})'
-  const res = await db.result(query, { statusList });
+export async function getTotalTransactions(statusList: string[], signer: string | null): Promise<number> {
+  let signerCondition = '';
+  if (signer) { signerCondition = ' AND signer ILIKE ${signer}'; }
+
+  let query = 'SELECT COUNT(*) FROM server_transactions WHERE status IN (${statusList:csv}) ' + signerCondition;
+  const res = await db.result(query, { statusList, signer });
   return res.rows[0].count;
 }
 

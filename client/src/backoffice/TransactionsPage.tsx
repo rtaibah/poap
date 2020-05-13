@@ -9,7 +9,7 @@ import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'fo
 /* Helpers */
 import { GasPriceSchema } from '../lib/schemas';
 import { TX_STATUS, etherscanLinks } from '../lib/constants';
-import { Transaction, getTransactions, bumpTransaction } from '../api';
+import { Transaction, getTransactions, bumpTransaction, AdminAddress, getSigners } from '../api';
 import { convertFromGWEI, convertToGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
 import { Loading } from '../components/Loading';
@@ -17,11 +17,9 @@ import { SubmitButton } from '../components/SubmitButton';
 import { TxStatus } from '../components/TxStatus';
 /* Assets */
 import gas from '../images/gas-station.svg';
-import bump from '../images/increase.svg';
-import checked from '../images/checked.svg';
 import error from '../images/error.svg';
-import clock from '../images/clock.svg';
 import FilterChip from '../components/FilterChip';
+import FilterSelect from '../components/FilterSelect';
 
 type PaginateAction = {
   selected: number;
@@ -35,6 +33,8 @@ const TransactionsPage: FC = () => {
   const [page, setPage] = useState<number>(0);
   const [limit, setLimit] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
+  const [signerFilter, setSignerFilter] = useState<string>('');
+  const [signers, setSigners] = useState<AdminAddress[]>([]);
   const [statusList, setStatusList] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [selectedTx, setSelectedTx] = useState<null | Transaction>(null);
@@ -45,8 +45,12 @@ const TransactionsPage: FC = () => {
   const [isPendingSelected, setIsPendingSelected] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log(total);
-  }, [total]);
+    if (signers.length === 0) {
+      getSigners().then(data => {
+        setSigners(data);
+      })
+    }
+  }, []);
 
   useEffect(() => {
     fetchTransactions();
@@ -55,13 +59,13 @@ const TransactionsPage: FC = () => {
   useEffect(() => {
     setPage(0);
     fetchTransactions();
-  }, [statusList, limit]);
+  }, [statusList, signerFilter, limit]);
 
   const fetchTransactions = () => {
     setIsFetchingTx(true);
     setTransactions(null);
 
-    getTransactions(limit, page * limit, statusList.join(','))
+    getTransactions(limit, page * limit, statusList.join(','), signerFilter)
       .then(response => {
         if (!response) return;
         setTransactions(response.transactions);
@@ -130,7 +134,10 @@ const TransactionsPage: FC = () => {
     handleFilterToggle('pending');
     setIsPendingSelected(!isPendingSelected);
   };
-
+  const handleCreatedByChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    const { value } = e.target;
+    setSignerFilter(value);
+  };
   const handleLimitChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ): void => {
@@ -143,13 +150,25 @@ const TransactionsPage: FC = () => {
       <h2>Transactions</h2>
       <div>
         <div className={'filters-container transactions'}>
-          <FilterChip text="Failed" isActive={isFailedSelected} handleOnClick={handleFailedClick} />
-          <FilterChip text="Passed" isActive={isPassedSelected} handleOnClick={handlePassedClick} />
-          <FilterChip
-            text="Pending"
-            isActive={isPendingSelected}
-            handleOnClick={handlePendingClick}
-          />
+          <div className={'left-content'}>
+            <FilterChip text="Failed" isActive={isFailedSelected} handleOnClick={handleFailedClick} />
+            <FilterChip text="Passed" isActive={isPassedSelected} handleOnClick={handlePassedClick} />
+            <FilterChip
+              text="Pending"
+              isActive={isPendingSelected}
+              handleOnClick={handlePendingClick}
+            />
+          </div>
+          <div className={'right-content'}>
+            <FilterSelect handleChange={handleCreatedByChange}>
+              <option value="">All signers</option>
+              {signers.map(signer => {
+                return (
+                  <option key={signer.id} value={signer.signer}>{signer.id} - {signer.signer} ({signer.role})</option>
+                )
+              })}
+            </FilterSelect>
+          </div>
         </div>
         <div className={'secondary-filters'}>
           Results per page:

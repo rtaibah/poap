@@ -495,10 +495,15 @@ export async function qrCodesSelectionUpdate(
 export function getTransactions(
   limit: number,
   offset: number,
-  status: string
+  status: string,
+  signer: string
 ): Promise<PaginatedTransactions> {
-  // TODO: use queryString library to avoid sending empty params
-  return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}&status=${status}`);
+
+  const params = queryString.stringify(
+    { limit, offset, status, signer },
+    { sort: false }
+  );
+  return secureFetch(`${API_BASE}/transactions?${params}`);
 }
 
 export function bumpTransaction(tx_hash: string, gasPrice: string): Promise<any> {

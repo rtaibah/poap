@@ -4,9 +4,9 @@ import React from 'react';
  * */
 const ClaimFooterMessage = () => (
   <div className={'claim-footer'}>
-    <div className={'title'}>Your community can use POAP 🎖 too</div>
+    <div className={'title'}>Your community can use POAP 🎖 too:</div>
     <div className={'subtitle'}>
-      Fill <a href={'https://www.poap.xyz/form'} target={'blank'}>this form</a> 📋 to learn how
+      Fill out <a href={'https://www.poap.xyz/form'} target={'blank'}>this form</a> 📋 to learn how.
     </div>
   </div>
 );
