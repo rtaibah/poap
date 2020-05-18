@@ -7,7 +7,7 @@ INSERT INTO
     end_date,
     name,
     description,
-    image_url,
+    image,
     city,
     country,
     event_url

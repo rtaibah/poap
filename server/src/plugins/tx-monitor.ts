@@ -14,13 +14,10 @@ declare module 'fastify' {
 }
 
 import cron from 'node-cron';
-import fetch from 'node-fetch';
 
 import { getPendingTxs, updateTransactionStatus } from '../db';
-import { TransactionStatus, TxStatusPayload } from '../types';
+import { TransactionStatus } from '../types';
 import getEnv from '../envs/index';
-
-const EXPLORER_API_BASE = 'https://api.blockcypher.com/v1';
 
 export default fp(function transactionsMonitorCron(
   fastify: FastifyInstance<Server, IncomingMessage, ServerResponse>,
@@ -32,32 +29,18 @@ export default fp(function transactionsMonitorCron(
     const pendingTransactions = await getPendingTxs();
     if (!pendingTransactions || pendingTransactions.length === 0) return;
 
-    const txPromises = pendingTransactions.map(async ({ tx_hash: txHash }) => {      
-      if (env.infuraNet == 'mainnet') {
-        const json: TxStatusPayload = await getTxStatus(txHash);
-        if (json) {
-          if (json.execution_error) {
-            await updateTransactionStatus(txHash, TransactionStatus.failed);
-          } else if (json.confirmed) {
-            await updateTransactionStatus(txHash, TransactionStatus.passed);
+    const txPromises = pendingTransactions.map(async ({ tx_hash: txHash }) => {
+      const receipt = await env.provider.getTransactionReceipt(txHash).then((receipt) => {
+        if(receipt) {
+          if(receipt.status == 1) {
+            updateTransactionStatus(txHash, TransactionStatus.passed);
+          } else if (receipt.status == 0) {
+            updateTransactionStatus(txHash, TransactionStatus.failed);
           }
         }
-        return json;
-      } 
-      else {
-        const receipt = await env.provider.getTransactionReceipt(txHash).then((receipt) => {
-          if(receipt) {
-            if(receipt.status == 1) {
-              updateTransactionStatus(txHash, TransactionStatus.passed);
-            } else if (receipt.status == 0) {
-              updateTransactionStatus(txHash, TransactionStatus.failed);
-            }
-          }
-          return receipt
-        });
-
         return receipt
-      }
+      });
+      return receipt
     });
     const results = Promise.all(txPromises);
     return results;
@@ -69,13 +52,3 @@ export default fp(function transactionsMonitorCron(
 
   next();
 });
-
-async function getTxStatus(hash: string): Promise<TxStatusPayload> {
-  const url = `${EXPLORER_API_BASE}/eth/main/txs/${encodeURIComponent(hash)}`;
-  const res = await fetch(url);
-  if (res.ok) {
-    return await res.json();
-  } else {
-    throw new Error(`Error with request statusCode: ${res.status}`);
-  }
-}

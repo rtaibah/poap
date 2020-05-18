@@ -60,6 +60,8 @@ jspm_packages/
 
 # dotenv environment variables file
 .env
+.env.development
+.env.production
 .env.mainnet
 
 # next.js build output
@@ -67,3 +69,5 @@ jspm_packages/
 
 dist/
 TODO
+
+.local_scripts/

@@ -10,11 +10,12 @@ import {
   saveTransaction,
   getSigner,
   getAvailableHelperSigners,
+  getLastSignerTransaction,
   getTransaction,
   updateTransactionStatus
-} from './db';
-import getEnv from './envs';
-import { Poap } from './poap-eth/Poap';
+} from '../db';
+import getEnv from '../envs';
+import { Poap } from './Poap';
 import {
   Address,
   Claim,
@@ -22,10 +23,10 @@ import {
   Signer,
   TransactionStatus,
   OperationType,
-} from './types';
+} from '../types';
 
 const Logger = pino();
-const ABI_DIR = join(__dirname, '../abi');
+const ABI_DIR = join(__dirname, '../../abi');
 
 export function getABI(name: string) {
   return JSON.parse(readFileSync(join(ABI_DIR, `${name}.json`)).toString());
@@ -49,18 +50,23 @@ export async function getHelperSigner(requiredBalance: number = 0): Promise<null
 
   if (signers) {
     signers = await Promise.all(signers.map(signer => getAddressBalance(signer)));
+    signers = signers.map(signer => {
+      return {
+        ...signer,
+        pending_tx: parseInt(`${signer.pending_tx}`, 10)
+      }
+    });
     let sorted_signers: Signer[] = signers.sort((a, b) => {
       if (a.pending_tx === b.pending_tx) {
-        return (parseInt(b.balance) - parseInt(a.balance));
-      } else if(a.pending_tx > b.pending_tx){
-        return 1;
+        return parseInt(b.balance, 10) - parseInt(a.balance, 10);
+      } else if (a.pending_tx < b.pending_tx) {
+        return -1;
       }
-      return -1;
+      return 1;
     });
 
     for (let signer of sorted_signers) {
       if (!wallet) {
-        console.log('signerWithBalance: ', signer);
         if (+signer.balance > requiredBalance) {
           wallet = env.poapHelpers[signer.signer.toLowerCase()];
         }
@@ -94,7 +100,7 @@ export async function getSignerWallet(address: Address): Promise<Wallet> {
 export function estimateMintingGas(n: number) {
   const delta = 136907;
   const baseCost = 35708;
-  return (baseCost + n * delta) * 1.5;
+  return Math.ceil((baseCost + n * delta) * 1.5);
 }
 
 /**
@@ -130,7 +136,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
     gasPrice = extraParams.gas_price
   }
 
-  // Use extraParams signer if it's specified in extraParams 
+  // Use extraParams signer if it's specified in extraParams
   if (extraParams && extraParams.signer) {
     signerWallet = await getSignerWallet(extraParams.signer.toLowerCase());
   } else if (onlyAdminSigner) {
@@ -142,7 +148,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
 
   const contract = getContract(signerWallet);
 
-  if(gasPrice == 0) {
+  if (gasPrice == 0) {
     gasPrice = await getCurrentGasPrice(signerWallet.address);
   }
 
@@ -157,6 +163,12 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
 
   if (extraParams && extraParams.nonce) {
     transactionParams.nonce = extraParams.nonce;
+  } else  {
+    const lastTransaction = await getLastSignerTransaction(signerWallet.address);
+    if (lastTransaction && lastTransaction.nonce > 0) {
+      console.log(`>> Last tx: ${lastTransaction.tx_hash} (${lastTransaction.nonce})`);
+      transactionParams.nonce = lastTransaction.nonce + 1
+    }
   }
 
   return {
@@ -164,48 +176,76 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
     contract: contract,
     transactionParams: transactionParams,
   };
-  
+
 }
 
-export async function mintToken(eventId: number, toAddr: Address, awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
-  let tx:ContractTransaction
-  let txObj:any
+async function processTransaction(tx: ContractTransaction, txObj: any, operation: string, args: string, awaitTx: boolean, extraParams: any) {
+  let saveTx: boolean = true;
+  if (!tx.hash) return;
 
-  try {
-    txObj = await getTxObj(false, extraParams);
-    tx = await txObj.contract.functions.mintToken(eventId, toAddr, txObj.transactionParams);
+  if (extraParams.hasOwnProperty('original_tx')) {
+    if (extraParams.original_tx.toLowerCase() === tx.hash.toLowerCase()) {
+      saveTx = false;
+    }
   }
-  catch(error) {
-    console.error(error);
-    return null;
-  }
-  
 
-  if (tx.hash) {
+  if (saveTx) {
     await saveTransaction(
       tx.hash,
       tx.nonce,
-      OperationType.mintToken,
-      JSON.stringify([eventId, toAddr]),
+      operation,
+      args,
       txObj.signerWallet.address,
       TransactionStatus.pending,
       txObj.transactionParams.gasPrice.toString()
     );
   }
 
-  console.log(`mintToken: Transaction: ${tx.hash}`);
-
+  console.log(`${operation}: Transaction: ${tx.hash}`);
   // The operation is NOT complete yet; we must wait until it is mined
-  if(awaitTx){
+  if (awaitTx) {
     await tx.wait();
   }
+  console.log(`${operation}: Finished: ${tx.hash}`);
+}
 
-  console.log(`mintToken: Finished: ${tx.hash}`);
+export async function mintToken(eventId: number, toAddr: Address, awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
+  let tx: ContractTransaction
+  let txObj: any
 
+  try {
+    txObj = await getTxObj(false, extraParams);
+    tx = await txObj.contract.functions.mintToken(eventId, toAddr, txObj.transactionParams);
+  }
+  catch (error) {
+    console.error(error);
+    return null;
+  }
+
+  await processTransaction(tx, txObj, OperationType.mintToken, JSON.stringify([eventId, toAddr]), awaitTx, extraParams);
   return tx
 }
 
-export async function bumpTransaction(hash: string, gasPrice: string) {
+export async function mintEventToManyUsers(eventId: number, toAddr: Address[], awaitTx: boolean = true, extraParams?: any) {
+  const txObj = await getTxObj(true, extraParams);
+  const tx = await txObj.contract.functions.mintEventToManyUsers(eventId, toAddr, txObj.transactionParams);
+  await processTransaction(tx, txObj, OperationType.mintEventToManyUsers, JSON.stringify([eventId, toAddr]), awaitTx, extraParams);
+}
+
+export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, awaitTx: boolean = true, extraParams?: any) {
+  const txObj = await getTxObj(true, extraParams);
+  const tx = await txObj.contract.functions.mintUserToManyEvents(eventIds, toAddr, txObj.transactionParams);
+  await processTransaction(tx, txObj, OperationType.mintUserToManyEvents, JSON.stringify({ eventIds, toAddr }), awaitTx, extraParams);
+}
+
+export async function burnToken(tokenId: string | number, awaitTx: boolean = true, extraParams?: any): Promise<boolean> {
+  const txObj = await getTxObj(true, extraParams);
+  const tx = await txObj.contract.functions.burn(tokenId, txObj.transactionParams);
+  await processTransaction(tx, txObj, OperationType.burnToken, tokenId.toString(), awaitTx, extraParams);
+  return true;
+}
+
+export async function bumpTransaction(hash: string, gasPrice: string, updateTx: boolean) {
   const transaction = await getTransaction(hash);
   if (!transaction) {
     throw new Error('Transaction was not found');
@@ -215,37 +255,43 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
 
   switch (transaction.operation) {
     case OperationType.burnToken: {
-      const [tokenId] = txJSON
-      await burnToken(tokenId, {
+      const tokenId = txJSON
+      await burnToken(tokenId, false, {
         signer: transaction.signer,
         gas_price: gasPrice,
-        nonce: transaction.nonce
+        nonce: transaction.nonce,
+        original_tx: hash
       })
     }
     case OperationType.mintEventToManyUsers: {
       const [eventId, toAddresses] = txJSON
-      await mintEventToManyUsers(eventId, toAddresses, {
+      await mintEventToManyUsers(eventId, toAddresses, false, {
         signer: transaction.signer,
         gas_price: gasPrice,
-        nonce: transaction.nonce
+        nonce: transaction.nonce,
+        estimate_mint_gas: toAddresses.length,
+        original_tx: hash
       })
       break;
     }
     case OperationType.mintToken: {
       const [eventId, toAddr] = txJSON
-      await mintToken(eventId, toAddr, true, {
+      await mintToken(eventId, toAddr, false, {
         signer: transaction.signer,
         gas_price: gasPrice,
-        nonce: transaction.nonce
+        nonce: transaction.nonce,
+        original_tx: hash
       })
       break;
     }
     case OperationType.mintUserToManyEvents: {
-      const [eventIds, toAddr] = txJSON
-      await mintUserToManyEvents(eventIds, toAddr, {
+      const {eventIds, toAddr} = txJSON
+      await mintUserToManyEvents(eventIds, toAddr, false, {
         signer: transaction.signer,
         gas_price: gasPrice,
-        nonce: transaction.nonce
+        nonce: transaction.nonce,
+        estimate_mint_gas: eventIds.length,
+        original_tx: hash
       })
       break;
     }
@@ -254,80 +300,9 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
     }
   }
 
-  await updateTransactionStatus(hash, TransactionStatus.bumped);
-}
-
-export async function mintEventToManyUsers(eventId: number, toAddr: Address[], extraParams?: any) {
-  const txObj = await getTxObj(true, extraParams);
-
-  const tx = await txObj.contract.functions.mintEventToManyUsers(eventId, toAddr, txObj.transactionParams);
-
-  if (tx.hash) {
-    await saveTransaction(
-      tx.hash,
-      tx.nonce,
-      OperationType.mintEventToManyUsers,
-      JSON.stringify([eventId, toAddr]),
-      txObj.signerWallet.address,
-      TransactionStatus.pending,
-      txObj.transactionParams.gasPrice.toString()
-    );
+  if (updateTx) {
+    await updateTransactionStatus(hash, TransactionStatus.bumped);
   }
-
-  console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
-
-  // The operation is NOT complete yet; we must wait until it is mined
-  // await tx.wait();
-  // console.log(`mintTokenBatch: Finished ${tx.hash}`);
-}
-
-export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, extraParams?: any) {
-  const txObj = await getTxObj(true, extraParams);
-  const tx = await txObj.contract.functions.mintUserToManyEvents(eventIds, toAddr, txObj.transactionParams);
-
-  if (tx.hash) {
-    await saveTransaction(
-      tx.hash,
-      tx.nonce,
-      OperationType.mintUserToManyEvents,
-      JSON.stringify({ eventIds, toAddr }),
-      txObj.signerWallet.address,
-      TransactionStatus.pending,
-      txObj.transactionParams.gasPrice.toString()
-    );
-  }
-
-  console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
-
-  // The operation is NOT complete yet; we must wait until it is mined
-  // await tx.wait();
-  // console.log(`mintTokenBatch: Finished ${tx.hash}`);
-}
-
-export async function burnToken(tokenId: string | number, extraParams?: any): Promise<boolean> {
-  const txObj = await getTxObj(true, extraParams);
-
-  // Set a new Value, which returns the transaction
-  const tx = await txObj.contract.functions.burn(tokenId, txObj.transactionParams);
-
-  if (tx.hash) {
-    await saveTransaction(
-      tx.hash,
-      tx.nonce,
-      OperationType.burnToken,
-      tokenId.toString(),
-      txObj.signerWallet.address,
-      TransactionStatus.pending,
-      txObj.transactionParams.gasPrice.toString()
-    );
-  }
-
-  console.log(`burn: Transaction: ${tx.hash}`);
-
-  // The operation is NOT complete yet; we must wait until it is mined
-  await tx.wait();
-  console.log(`burn: Finished ${tx.hash}`);
-  return true;
 }
 
 export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
@@ -354,7 +329,29 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
       owner: address,
     });
   }
-  return tokens;
+
+  const sortedTokens = tokens.sort((a:any, b:any) => {
+    try{
+      return new Date(b.event.start_date) > new Date(a.event.start_date) ? 1 : -1
+    } catch (e) {
+      return -1
+    }
+  })
+
+  return sortedTokens;
+}
+
+export async function getAllEventIds(address: Address): Promise<number[]> {
+  const env = getEnv();
+  const contract = getContract(env.poapAdmin);
+  const tokensAmount = (await contract.functions.balanceOf(address)).toNumber();
+
+  const eventIds: number[] = [];
+  for (let i = 0; i < tokensAmount; i++) {
+    const tokenDetails = await contract.functions.tokenDetailsOfOwnerByIndex(address, i);
+    eventIds.push(tokenDetails.eventId.toNumber());
+  }
+  return eventIds;
 }
 
 export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
@@ -379,7 +376,7 @@ export async function getTokenImg(tokenId: string | number): Promise<null | stri
   const eventId = await contract.functions.tokenEvent(tokenId);
   const event = await getEvent(eventId.toNumber());
   if (!event) {
-    throw new Error('Invalid Event Id');
+    return 'https://www.poap.xyz/events/badges/POAP.png'
   }
 
   return event.image_url
@@ -407,19 +404,13 @@ export async function verifyClaim(claim: Claim): Promise<string | boolean> {
 
   const proofMessage = JSON.stringify([claim.claimId, claim.eventId, claim.claimer]);
   Logger.info({ proofMessage }, 'proofMessage');
-  const signerAddress = verifyMessage(proofMessage, claim.proof);
-
-  if (signerAddress !== event.signer) {
-    console.log('invalid signer signature');
-    return false;
-  }
 
   return true;
 }
 
 export async function getAddressBalance(signer: Signer): Promise<Signer> {
-  let provider = getDefaultProvider();
-  let balance = await provider.getBalance(signer.signer);
+  const env = getEnv();
+  let balance = await env.provider.getBalance(signer.signer);
 
   signer.balance = balance.toString();
 
@@ -439,22 +430,22 @@ export async function lookupAddress(address: string): Promise<string> {
 }
 
 export async function checkAddress(address: string): Promise<string | null> {
-  let response:string | null = null;
+  let response: string | null = null;
   try {
     response = await utils.getAddress(address);
   }
-  catch(error) {
+  catch (error) {
     try {
       response = await resolveName(address)
     }
-    catch(error) {
+    catch (error) {
       return response;
     }
   }
   return response;
 }
 
-export async function checkHasToken(event_id:number, address: string): Promise<boolean> {
+export async function checkHasToken(event_id: number, address: string): Promise<boolean> {
   const all_tokens = await getAllTokens(address);
   let token = all_tokens.find(token => token.event.id === event_id);
   return !!token;

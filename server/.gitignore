@@ -1,3 +1,7 @@
 dist/
 .env
 app.yaml
+dev.yaml
+staging.yaml
+service-account-file.json
+src/poapapp-fcm.json

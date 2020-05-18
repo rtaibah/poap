@@ -9,22 +9,21 @@ import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'fo
 /* Helpers */
 import { GasPriceSchema } from '../lib/schemas';
 import { TX_STATUS, etherscanLinks } from '../lib/constants';
-import { Transaction, getTransactions, bumpTransaction } from '../api';
+import { Transaction, getTransactions, bumpTransaction, AdminAddress, getSigners } from '../api';
 import { convertFromGWEI, convertToGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
 import { Loading } from '../components/Loading';
 import { SubmitButton } from '../components/SubmitButton';
+import { TxStatus } from '../components/TxStatus';
 /* Assets */
 import gas from '../images/gas-station.svg';
-import checked from '../images/checked.svg';
 import error from '../images/error.svg';
-import clock from '../images/clock.svg';
-
-const PAGE_SIZE = 10;
+import FilterChip from '../components/FilterChip';
+import FilterSelect from '../components/FilterSelect';
 
 type PaginateAction = {
   selected: number;
-}
+};
 
 type GasPriceFormValues = {
   gasPrice: string;
@@ -32,28 +31,41 @@ type GasPriceFormValues = {
 
 const TransactionsPage: FC = () => {
   const [page, setPage] = useState<number>(0);
+  const [limit, setLimit] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
+  const [signerFilter, setSignerFilter] = useState<string>('');
+  const [signers, setSigners] = useState<AdminAddress[]>([]);
   const [statusList, setStatusList] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [selectedTx, setSelectedTx] = useState<null | Transaction>(null);
   const [isFetchingTx, setIsFetchingTx] = useState<null | boolean>(null);
   const [transactions, setTransactions] = useState<null | Transaction[]>(null);
+  const [isFailedSelected, setIsFailedSelected] = useState<boolean>(false);
+  const [isPassedSelected, setIsPassedSelected] = useState<boolean>(false);
+  const [isPendingSelected, setIsPendingSelected] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (signers.length === 0) {
+      getSigners().then(data => {
+        setSigners(data);
+      })
+    }
+  }, []);
 
   useEffect(() => {
     fetchTransactions();
-  }, [page, statusList]);
+  }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
-  const txStatus = {
-    [TX_STATUS.pending]: clock,
-    [TX_STATUS.failed]: error,
-    [TX_STATUS.passed]: checked,
-  };
+  useEffect(() => {
+    setPage(0);
+    fetchTransactions();
+  }, [statusList, signerFilter, limit]);
 
   const fetchTransactions = () => {
     setIsFetchingTx(true);
     setTransactions(null);
 
-    getTransactions(PAGE_SIZE, page  * PAGE_SIZE, statusList.join(','))
+    getTransactions(limit, page * limit, statusList.join(','), signerFilter)
       .then(response => {
         if (!response) return;
         setTransactions(response.transactions);
@@ -88,14 +100,16 @@ const TransactionsPage: FC = () => {
   };
 
   const handleFilterToggle = (status: string) => {
-    let newStatusList = [...statusList];
-    let index = newStatusList.indexOf(status);
-    if (index > -1) {
-      newStatusList.splice(index, 1);
+    const _statusList = [...statusList];
+    const isStatusInStatusList = _statusList.indexOf(status) > -1;
+    const indexOfStatus = _statusList.indexOf(status);
+
+    if (isStatusInStatusList) {
+      _statusList.splice(indexOfStatus, 1);
     } else {
-      newStatusList.push(status);
+      _statusList.push(status);
     }
-    setStatusList(newStatusList)
+    setStatusList(_statusList);
   };
 
   const openEditModal = (transaction: Transaction) => {
@@ -108,25 +122,61 @@ const TransactionsPage: FC = () => {
     setSelectedTx(null);
   };
 
+  const handleFailedClick = () => {
+    handleFilterToggle('failed');
+    setIsFailedSelected(!isFailedSelected);
+  };
+  const handlePassedClick = () => {
+    handleFilterToggle('passed');
+    setIsPassedSelected(!isPassedSelected);
+  };
+  const handlePendingClick = () => {
+    handleFilterToggle('pending');
+    setIsPendingSelected(!isPendingSelected);
+  };
+  const handleCreatedByChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    const { value } = e.target;
+    setSignerFilter(value);
+  };
+  const handleLimitChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ): void => {
+    const { value } = e.target;
+    setLimit(parseInt(value, 10));
+  }
+
   return (
     <div className={'admin-table transactions'}>
       <h2>Transactions</h2>
       <div>
-        <h4>Filters</h4>
-        <div className={'filters'}>
-          {Object.entries(TX_STATUS).map((entry, index) => {
-            let status = entry[1];
-            return (
-              <div key={index} className={'filter'}>
-                <input
-                  type={'checkbox'}
-                  id={`id_${status}`}
-                  onChange={() => handleFilterToggle(status)}
-                />
-                <label htmlFor={`id_${status}`}>{status}</label>
-              </div>
-            )
-          })}
+        <div className={'filters-container transactions'}>
+          <div className={'left-content'}>
+            <FilterChip text="Failed" isActive={isFailedSelected} handleOnClick={handleFailedClick} />
+            <FilterChip text="Passed" isActive={isPassedSelected} handleOnClick={handlePassedClick} />
+            <FilterChip
+              text="Pending"
+              isActive={isPendingSelected}
+              handleOnClick={handlePendingClick}
+            />
+          </div>
+          <div className={'right-content'}>
+            <FilterSelect handleChange={handleCreatedByChange}>
+              <option value="">All signers</option>
+              {signers.map(signer => {
+                return (
+                  <option key={signer.id} value={signer.signer}>{signer.id} - {signer.signer} ({signer.role})</option>
+                )
+              })}
+            </FilterSelect>
+          </div>
+        </div>
+        <div className={'secondary-filters'}>
+          Results per page:
+          <select onChange={handleLimitChange}>
+            <option value={10}>10</option>
+            <option value={100}>100</option>
+            <option value={1000}>1000</option>
+          </select>
         </div>
       </div>
       <div className={'row table-header visible-md'}>
@@ -137,110 +187,122 @@ const TransactionsPage: FC = () => {
         <div className={'col-md-1 center'}>Status</div>
         <div className={'col-md-2 center'}>Gas Price (GWei)</div>
       </div>
-      <div className={'row table-header visible-sm'}>
-        <div className={'center'}>Transactions</div>
-      </div>
       <div className={'admin-table-row'}>
         {isFetchingTx && <Loading />}
-        {transactions && transactions.map((tx, i) => {
-          return (
-            <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={tx.id}>
-              <div className={'col-md-1 center'}>
-                <span className={'visible-sm'}>#</span>
-                {tx.id}
+
+        {transactions &&
+          transactions.map((tx, i) => {
+            return (
+              <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={tx.id}>
+                <div className={'col-md-1 center'}>
+                  <span className={'visible-sm'}>#</span>
+                  {tx.id}
+                </div>
+                <div className={'col-md-3'}>
+                  <span className={'visible-sm'}>Tx: </span>
+                  <a href={etherscanLinks.tx(tx.tx_hash)} target={'_blank'}>
+                    {tx.tx_hash && reduceAddress(tx.tx_hash)}
+                  </a>
+                </div>
+                <div className={'col-md-3'}>
+                  <span className={'visible-sm'}>Signer: </span>
+                  <a href={etherscanLinks.address(tx.signer)} target={'_blank'}>
+                    {tx.signer && reduceAddress(tx.signer)}
+                  </a>
+                  <span className={'nonce'} title={'Nonce'}>{tx.nonce}</span>
+                </div>
+                <div className={'col-md-2 capitalize'}>
+                  <span className={'visible-sm'}>Operation: </span>
+                  {tx.operation}
+                </div>
+                <div className={'col-md-1 center'}>
+                  <TxStatus status={tx.status} />
+                </div>
+                <div className={'col-md-2 center'}>
+                  <span className={'visible-sm'}>Gas Price (GWei): </span>
+                  {tx.gas_price && convertToGWEI(tx.gas_price)}
+                  {tx.status === TX_STATUS.pending && (
+                    <img
+                      src={gas}
+                      alt={'Edit'}
+                      className={'edit-icon'}
+                      onClick={() => openEditModal(tx)}
+                    />
+                  )}
+                </div>
               </div>
-              <div className={'col-md-3'}>
-                <span className={'visible-sm'}>Tx: </span>
-                <a href={etherscanLinks.tx(tx.tx_hash)} target={"_blank"}>{reduceAddress(tx.tx_hash)}</a>
-              </div>
-              <div className={'col-md-3'}>
-                <span className={'visible-sm'}>Signer: </span>
-                <a href={etherscanLinks.address(tx.signer)} target={"_blank"}>{reduceAddress(tx.signer)}</a>
-              </div>
-              <div className={'col-md-2 capitalize'}>
-                <span className={'visible-sm'}>Operation: </span>
-                {tx.operation}</div>
-              <div className={'col-md-1 center'}>
-                <img src={txStatus[tx.status]} className={'status-icon'} alt={tx.status} />
-              </div>
-              <div className={'col-md-2 center'}>
-                <span className={'visible-sm'}>Gas Price (GWei): </span>
-                {convertToGWEI(tx.gas_price)}
-                {tx.status === TX_STATUS.pending &&
-                <img src={gas} alt={'Edit'} className={'edit-icon'} onClick={() => openEditModal(tx)} />
-                }
-              </div>
-            </div>
-          )
-        })}
-        {transactions && transactions.length === 0 && !isFetchingTx &&
-        <div className={'no-results'}>No transactions found</div>
-        }
+            );
+          })}
+
+        {transactions && transactions.length === 0 && !isFetchingTx && (
+          <div className={'no-results'}>No transactions found</div>
+        )}
       </div>
-      {total > 0 &&
+      {total > 10 && (
         <div className={'pagination'}>
           <ReactPaginate
-            pageCount={Math.ceil(total/PAGE_SIZE)}
+            pageCount={Math.ceil(total / limit)}
             marginPagesDisplayed={2}
             pageRangeDisplayed={5}
+            forcePage={page}
             activeClassName={'active'}
             onPageChange={handlePageChange}
           />
         </div>
-      }
-      <ReactModal
-        isOpen={modalOpen}
-        shouldFocusAfterRender={true}
-      >
+      )}
+      <ReactModal isOpen={modalOpen} shouldFocusAfterRender={true}>
         <div>
           <h3>Edit Gas Price</h3>
-          {selectedTx &&
+          {selectedTx && (
             <>
               <div className={'description'}>
-                Modify gas price for tx <a href={etherscanLinks.tx(selectedTx.tx_hash)} target={"_blank"}>{selectedTx.tx_hash}</a>.
-                Operation: {selectedTx.operation}
+                Modify gas price for tx{' '}
+                <a href={etherscanLinks.tx(selectedTx.tx_hash)} target={'_blank'}>
+                  {selectedTx.tx_hash}
+                </a>
+                . Operation: {selectedTx.operation}
               </div>
-            <Formik
-              enableReinitialize
-              onSubmit={handleFormSubmit}
-              initialValues={{ gasPrice: convertToGWEI(selectedTx.gas_price) }}
-              validationSchema={GasPriceSchema}
-            >
-              {({ dirty, isValid, isSubmitting, status, touched }) => {
-                return (
-                  <Form className="price-gas-modal-form">
-                    <Field
-                      name="gasPrice"
-                      render={({ field, form }: FieldProps) => {
-                        return (
-                          <input
-                            type="text"
-                            autoComplete="off"
-                            className={classNames(!!form.errors[field.name] && 'error')}
-                            placeholder={'Gas price in GWEI'}
-                            {...field}
-                          />
-                        );
-                      }}
-                    />
-                    <ErrorMessage name="gasPrice" component="p" className="bk-error"/>
-                    {status && (
-                      <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>
-                    )}
-                    <SubmitButton
-                      text="Modify gas price"
-                      isSubmitting={isSubmitting}
-                      canSubmit={isValid && dirty}
-                    />
-                    <div onClick={closeEditModal} className={'close-modal'}>
-                      Cancel
-                    </div>
-                  </Form>
-                );
-              }}
-            </Formik>
-          </>
-          }
+              <Formik
+                enableReinitialize
+                onSubmit={handleFormSubmit}
+                initialValues={{ gasPrice: convertToGWEI(selectedTx.gas_price) }}
+                validationSchema={GasPriceSchema}
+              >
+                {({ dirty, isValid, isSubmitting, status, touched }) => {
+                  return (
+                    <Form className="price-gas-modal-form">
+                      <Field
+                        name="gasPrice"
+                        render={({ field, form }: FieldProps) => {
+                          return (
+                            <input
+                              type="text"
+                              autoComplete="off"
+                              className={classNames(!!form.errors[field.name] && 'error')}
+                              placeholder={'Gas price in GWEI'}
+                              {...field}
+                            />
+                          );
+                        }}
+                      />
+                      <ErrorMessage name="gasPrice" component="p" className="bk-error" />
+                      {status && (
+                        <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>
+                      )}
+                      <SubmitButton
+                        text="Modify gas price"
+                        isSubmitting={isSubmitting}
+                        canSubmit={isValid && dirty}
+                      />
+                      <div onClick={closeEditModal} className={'close-modal'}>
+                        Cancel
+                      </div>
+                    </Form>
+                  );
+                }}
+              </Formik>
+            </>
+          )}
         </div>
       </ReactModal>
     </div>

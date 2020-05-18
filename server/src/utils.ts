@@ -1,3 +1,4 @@
+
 export async function concurrentMap<A, B>(
   xs: A[],
   fn: (v: A) => Promise<B>,
@@ -15,4 +16,8 @@ export async function concurrentMap<A, B>(
     results = results.concat(await Promise.all(promises));
   }
   return results;
+}
+
+export function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
