@@ -69,3 +69,5 @@ jspm_packages/
 
 dist/
 TODO
+
+.local_scripts/

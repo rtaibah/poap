@@ -179,6 +179,36 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
 
 }
 
+async function processTransaction(tx: ContractTransaction, txObj: any, operation: string, args: string, awaitTx: boolean, extraParams: any) {
+  let saveTx: boolean = true;
+  if (!tx.hash) return;
+
+  if (extraParams.hasOwnProperty('original_tx')) {
+    if (extraParams.original_tx.toLowerCase() === tx.hash.toLowerCase()) {
+      saveTx = false;
+    }
+  }
+
+  if (saveTx) {
+    await saveTransaction(
+      tx.hash,
+      tx.nonce,
+      operation,
+      args,
+      txObj.signerWallet.address,
+      TransactionStatus.pending,
+      txObj.transactionParams.gasPrice.toString()
+    );
+  }
+
+  console.log(`${operation}: Transaction: ${tx.hash}`);
+  // The operation is NOT complete yet; we must wait until it is mined
+  if (awaitTx) {
+    await tx.wait();
+  }
+  console.log(`${operation}: Finished: ${tx.hash}`);
+}
+
 export async function mintToken(eventId: number, toAddr: Address, awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
   let tx: ContractTransaction
   let txObj: any
@@ -192,30 +222,30 @@ export async function mintToken(eventId: number, toAddr: Address, awaitTx: boole
     return null;
   }
 
-
-  if (tx.hash) {
-    await saveTransaction(
-      tx.hash,
-      tx.nonce,
-      OperationType.mintToken,
-      JSON.stringify([eventId, toAddr]),
-      txObj.signerWallet.address,
-      TransactionStatus.pending,
-      txObj.transactionParams.gasPrice.toString()
-    );
-  }
-
-  console.log(`mintToken: Transaction: ${tx.hash}`);
-  // The operation is NOT complete yet; we must wait until it is mined
-  if (awaitTx) {
-    await tx.wait();
-  }
-  console.log(`mintToken: Finished: ${tx.hash}`);
-
+  await processTransaction(tx, txObj, OperationType.mintToken, JSON.stringify([eventId, toAddr]), awaitTx, extraParams);
   return tx
 }
 
-export async function bumpTransaction(hash: string, gasPrice: string) {
+export async function mintEventToManyUsers(eventId: number, toAddr: Address[], awaitTx: boolean = true, extraParams?: any) {
+  const txObj = await getTxObj(true, extraParams);
+  const tx = await txObj.contract.functions.mintEventToManyUsers(eventId, toAddr, txObj.transactionParams);
+  await processTransaction(tx, txObj, OperationType.mintEventToManyUsers, JSON.stringify([eventId, toAddr]), awaitTx, extraParams);
+}
+
+export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, awaitTx: boolean = true, extraParams?: any) {
+  const txObj = await getTxObj(true, extraParams);
+  const tx = await txObj.contract.functions.mintUserToManyEvents(eventIds, toAddr, txObj.transactionParams);
+  await processTransaction(tx, txObj, OperationType.mintUserToManyEvents, JSON.stringify({ eventIds, toAddr }), awaitTx, extraParams);
+}
+
+export async function burnToken(tokenId: string | number, awaitTx: boolean = true, extraParams?: any): Promise<boolean> {
+  const txObj = await getTxObj(true, extraParams);
+  const tx = await txObj.contract.functions.burn(tokenId, txObj.transactionParams);
+  await processTransaction(tx, txObj, OperationType.burnToken, tokenId.toString(), awaitTx, extraParams);
+  return true;
+}
+
+export async function bumpTransaction(hash: string, gasPrice: string, updateTx: boolean) {
   const transaction = await getTransaction(hash);
   if (!transaction) {
     throw new Error('Transaction was not found');
@@ -229,7 +259,8 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
       await burnToken(tokenId, false, {
         signer: transaction.signer,
         gas_price: gasPrice,
-        nonce: transaction.nonce
+        nonce: transaction.nonce,
+        original_tx: hash
       })
     }
     case OperationType.mintEventToManyUsers: {
@@ -238,7 +269,8 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
         signer: transaction.signer,
         gas_price: gasPrice,
         nonce: transaction.nonce,
-        estimate_mint_gas: toAddresses.length
+        estimate_mint_gas: toAddresses.length,
+        original_tx: hash
       })
       break;
     }
@@ -247,7 +279,8 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
       await mintToken(eventId, toAddr, false, {
         signer: transaction.signer,
         gas_price: gasPrice,
-        nonce: transaction.nonce
+        nonce: transaction.nonce,
+        original_tx: hash
       })
       break;
     }
@@ -257,7 +290,8 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
         signer: transaction.signer,
         gas_price: gasPrice,
         nonce: transaction.nonce,
-        estimate_mint_gas: eventIds.length
+        estimate_mint_gas: eventIds.length,
+        original_tx: hash
       })
       break;
     }
@@ -266,80 +300,9 @@ export async function bumpTransaction(hash: string, gasPrice: string) {
     }
   }
 
-  await updateTransactionStatus(hash, TransactionStatus.bumped);
-}
-
-export async function mintEventToManyUsers(eventId: number, toAddr: Address[], awaitTx: boolean = true, extraParams?: any) {
-  const txObj = await getTxObj(true, extraParams);
-
-  const tx = await txObj.contract.functions.mintEventToManyUsers(eventId, toAddr, txObj.transactionParams);
-
-  if (tx.hash) {
-    await saveTransaction(
-      tx.hash,
-      tx.nonce,
-      OperationType.mintEventToManyUsers,
-      JSON.stringify([eventId, toAddr]),
-      txObj.signerWallet.address,
-      TransactionStatus.pending,
-      txObj.transactionParams.gasPrice.toString()
-    );
+  if (updateTx) {
+    await updateTransactionStatus(hash, TransactionStatus.bumped);
   }
-
-  console.log(`mintEventToManyUsers: Transaction: ${tx.hash}`);
-  // The operation is NOT complete yet; we must wait until it is mined
-  if (awaitTx) {
-    await tx.wait();
-  }
-}
-
-export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, awaitTx: boolean = true, extraParams?: any) {
-  const txObj = await getTxObj(true, extraParams);
-  const tx = await txObj.contract.functions.mintUserToManyEvents(eventIds, toAddr, txObj.transactionParams);
-
-  if (tx.hash) {
-    await saveTransaction(
-      tx.hash,
-      tx.nonce,
-      OperationType.mintUserToManyEvents,
-      JSON.stringify({ eventIds, toAddr }),
-      txObj.signerWallet.address,
-      TransactionStatus.pending,
-      txObj.transactionParams.gasPrice.toString()
-    );
-  }
-
-  console.log(`mintUserToManyEvents: Transaction: ${tx.hash}`);
-  // The operation is NOT complete yet; we must wait until it is mined
-  if (awaitTx) {
-    await tx.wait();
-  }
-}
-
-export async function burnToken(tokenId: string | number, awaitTx: boolean = true, extraParams?: any): Promise<boolean> {
-  const txObj = await getTxObj(true, extraParams);
-
-  // Set a new Value, which returns the transaction
-  const tx = await txObj.contract.functions.burn(tokenId, txObj.transactionParams);
-
-  if (tx.hash) {
-    await saveTransaction(
-      tx.hash,
-      tx.nonce,
-      OperationType.burnToken,
-      tokenId.toString(),
-      txObj.signerWallet.address,
-      TransactionStatus.pending,
-      txObj.transactionParams.gasPrice.toString()
-    );
-  }
-
-  console.log(`burn: Transaction: ${tx.hash}`);
-  // The operation is NOT complete yet; we must wait until it is mined
-  if (awaitTx) {
-    await tx.wait();
-  }
-  return true;
 }
 
 export async function getAllTokens(address: Address): Promise<TokenInfo[]> {

@@ -2,11 +2,6 @@ export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export type Address = string;
 
-export type TxStatusPayload = {
-  confirmed?: string,
-  execution_error?: string
-}
-
 export enum OperationType {
   mintToken = 'mintToken',
   mintEventToManyUsers = 'mintEventToManyUsers',

@@ -1,5 +1,6 @@
 import { Provider, InfuraProvider, JsonRpcProvider } from 'ethers/providers';
-import { Wallet, getDefaultProvider } from 'ethers';
+// import { Wallet, getDefaultProvider } from 'ethers';
+import { Wallet } from 'ethers';
 import { Address } from '../types';
 
 export interface EnvVariables {
@@ -32,7 +33,7 @@ function getHelperWallets(provider: Provider) {
   let admin_wallet = new Wallet(ownerPK, provider)
   helpers[admin_wallet.address.toLowerCase()] = new Wallet(ownerPK, provider);
 
-  var jsonObj = JSON.parse(helpersPK);
+  let jsonObj = JSON.parse(helpersPK);
   for (let item of jsonObj) {
     let wallet = new Wallet(item, provider);
     helpers[wallet.address.toLowerCase()] = new Wallet(item, provider);
@@ -62,8 +63,8 @@ export default function getEnv(): EnvVariables {
 
   } else {
     const network = ensureEnvVariable('ETH_NETWORK');
-    provider = getDefaultProvider(network);
-
+    const provider_url = ensureEnvVariable('PROVIDER_RPC_URL');
+    provider = new JsonRpcProvider(provider_url, network);
   }
 
   const ownerPK = ensureEnvVariable('POAP_OWNER_PK');
