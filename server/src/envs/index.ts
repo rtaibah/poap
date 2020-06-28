@@ -1,5 +1,6 @@
 import { Provider, InfuraProvider, JsonRpcProvider } from 'ethers/providers';
-import { Wallet, getDefaultProvider } from 'ethers';
+// import { Wallet, getDefaultProvider } from 'ethers';
+import { Wallet } from 'ethers';
 import { Address } from '../types';
 
 export interface EnvVariables {
@@ -11,6 +12,12 @@ export interface EnvVariables {
   secretKey: string;
   infuraNet: string;
   providerStr: string;
+  swaggerHost: string;
+  swaggerUrl: string;
+  auth0AppName: string;
+  auth0Kid: string;
+  auth0Audience: string;
+  googleStorageBucket: string;
 }
 
 export interface PoapHelpers {
@@ -26,7 +33,7 @@ function getHelperWallets(provider: Provider) {
   let admin_wallet = new Wallet(ownerPK, provider)
   helpers[admin_wallet.address.toLowerCase()] = new Wallet(ownerPK, provider);
 
-  var jsonObj = JSON.parse(helpersPK);
+  let jsonObj = JSON.parse(helpersPK);
   for (let item of jsonObj) {
     let wallet = new Wallet(item, provider);
     helpers[wallet.address.toLowerCase()] = new Wallet(item, provider);
@@ -52,12 +59,12 @@ export default function getEnv(): EnvVariables {
     provider = new InfuraProvider(infuraNet, infuraPK);
 
   } else if(envProvider == 'local') {
-    provider = new JsonRpcProvider('http://localhost:7545');
+    provider = new JsonRpcProvider('http://localhost:9545');
 
   } else {
     const network = ensureEnvVariable('ETH_NETWORK');
-    provider = getDefaultProvider(network);
-
+    const provider_url = ensureEnvVariable('PROVIDER_RPC_URL');
+    provider = new JsonRpcProvider(provider_url, network);
   }
 
   const ownerPK = ensureEnvVariable('POAP_OWNER_PK');
@@ -70,6 +77,12 @@ export default function getEnv(): EnvVariables {
     poapHelpers: getHelperWallets(provider),
     secretKey: ensureEnvVariable('SECRET_KEY'),
     infuraNet: ensureEnvVariable('ETH_NETWORK'),
-    providerStr: ensureEnvVariable('PROVIDER')
+    providerStr: ensureEnvVariable('PROVIDER'),
+    swaggerHost: ensureEnvVariable('SWAGGER_HOST'),
+    swaggerUrl: ensureEnvVariable('SWAGGER_URL'),
+    auth0AppName: ensureEnvVariable('AUTH0_APP_NAME'),
+    auth0Kid: ensureEnvVariable('AUTH0_KID'),
+    auth0Audience: ensureEnvVariable('AUTH0_AUDIENCE'),
+    googleStorageBucket: ensureEnvVariable('GOOGLE_STORAGE_BUCKET'),
   };
 }

@@ -159,3 +159,42 @@ Steps:
 
     cd server/
     gcloud app deploy --verbosity=info
+
+
+### Auth 0 DEV Env Configutarion
+ for poap you have to create a 'SINGLE PAGE APLICATION' and an 'API' in auth0.
+
+ then you have to set the following .env variables:
+  - server:
+    - AUTH0_APP_NAME= {it is the sub domain of the app url}
+    - AUTH0_KID= {it is in the app description}
+    - AUTH0_AUDIENCE= {it is the identifier in the API general settings}
+  - client:
+    - REACT_APP_AUTH0_DOMAIN={entire domain of the app}
+    - REACT_APP_AUTH0_CLIENT_ID={client id of the SINGLE PAGE APP}
+    - REACT_APP_AUTH0_AUDIENCE={same audience as server}
+
+ also you have to create a rule: 
+  - first you have to enable RBAC:
+    - https://auth0.com/docs/dashboard/guides/apis/enable-rbac
+  
+    - then create the rule with this script code:
+
+        ``` function (user, context, callback) {
+        const namespace = 'https://poap.xyz';
+        const assignedRoles = (context.authorization || {}).roles;
+
+        let idTokenClaims = context.idToken || {};
+        let accessTokenClaims = context.accessToken || {};
+
+        idTokenClaims[`${namespace}/roles`] = assignedRoles;
+        accessTokenClaims[`${namespace}/roles`] = assignedRoles;
+
+        context.idToken = idTokenClaims;
+        context.accessToken = accessTokenClaims;
+
+        callback(null, user, context);
+        }```
+
+ create user roles in auth0 using the role 'UserRole' in /server/src/types.ts
+ 

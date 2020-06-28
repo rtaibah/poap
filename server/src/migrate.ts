@@ -4,8 +4,8 @@ import * as csv from 'fast-csv';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import getEnv from './envs';
-import { Poap } from './poap-eth/Poap';
-import { estimateMintingGas, getContract } from './poap-helper';
+import { Poap } from './eth/Poap';
+import { estimateMintingGas, getContract } from './eth/helpers';
 import { Address } from './types';
 import { concurrentMap } from './utils';
 

@@ -9,33 +9,34 @@ import { AddressSchema } from '../lib/schemas';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
+import ClaimFooterMessage from './ClaimFooterMessage';
 
 type QRFormValues = {
   address: string;
 };
 
 /*
-* @dev: Form component to get the address and submit mint request
-* Logic behind web3 enabled status
-* We will always try to populate the address field, but as Metamask requires
-* that the user 'connect' their wallet to the site (`ethereum.enable()`),
-* we ask if the user has a web3 instance that is not Metamask or if it's, it should
-* be already logged-in: `if(enabledWeb3 && (!hasMetamask() || isMetamaskLogged()))`
-* If the user has another provider, we will try to get the account at the moment
-* */
+ * @dev: Form component to get the address and submit mint request
+ * Logic behind web3 enabled status
+ * We will always try to populate the address field, but as Metamask requires
+ * that the user 'connect' their wallet to the site (`ethereum.enable()`),
+ * we ask if the user has a web3 instance that is not Metamask or if it's, it should
+ * be already logged-in: `if(enabledWeb3 && (!hasMetamask() || isMetamaskLogged()))`
+ * If the user has another provider, we will try to get the account at the moment
+ * */
 const ClaimForm: React.FC<{
-  enabledWeb3: boolean | null,
-  claim: HashClaim,
-  checkClaim: (hash: string) => void
-}> = ({enabledWeb3, claim, checkClaim}) => {
+  enabledWeb3: boolean | null;
+  claim: HashClaim;
+  checkClaim: (hash: string) => void;
+}> = ({ enabledWeb3, claim, checkClaim }) => {
   const [account, setAccount] = useState<string>('');
 
   useEffect(() => {
-    if(enabledWeb3 && (!hasMetamask() || isMetamaskLogged())) getAddress();
+    if (enabledWeb3 && (!hasMetamask() || isMetamaskLogged())) getAddress();
   }, [enabledWeb3]);
 
   const getAddress = () => {
-    if(!hasMetamask() || isMetamaskLogged()) {
+    if (!hasMetamask() || isMetamaskLogged()) {
       tryGetAccount()
         .then(address => {
           if (address) setAccount(address);
@@ -48,16 +49,16 @@ const ClaimForm: React.FC<{
     }
   };
 
-  const handleFormSubmit = async (
-    values: QRFormValues,
-    actions: FormikActions<QRFormValues>
-  ) => {
+  const handleFormSubmit = async (values: QRFormValues, actions: FormikActions<QRFormValues>) => {
     try {
       actions.setSubmitting(true);
       await postClaimHash(claim.qr_hash.toLowerCase(), values.address.toLowerCase(), claim.secret);
       checkClaim(claim.qr_hash);
     } catch (error) {
-      actions.setStatus({ ok: false, msg: `Badge couldn't be minted` });
+      actions.setStatus({
+        ok: false,
+        msg: `Badge couldn't be claimed: ${error.message}`,
+      });
     } finally {
       actions.setSubmitting(false);
     }
@@ -84,24 +85,23 @@ const ClaimForm: React.FC<{
                         type="text"
                         autoComplete="off"
                         className={classNames(!!form.errors[field.name] && 'error')}
-                        placeholder={'Paste your Address or ENS'}
+                        placeholder={'Input your Ethereum address or ENS name'}
                         {...field}
                       />
                     );
                   }}
                 />
-                <ErrorMessage name="gasPrice" component="p" className="bk-error"/>
-                {status && (
-                  <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>
-                )}
+                <ErrorMessage name="gasPrice" component="p" className="bk-error" />
+                {status && <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>}
                 <div className={'web3-browser'}>
-                  <div>Please complete the input above to continue</div>
-                  {enabledWeb3 &&
-                  <div>Web3 browser? <span onClick={getAddress}>Get my address</span></div>
-                  }
+                  {enabledWeb3 && (
+                    <div>
+                      Web3 browser? <span onClick={getAddress}>Get my address</span>
+                    </div>
+                  )}
                 </div>
                 <SubmitButton
-                  text="Claim my badge"
+                  text="Claim POAP token"
                   isSubmitting={isSubmitting}
                   canSubmit={isValid && enabledWeb3 !== null}
                 />
@@ -110,8 +110,9 @@ const ClaimForm: React.FC<{
           }}
         </Formik>
       </div>
+      <ClaimFooterMessage />
     </div>
-  )
+  );
 };
 
 export default ClaimForm;
