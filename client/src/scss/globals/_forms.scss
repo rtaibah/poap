@@ -8,6 +8,7 @@ form {
   label,
   input[type='text'],
   input[type='email'],
+  input[type='file'],
   textarea,
   select {
     // float: left;
@@ -83,6 +84,17 @@ div {
         border: 2px solid $color-primary;
       }
     }
+
+    input:disabled {
+      cursor: not-allowed;
+      background: $color-light-grey;
+      color: #bababa;
+      border: none !important;
+
+      &:hover {
+        border: none !important;
+      }
+    }
   }
 }
 
@@ -91,7 +103,7 @@ div {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
+  justify-content: flex-start;
 
   label {
     margin-bottom: 10px;
@@ -106,6 +118,21 @@ div {
         left: auto;
       }
     }
+  }
+}
+
+.checkbox-field {
+  margin-top: $grid-gutter;
+  display: flex;
+  flex-direction: row;
+
+  label {
+    color: $color-primary;
+    cursor: pointer;
+  }
+  input {
+    cursor: pointer;
+    margin-top: 2px;
   }
 }
 
@@ -419,7 +446,7 @@ textarea {
   justify-content: space-between;
 
   &.creation-modal {
-    justify-content: flex-end;
+    justify-content: space-between;
   }
 
   button {
@@ -432,6 +459,23 @@ textarea {
     button {
       min-width: 130px;
     }
+  }
+}
+
+.modal-action-checkbox-container {
+  display: flex;
+  flex-direction: row;
+  input {
+    transform: scale(1.2);
+    margin: 2px 0 0 2px;
+  }
+  label,
+  input {
+    cursor: pointer;
+  }
+  label {
+    padding-left: 5px;
+    margin-bottom: 0;
   }
 }
 

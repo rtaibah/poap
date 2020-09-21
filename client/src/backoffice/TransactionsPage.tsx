@@ -17,7 +17,6 @@ import { SubmitButton } from '../components/SubmitButton';
 import { TxStatus } from '../components/TxStatus';
 /* Assets */
 import gas from '../images/gas-station.svg';
-import error from '../images/error.svg';
 import FilterChip from '../components/FilterChip';
 import FilterSelect from '../components/FilterSelect';
 
@@ -50,7 +49,7 @@ const TransactionsPage: FC = () => {
         setSigners(data);
       })
     }
-  }, []);
+  }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     fetchTransactions();
@@ -59,7 +58,7 @@ const TransactionsPage: FC = () => {
   useEffect(() => {
     setPage(0);
     fetchTransactions();
-  }, [statusList, signerFilter, limit]);
+  }, [statusList, signerFilter, limit]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchTransactions = () => {
     setIsFetchingTx(true);
@@ -93,7 +92,11 @@ const TransactionsPage: FC = () => {
       fetchTransactions();
       closeEditModal();
     } catch (error) {
-      actions.setStatus({ ok: false, msg: `Gas price couldn't be changed` });
+      let message: any = `Gas price couldn't be changed`
+      if (error.message) {
+        message = <span>{message}<br />{error.message}</span>
+      }
+      actions.setStatus({ ok: false, msg: message });
     } finally {
       actions.setSubmitting(false);
     }

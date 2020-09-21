@@ -1,5 +1,7 @@
 import { Contract, ContractTransaction, Wallet, getDefaultProvider, utils } from 'ethers';
 import { verifyMessage } from 'ethers/utils';
+import { hash, sign, TypedValue } from 'eth-crypto';
+import { differenceInDays, isFuture } from 'date-fns';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
@@ -12,7 +14,8 @@ import {
   getAvailableHelperSigners,
   getLastSignerTransaction,
   getTransaction,
-  updateTransactionStatus
+  updateTransactionStatus,
+  updateBumpedQrClaim
 } from '../db';
 import getEnv from '../envs';
 import { Poap } from './Poap';
@@ -161,7 +164,8 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
     gasPrice: Number(gasPrice),
   };
 
-  if (extraParams && extraParams.nonce) {
+  // if (extraParams && extraParams.nonce) {
+  if (extraParams && 'nonce' in extraParams && Number.isFinite(extraParams.nonce) && extraParams.nonce >= 0) {
     transactionParams.nonce = extraParams.nonce;
   } else  {
     const lastTransaction = await getLastSignerTransaction(signerWallet.address);
@@ -183,7 +187,7 @@ async function processTransaction(tx: ContractTransaction, txObj: any, operation
   let saveTx: boolean = true;
   if (!tx.hash) return;
 
-  if (extraParams.hasOwnProperty('original_tx')) {
+  if (extraParams && 'original_tx' in extraParams) {
     if (extraParams.original_tx.toLowerCase() === tx.hash.toLowerCase()) {
       saveTx = false;
     }
@@ -250,6 +254,11 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
   if (!transaction) {
     throw new Error('Transaction was not found');
   }
+
+  if (Number(transaction.gas_price) >= Number(gasPrice) && updateTx) {
+    throw new Error('New gas price is not bigger than previous gas price');
+  }
+
   // Parse available arguments saved in the database
   const txJSON = JSON.parse(transaction.arguments)
 
@@ -276,12 +285,15 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
     }
     case OperationType.mintToken: {
       const [eventId, toAddr] = txJSON
-      await mintToken(eventId, toAddr, false, {
+      let new_tx = await mintToken(eventId, toAddr, false, {
         signer: transaction.signer,
         gas_price: gasPrice,
         nonce: transaction.nonce,
         original_tx: hash
       })
+      if (new_tx && new_tx.hash) {
+        await updateBumpedQrClaim(eventId, toAddr, transaction.signer, hash, new_tx.hash);
+      }
       break;
     }
     case OperationType.mintUserToManyEvents: {
@@ -330,15 +342,13 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     });
   }
 
-  const sortedTokens = tokens.sort((a:any, b:any) => {
+  return tokens.sort((a:any, b:any) => {
     try{
       return new Date(b.event.start_date) > new Date(a.event.start_date) ? 1 : -1
     } catch (e) {
       return -1
     }
   })
-
-  return sortedTokens;
 }
 
 export async function getAllEventIds(address: Address): Promise<number[]> {
@@ -449,4 +459,19 @@ export async function checkHasToken(event_id: number, address: string): Promise<
   const all_tokens = await getAllTokens(address);
   let token = all_tokens.find(token => token.event.id === event_id);
   return !!token;
+}
+
+export function signMessage(privateKey: string, params: TypedValue[]): string {
+  // params = [ {type: "uint256", value: value}, ];
+  const message = hash.keccak256(params);
+  return sign(privateKey, message);
+}
+
+export function isEventEditable(eventDate: string): boolean {
+  try {
+    const _eventDate = new Date(eventDate)
+    return isFuture(_eventDate) || differenceInDays(new Date(), _eventDate) < 30
+  } catch (e) {
+    return false
+  }
 }

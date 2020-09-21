@@ -20,6 +20,7 @@ const App: React.FC<AppProps> = ({ auth }) => (
         <Route exact path={ROUTES.adminLogin.path} component={AdminLoginPage} />
         <Route path={ROUTES.admin} component={BackOffice} />
         <Route path={ROUTES.signerClaimPage} component={SignerClaimPage} />
+        <Route path={ROUTES.codeClaimWeb3PageHash} component={CodeClaimPage} />
         <Route path={ROUTES.codeClaimPageHash} component={CodeClaimPage} />
         <Route path={ROUTES.codeClaimPage} component={CodeClaimPage} />
         <Route path={ROUTES.home} component={ScanPage} />

@@ -55,7 +55,10 @@ export const CheckAccount: React.FC<{
 export const SignerClaimPage: React.FC<RouteComponentProps<{ event: string }>> = ({ match }) => {
   return (
     <>
-      <LoadEvent fancyId={match.params.event} render={event => <ClaimPageInner event={event} />} />
+      <LoadEvent
+        fancyId={match.params.event}
+        render={(event) => <ClaimPageInner event={event} />}
+      />
       <ClaimFooter />
     </>
   );
@@ -106,7 +109,7 @@ const ClaimPageInner: React.FC<{ event: PoapEvent }> = React.memo(({ event }) =>
               style={{ minHeight: 65 }}
             >
               <CheckAccount
-                render={account => (
+                render={(account) => (
                   <>
                     <h2>Wallet</h2>
                     <p className="wallet-number">{account}</p>

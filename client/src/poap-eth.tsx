@@ -3,15 +3,15 @@ import { Web3Provider } from 'ethers/providers';
 import { claimToken, PoapEvent, requestProof } from './api';
 import { getAddress } from 'ethers/utils';
 
-declare global {
-  interface Window {
-    ethereum?: {
-      isMetaMask?: boolean;
-      enable(): Promise<string[]>;
-      selectedAddress?: string;
-    };
-  }
-}
+// declare global {
+//   interface Window {
+//     ethereum?: {
+//       isMetaMask?: boolean;
+//       enable(): Promise<string[]>;
+//       selectedAddress?: string;
+//     };
+//   }
+// }
 
 export function hasMetamask() {
   return typeof (window as any).ethereum !== 'undefined' && window.ethereum!.isMetaMask;
@@ -53,7 +53,7 @@ export async function getUserWallet(): Promise<Signer> {
 // const isAndroid = ua.includes('Android');
 
 export function hasWeb3(): Promise<boolean> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     let aborted = false;
     function checkForWeb3() {
       if (!aborted) {
@@ -106,7 +106,6 @@ export async function tryGetAccount(): Promise<null | string> {
       }
     }
   }
-
   return rawAddress == null ? null : getAddress(rawAddress);
 }
 

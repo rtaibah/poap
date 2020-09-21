@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@portis/web3": "^2.0.0-beta.57",
+    "@walletconnect/web3-provider": "1.1.0",
+    "@types/react-color": "^3.0.4",
     "aos": "^2.3.4",
     "auth0-js": "^9.11.2",
     "classnames": "^2.2.6",
@@ -15,8 +18,10 @@
     "query-string": "^6.8.3",
     "react": "^16.8.6",
     "react-burger-menu": "^2.6.10",
+    "react-color": "^2.18.1",
     "react-day-picker": "^7.4.0",
     "react-dom": "^16.8.6",
+    "react-lightweight-tooltip": "^1.0.0",
     "react-modal": "^3.10.1",
     "react-paginate": "^6.3.0",
     "react-router-dom": "^5.1.2",
@@ -25,6 +30,8 @@
     "react-share": "^3.0.0",
     "react-toast-notifications": "^2.4.0",
     "typescript": "3.7.4",
+    "web3": "^1.2.8",
+    "web3modal": "1.9.0",
     "yup": "^0.27.0"
   },
   "scripts": {
@@ -35,7 +42,24 @@
     "deploy": "yarn build && yarn firebase deploy"
   },
   "eslintConfig": {
-    "extends": "react-app"
+    "extends": [
+      "react-app",
+      "eslint:recommended",
+      "plugin:react/recommended",
+      "plugin:cypress/recommended",
+      "plugin:prettier/recommended"
+    ],
+    "plugins": [],
+    "rules": {
+      "react/prop-types": 0,
+      "prettier/prettier": "error",
+      "react/jsx-sort-props": 0,
+      "react/display-name": 0,
+      "no-console": "off",
+      "react/no-unescaped-entities": 0,
+      "no-control-regex": 0,
+      "react/jsx-boolean-value": "never"
+    }
   },
   "browserslist": {
     "production": [
@@ -66,6 +90,12 @@
     "@types/react-select": "^3.0.12",
     "@types/react-share": "^2.1.1",
     "@types/react-toast-notifications": "^2.0.0",
-    "@types/yup": "^0.26.22"
+    "@types/web3": "^1.2.2",
+    "@types/yup": "^0.26.22",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-cypress": "^2.11.1",
+    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-simple-import-sort": "^5.0.3",
+    "prettier": "^2.0.5"
   }
 }

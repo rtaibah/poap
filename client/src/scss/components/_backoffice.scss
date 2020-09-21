@@ -1,6 +1,21 @@
 .app-content {
   &.backoffice {
     padding-bottom: 200px;
+
+    /* Tooltips */
+    .backoffice-tooltip {
+      text-align: center;
+      padding: 0 5px;
+    }
+
+    .event-table-tooltip {
+      text-align: center;
+      padding: 0 5px;
+
+      img.tooltipped {
+        width: 250px;
+      }
+    }
   }
 }
 
@@ -31,18 +46,15 @@
   margin: auto;
 }
 
-// .bk-field-detail {
-//   padding: 5px 10px;
-// }
-
 .bk-form-row {
   width: 100%;
   margin: 18px 0px;
 
-  > label {
-    margin-bottom: 10px;
-    display: block;
+  label {
     color: $color-primary;
+  }
+  textarea {
+    margin-bottom: 16px;
   }
 
   input,
@@ -58,25 +70,52 @@
 
 .bk-group {
   display: flex;
+  min-height: 130px;
+
+  > * {
+    flex: 1;
+    width: 486px;
+
+    &:first-of-type {
+      margin-right: 10px;
+    }
+
+    &:not(:first-of-type) {
+      margin-left: 10px;
+    }
+  }
 
   label {
     margin-bottom: 10px;
     display: block;
     color: $color-primary;
+
+    i {
+      font-size: 0.8rem;
+      color: $color-grey;
+    }
   }
 
-  > * {
-    margin-right: 5px;
+  .bk-form-row:nth-of-type(1),
+  .date-picker-container:nth-of-type(1) {
+    margin-right: 10px;
+  }
+  .bk-form-row:nth-of-type(2),
+  .date-picker-container:nth-of-type(2) {
+    margin-left: 10px;
+  }
+
+  .bk-form-row {
+    margin-top: 0;
+    margin-bottom: 0;
+    height: 112px;
   }
 }
 
 .bk-error {
   color: #e13c5d;
   text-align: center;
-
-  // margin-top: 5px;
-  // @include x-rem(font-size, 14px);
-  // max-width: 600px;
+  margin-top: -10px;
   @include x-rem(font-size, 16px);
 }
 
@@ -92,6 +131,7 @@
 .bk-msg-error {
   color: #e13c5d;
   font-weight: bold;
+  max-width: 500px;
 }
 
 .bk-msg-ok {
@@ -196,7 +236,7 @@
 
 .admin-table {
   .row {
-    padding: 15px;
+    padding: 10px 5px;
 
     &.table-header {
       font-weight: bold;
@@ -240,6 +280,7 @@
           position: absolute;
           bottom: 15px;
           right: 25px;
+          z-index: 10;
         }
       }
 
@@ -266,7 +307,7 @@
       }
 
       .logo-image {
-        height: 100%;
+        height: 20px;
       }
 
       .description {
@@ -415,7 +456,32 @@
       }
     }
 
-    &.qr {
+    &.qr,
+    &.templates {
+      &.space-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        margin-bottom: 15px;
+
+        input {
+          margin: 0;
+          width: 250px;
+        }
+
+        .action-buttons-container {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+
+          .action-button-container {
+            margin: 0;
+            margin-left: 12px;
+          }
+        }
+      }
+
       margin-bottom: 0;
       @media (max-width: $bp-mw) {
         display: block;
@@ -531,6 +597,7 @@
   &.qr,
   &.notifications,
   &.transactions,
+  &.templates,
   &.addresses {
     .no-results {
       text-align: center;
@@ -600,6 +667,11 @@
   }
 }
 
+.ReactModal__Overlay--after-open {
+  z-index: 2;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
 .ReactModal__Content--after-open {
   position: relative !important;
   margin: auto;
@@ -609,6 +681,7 @@
   min-width: 350px;
   right: auto !important;
   left: auto !important;
+  z-index: 2;
 
   .description {
     padding: 20px 0;
@@ -765,8 +838,173 @@
 }
 
 .rselect {
+  div {
+    color: $color-primary !important;
+  }
+
   input {
     height: auto;
     margin: 5px 0;
+  }
+}
+
+.backoffice-tooltip {
+  text-align: center;
+  padding: 0 5px;
+}
+
+.color-picker-container {
+  position: relative;
+}
+
+.h78 {
+  height: 112px;
+}
+
+.info-label-container {
+  display: flex;
+  position: relative;
+  z-index: 100;
+
+  > div {
+    z-index: 1 !important;
+  }
+  i {
+    font-size: 0.8rem;
+    color: $color-grey;
+  }
+}
+
+.info-label {
+  // margin-bottom: 10px;
+  display: block;
+  color: $color-primary;
+}
+
+.info-button {
+  z-index: 1 !important;
+  width: 13px;
+  margin-left: 10px;
+  margin-bottom: 3px;
+}
+
+.date-picker-container {
+  span {
+    margin-bottom: 10px;
+  }
+}
+
+.template-edit-icon-container {
+  display: flex;
+  height: 20px;
+  justify-content: center;
+  align-items: center;
+
+  @media (min-width: $bp-l) {
+    position: static;
+  }
+
+  a {
+    width: 20px;
+    height: 20px;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
+
+.input-with-image {
+  display: grid;
+  grid-template-columns: 5fr 2fr;
+  .template-image-preview {
+    display: flex;
+    justify-content: center;
+    div {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      img {
+        margin-left: 20px;
+        max-height: 50px;
+        max-width: 100px;
+      }
+    }
+  }
+}
+
+
+.template_claim_loading {
+  height: 100vh;
+  width: 100vw;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    height: 30px;
+    width: 30px;
+
+    circle {
+      stroke: $color-primary;
+    }
+  }
+}
+
+.ReactModal__Content--after-open {
+  z-index: 2;
+  &.template {
+    max-width: 100vw;
+    width: 90vw;
+    top: 5vh !important;
+    left: 5vw !important;
+    height: 90vh;
+    margin: 0;
+    overflow: scroll;
+    z-index: 2;
+
+    > svg {
+      position: absolute;
+      cursor: pointer;
+      top: 8px;
+      right: 8px;
+      stroke-width: 4;
+    }
+  }
+}
+
+.secondary_button {
+  background-color: white;
+  cursor: pointer;
+  color: $color-primary;
+  outline: none;
+  border-radius: 40px;
+  padding: 12px 24px;
+  height: 51px;
+  border: 1px solid $color-primary;
+}
+
+.template-buttons-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  button {
+    margin-bottom: 24px;
+  }
+  .close-action{
+    cursor: pointer;
+    font-weight: bold;
+  }
+}
+
+.template-form {
+  padding-bottom: 100px;
+  z-index: 1;
+  .bk-group {
+    min-height: inherit;
   }
 }

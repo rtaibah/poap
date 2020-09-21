@@ -71,7 +71,7 @@ export const ChooseAddressPage: React.FC<ChooseAddressPageProps> = ({ onAccountD
                 or{' '}
                 <a
                   href="/"
-                  onClick={e => {
+                  onClick={(e) => {
                     e.preventDefault();
                     toggleEnterByHand();
                   }}
@@ -129,12 +129,12 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
   const [ensError, setEnsError] = useState(false);
   const [working, setWorking] = useState(false);
 
-  const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+  const handleChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     setAddress(event.target.value);
     if (ensError) setEnsError(false);
   };
 
-  const onSubmit: React.FormEventHandler = async event => {
+  const onSubmit: React.FormEventHandler = async (event) => {
     event.preventDefault();
     setWorking(true);
 

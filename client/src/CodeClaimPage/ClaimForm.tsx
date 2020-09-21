@@ -3,57 +3,68 @@ import classNames from 'classnames';
 import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'formik';
 
 /* Helpers */
-import { hasMetamask, tryGetAccount, loginMetamask, isMetamaskLogged } from '../poap-eth';
-import { HashClaim, postClaimHash } from '../api';
-import { AddressSchema } from '../lib/schemas';
+import { tryGetAccount } from 'poap-eth';
+import { HashClaim, postClaimHash } from 'api';
+import { AddressSchema } from 'lib/schemas';
+import { hasWeb3 } from 'poap-eth';
 
 /* Components */
-import { SubmitButton } from '../components/SubmitButton';
+import { SubmitButton } from 'components/SubmitButton';
 import ClaimFooterMessage from './ClaimFooterMessage';
+
+/* Lib */
+import { COLORS, STYLES } from 'lib/constants';
+import { useImageSrc } from 'lib/hooks/useImageSrc';
+
+/* Types */
+import { Template } from 'api';
 
 type QRFormValues = {
   address: string;
 };
 
-/*
- * @dev: Form component to get the address and submit mint request
- * Logic behind web3 enabled status
- * We will always try to populate the address field, but as Metamask requires
- * that the user 'connect' their wallet to the site (`ethereum.enable()`),
- * we ask if the user has a web3 instance that is not Metamask or if it's, it should
- * be already logged-in: `if(enabledWeb3 && (!hasMetamask() || isMetamaskLogged()))`
- * If the user has another provider, we will try to get the account at the moment
- * */
 const ClaimForm: React.FC<{
-  enabledWeb3: boolean | null;
-  claim: HashClaim;
-  checkClaim: (hash: string) => void;
-}> = ({ enabledWeb3, claim, checkClaim }) => {
+  claim?: HashClaim;
+  method: string;
+  template?: Template;
+  onSubmit: (claim: HashClaim) => void;
+}> = ({ claim, onSubmit, method, template }) => {
+  const [enabledWeb3, setEnabledWeb3] = useState<boolean | null>(null);
   const [account, setAccount] = useState<string>('');
 
+  const mobileImageUrlRaw = claim?.event_template?.mobile_image_url ?? template?.mobile_image_url;
+  const mobileImageLink = claim?.event_template?.mobile_image_link ?? template?.mobile_image_link;
+  const mainColor = claim?.event_template?.main_color ?? template?.main_color;
+
+  const mobileImageUrl = useImageSrc(mobileImageUrlRaw);
+
   useEffect(() => {
-    if (enabledWeb3 && (!hasMetamask() || isMetamaskLogged())) getAddress();
-  }, [enabledWeb3]);
+    hasWeb3().then(setEnabledWeb3);
+  }, []);
 
   const getAddress = () => {
-    if (!hasMetamask() || isMetamaskLogged()) {
-      tryGetAccount()
-        .then(address => {
-          if (address) setAccount(address);
-        })
-        .catch(e => {
-          console.log('Error while fetching account: ', e);
-        });
-    } else {
-      loginMetamask().then(response => setAccount(response.account));
-    }
+    tryGetAccount()
+      .then((address) => {
+        if (address) setAccount(address);
+      })
+      .catch((e) => {
+        console.log('Error while fetching account: ', e);
+      });
   };
 
   const handleFormSubmit = async (values: QRFormValues, actions: FormikActions<QRFormValues>) => {
     try {
       actions.setSubmitting(true);
-      await postClaimHash(claim.qr_hash.toLowerCase(), values.address.toLowerCase(), claim.secret);
-      checkClaim(claim.qr_hash);
+      if (claim) {
+        const newClaim = await postClaimHash(
+          claim.qr_hash.toLowerCase(),
+          values.address.toLowerCase(),
+          claim.secret,
+          method
+        );
+
+        onSubmit(newClaim);
+      }
     } catch (error) {
       actions.setStatus({
         ok: false,
@@ -84,6 +95,7 @@ const ClaimForm: React.FC<{
                       <input
                         type="text"
                         autoComplete="off"
+                        style={{ borderColor: mainColor ?? COLORS.primaryColor }}
                         className={classNames(!!form.errors[field.name] && 'error')}
                         placeholder={'Input your Ethereum address or ENS name'}
                         {...field}
@@ -100,17 +112,33 @@ const ClaimForm: React.FC<{
                     </div>
                   )}
                 </div>
+
                 <SubmitButton
                   text="Claim POAP token"
+                  style={{
+                    backgroundColor: mainColor ?? COLORS.primaryColor,
+                    boxShadow: mainColor ? STYLES.boxShadow(mainColor) : '',
+                  }}
                   isSubmitting={isSubmitting}
-                  canSubmit={isValid && enabledWeb3 !== null}
+                  canSubmit={isValid}
                 />
               </Form>
             );
           }}
         </Formik>
       </div>
-      <ClaimFooterMessage />
+      <ClaimFooterMessage linkStyle={{ color: mainColor ?? COLORS.primaryColor }} />
+      <div className="mobile-image">
+        {mobileImageUrl ? (
+          mobileImageLink ? (
+            <a href={mobileImageLink} rel="noopener noreferrer" target="_blank">
+              <img alt="Brand publicity" src={mobileImageUrl} />
+            </a>
+          ) : (
+            <img alt="Brand publicity" src={mobileImageUrl} />
+          )
+        ) : null}
+      </div>
     </div>
   );
 };

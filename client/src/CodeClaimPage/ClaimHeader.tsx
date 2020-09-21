@@ -1,8 +1,8 @@
 import React from 'react';
 
 /* Assets */
-import Star from '../images/white-star.svg';
-import HeaderShadow from '../images/header-shadow-desktop-white.svg';
+import Star from 'images/white-star.svg';
+import HeaderShadow from 'images/header-shadow-desktop-white.svg';
 
 /*
  * @dev: Common header for QR claim system

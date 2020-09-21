@@ -9,6 +9,7 @@ import { LinkButton } from '../components/LinkButton';
 /* Assets */
 import Spinner from '../images/etherscan-spinner.svg';
 import ClaimFooterMessage from './ClaimFooterMessage';
+import { etherscanLinks } from '../lib/constants';
 
 /*
  * @dev: Component to show user that transactions is being mined
@@ -17,8 +18,6 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
   claim,
   checkClaim,
 }) => {
-  const etherscanLink = `https://etherscan.io/tx/${claim.tx_hash}`;
-
   useEffect(() => {
     const interval = setInterval(() => {
       checkClaim(claim.qr_hash);
@@ -29,7 +28,7 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
   return (
     <div className={'claim-info'} data-aos="fade-up" data-aos-delay="300">
       <div className={'info-title'}>The POAP token is on its way to your wallet</div>
-      <div className={'info-pending'}>
+      <div className={'info-tx info-pending'}>
         <img src={Spinner} alt={'Mining'} />
         Pending
       </div>
@@ -38,7 +37,7 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
       </div>
       <LinkButton
         text={'View on Etherscan'}
-        link={etherscanLink}
+        link={etherscanLinks.tx(claim.tx_hash)}
         extraClass={'link-btn'}
         target={'_blank'}
       />

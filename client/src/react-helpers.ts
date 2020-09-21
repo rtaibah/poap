@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToasts } from 'react-toast-notifications';
 
 export function useToggleState(initial: boolean): [boolean, () => void] {
   const [value, setValue] = useState(initial);
@@ -17,10 +18,13 @@ export function useBodyClassName(classes: string) {
   }, [classes]);
 }
 
-export function useAsync<A>(fn: () => Promise<A>): [A | null, boolean, boolean] {
+export function useAsync<A>(fn: (params?: any) => Promise<A> | null): [A | null, boolean, boolean] {
   const [working, setWorking] = useState(false);
   const [hasError, setError] = useState(false);
   const [value, setValue] = useState<A | null>(null);
+
+  // lib hooks
+  const { addToast } = useToasts();
 
   useEffect(() => {
     const aux = async () => {
@@ -29,14 +33,18 @@ export function useAsync<A>(fn: () => Promise<A>): [A | null, boolean, boolean] 
       try {
         const value = await fn();
         setValue(value);
-      } catch {
+      } catch (error) {
         setError(true);
+        addToast(error.message, {
+          appearance: 'error',
+          autoDismiss: true,
+        });
       } finally {
         setWorking(false);
       }
     };
     aux();
-  }, [fn]);
+  }, [fn]); //eslint-disable-line
 
   return [value, working, hasError];
 }

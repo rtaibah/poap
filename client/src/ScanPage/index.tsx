@@ -41,6 +41,11 @@ export const ScanPage: React.FC<RouteComponentProps> = ({ match, history, locati
         path={ROUTES.home}
         render={() => <ChooseAddressPage onAccountDetails={showBadges} />}
       />
+      <Route
+        exact
+        path={ROUTES.scanHome}
+        render={() => <ChooseAddressPage onAccountDetails={showBadges} />}
+      />
       <Route path={ROUTES.scan} component={AddressTokensPage} />
       <Route path={ROUTES.token} component={TokenDetailPage} />
       <ScanFooter path={resolvePathname()} />

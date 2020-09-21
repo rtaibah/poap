@@ -39,13 +39,13 @@ const AddressManagementPage: FC = () => {
     setAddresses(null);
 
     getSigners()
-      .then(addresses => {
+      .then((addresses) => {
         if (!addresses) return;
         setAddresses(addresses);
       })
-      .catch(error => console.error(error))
+      .catch((error) => console.error(error))
       .finally(() => setIsFetchingAddresses(false));
-  }
+  };
 
   const handleFormSubmit = async (
     values: GasPriceFormValues,
@@ -77,7 +77,6 @@ const AddressManagementPage: FC = () => {
     setSelectedAddress(null);
   };
 
-
   return (
     <div className={'admin-table addresses'}>
       <h2>Admin addresses management</h2>
@@ -91,45 +90,50 @@ const AddressManagementPage: FC = () => {
       </div>
       <div className={'admin-table-row'}>
         {isFetchingAddresses && <Loading />}
-        {addresses && addresses.map((address, i) => {
-          return (
-            <div className={`row`} key={address.id}>
-              <div className={'col-md-1 center'}>
-                <span className={'visible-sm'}>#</span>
-                {address.id}
+        {addresses &&
+          addresses.map((address, i) => {
+            return (
+              <div className={`row`} key={address.id}>
+                <div className={'col-md-1 center'}>
+                  <span className={'visible-sm'}>#</span>
+                  {address.id}
+                </div>
+                <div className={'col-md-3'}>
+                  <span className={'visible-sm'}>Address: </span>
+                  <a href={etherscanLinks.address(address.signer)} target={'_blank'}>
+                    {reduceAddress(address.signer)}
+                  </a>
+                </div>
+                <div className={'col-md-2 capitalize'}>
+                  <span className={'visible-sm'}>Role: </span>
+                  {address.role}
+                </div>
+                <div className={'col-md-2 center'}>
+                  <span className={'visible-sm'}>Pending Txs: </span>
+                  {address.pending_tx}
+                </div>
+                <div className={'col-md-2 center'}>
+                  <span className={'visible-sm'}>Balance (ETH): </span>
+                  {Math.round(convertToETH(address.balance) * 1000) / 1000}
+                </div>
+                <div className={'col-md-2 center'}>
+                  <span className={'visible-sm'}>Gas Price (GWei): </span>
+                  {convertToGWEI(address.gas_price)}
+                  <img
+                    src={edit}
+                    alt={'Edit'}
+                    className={'edit-icon'}
+                    onClick={() => openEditModal(address)}
+                  />
+                </div>
               </div>
-              <div className={'col-md-3'}>
-                <span className={'visible-sm'}>Address: </span>
-                <a href={etherscanLinks.address(address.signer)} target={"_blank"}>{reduceAddress(address.signer)}</a>
-              </div>
-              <div className={'col-md-2 capitalize'}>
-                <span className={'visible-sm'}>Role: </span>
-                {address.role}
-              </div>
-              <div className={'col-md-2 center'}>
-                <span className={'visible-sm'}>Pending Txs: </span>
-                {address.pending_tx}
-              </div>
-              <div className={'col-md-2 center'}>
-                <span className={'visible-sm'}>Balance (ETH): </span>
-                {Math.round(convertToETH(address.balance) * 1000) / 1000}
-              </div>
-              <div className={'col-md-2 center'}>
-                <span className={'visible-sm'}>Gas Price (GWei): </span>
-                {convertToGWEI(address.gas_price)}
-                <img src={edit} alt={'Edit'} className={'edit-icon'} onClick={() => openEditModal(address)} />
-              </div>
-            </div>
-          )
-        })}
+            );
+          })}
       </div>
-      <ReactModal
-        isOpen={modalOpen}
-        shouldFocusAfterRender={true}
-      >
+      <ReactModal isOpen={modalOpen} shouldFocusAfterRender={true}>
         <div>
           <h3>Edit Gas Price</h3>
-          {selectedAddress &&
+          {selectedAddress && (
             <Formik
               enableReinitialize
               onSubmit={handleFormSubmit}
@@ -153,7 +157,7 @@ const AddressManagementPage: FC = () => {
                         );
                       }}
                     />
-                    <ErrorMessage name="gasPrice" component="p" className="bk-error"/>
+                    <ErrorMessage name="gasPrice" component="p" className="bk-error" />
                     {status && (
                       <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>
                     )}
@@ -169,7 +173,7 @@ const AddressManagementPage: FC = () => {
                 );
               }}
             </Formik>
-          }
+          )}
         </div>
       </ReactModal>
     </div>

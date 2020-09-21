@@ -15,15 +15,19 @@ const colourStyles = {
     borderColor: 'white',
     '&:hover': { borderColor: '#6534ff' },
   }),
-  input: (styles: any) => ({ ...styles, height: 36 })
+  input: (styles: any) => ({ ...styles, height: 36 }),
 };
 
-const FilterReactSelect: React.FC<FilterReactSelectProps> = ({ options, placeholder, onChange }) => (
+const FilterReactSelect: React.FC<FilterReactSelectProps> = ({
+  options,
+  placeholder,
+  onChange,
+}) => (
   <Select
     options={options}
     onChange={onChange}
     placeholder={placeholder}
-    className={"rselect"}
+    className="rselect"
     styles={colourStyles}
   />
 );

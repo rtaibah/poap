@@ -18,6 +18,10 @@ export interface EnvVariables {
   auth0Kid: string;
   auth0Audience: string;
   googleStorageBucket: string;
+  sendgridApiKey: string;
+  sendgridNewEventTemplate: string;
+  sendgridSenderEmail: string;
+  adminEmails: string[];
 }
 
 export interface PoapHelpers {
@@ -39,6 +43,11 @@ function getHelperWallets(provider: Provider) {
     helpers[wallet.address.toLowerCase()] = new Wallet(item, provider);
   }
   return helpers;
+}
+
+function getAdminEmails() {
+  const adminEmails = ensureEnvVariable('ADMIN_EMAILS')
+  return JSON.parse(adminEmails);
 }
 
 function ensureEnvVariable(name: string): string {
@@ -84,5 +93,9 @@ export default function getEnv(): EnvVariables {
     auth0Kid: ensureEnvVariable('AUTH0_KID'),
     auth0Audience: ensureEnvVariable('AUTH0_AUDIENCE'),
     googleStorageBucket: ensureEnvVariable('GOOGLE_STORAGE_BUCKET'),
+    sendgridApiKey: ensureEnvVariable('SENDGRID_API_KEY'),
+    sendgridNewEventTemplate: ensureEnvVariable('SENDGRID_NEW_EVENT_TEMPLATE'),
+    sendgridSenderEmail: ensureEnvVariable('SENDGRID_SENDER_EMAIL'),
+    adminEmails: getAdminEmails(),
   };
 }

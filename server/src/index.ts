@@ -29,11 +29,15 @@ fastify.register(fastifyHelmet, {
 });
 
 fastify.register(fastifyRateLimit, {
-  max: 100,
+  max: 1000,
   timeWindow: 60000
 });
 
-fastify.register(fastifyCors, {});
+fastify.register(fastifyCors, {
+  origin: '*',
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Accept', 'Content-Type', 'Authorization'],
+  methods: ['GET', 'PUT', 'PATCH', 'POST', 'DELETE']
+});
 fastify.register(fastifyCompress, {});
 fastify.register(fastifyMultipart, {
   addToBody: true,

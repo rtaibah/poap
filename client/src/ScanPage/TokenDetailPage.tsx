@@ -34,7 +34,7 @@ export const TokenDetailPage: React.FC<RouteComponentProps<{
   useEffect(() => {
     const fn = async () => {
       if (location.state) {
-        setToken(location.state);
+        setToken(location.state as TokenInfo);
       } else {
         const token = await getTokenInfo(match.params.tokenId);
         setToken(token);

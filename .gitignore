@@ -71,3 +71,6 @@ dist/
 TODO
 
 .local_scripts/
+
+# Yarn Lock File
+yarn.lock

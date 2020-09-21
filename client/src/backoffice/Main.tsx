@@ -4,12 +4,12 @@ import { Link, Redirect, Route, withRouter, Switch } from 'react-router-dom';
 import { slide as Menu } from 'react-burger-menu';
 
 // lib
-import { AuthContext, authClient } from '../auth';
+import { AuthContext, authClient } from 'auth';
 
 /* Assets */
-import PoapLogo from '../images/POAP.svg';
-import Calendar from '../images/calendar.svg';
-import Qr from '../images/qr-code.svg';
+import PoapLogo from 'images/POAP.svg';
+import Calendar from 'images/calendar.svg';
+import Qr from 'images/qr-code.svg';
 
 /* Constants */
 import { ROUTES, LABELS } from '../lib/constants';
@@ -23,7 +23,8 @@ import { InboxPage } from './InboxPage';
 import { InboxListPage } from './InboxListPage';
 import { QrPage } from './QrPage';
 import { EventsPage } from './EventsPage';
-// import { EventList, CreateEventForm, EditEventForm } from './EventsPage';
+import { TemplatePage } from './templates/TemplatePage';
+import { TemplateFormPage } from './templates/TemplateFormPage';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 
@@ -71,7 +72,7 @@ export const withAuthentication = <T extends Object>(
   };
 };
 
-const NavigationMenu = withRouter(({ history }) => {
+export const NavigationMenu = withRouter(({ history }) => {
   const [isOpen, setIsOpen] = useState(false);
   const auth = useContext(AuthContext);
 
@@ -108,6 +109,8 @@ const NavigationMenu = withRouter(({ history }) => {
 
       <SidebarLink route={ROUTES.qr} handleClick={closeMenu} />
 
+      <SidebarLink route={ROUTES.template} handleClick={closeMenu} />
+
       {!isAdmin && <SidebarLink route={ROUTES.adminLogin} handleClick={closeMenu} />}
 
       {isAdmin && (
@@ -133,12 +136,12 @@ const Landing = () => {
         <h3>Manage Events</h3>
         <img className={'icon'} src={Calendar} alt={'Manage Events'} />
       </Link>
-      {isAdmin &&
+      {isAdmin && (
         <Link to={ROUTES.qr.path} className={'card card-link'}>
           <h3>Manage QR Codes</h3>
           <img className={'icon'} src={Qr} alt={'Manage QR Codes'} />
         </Link>
-      }
+      )}
     </div>
   );
 }
@@ -174,6 +177,10 @@ export const BackOffice: React.FC = () => (
           <Route path={ROUTES.events.path} render={() => <EventsPage />} />
 
           <Route exact path={ROUTES.admin} render={() => <Landing />} />
+
+          <Route exact path={ROUTES.template.path} component={TemplatePage} />
+
+          <Route path={ROUTES.templateForm.path} component={TemplateFormPage} />
 
           <Route
             exact

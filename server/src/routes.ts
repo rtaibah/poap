@@ -4,9 +4,11 @@ import createError from 'http-errors';
 import {
   getEvent,
   getEventByFancyId,
+  getFullEventByFancyId,
   getEvents,
   updateEvent,
   createEvent,
+  saveEventUpdate,
   getPoapSettingByName,
   getPoapSettings,
   updatePoapSettingByName,
@@ -43,6 +45,15 @@ import {
   createQrClaims,
   checkNumericIdExists,
   checkQrHashExists,
+  updateDelegatedQrClaim,
+  getEventTemplate,
+  getPaginatedEventTemplates,
+  getTotalEventTemplates,
+  createEventTemplate,
+  getFullEventTemplateById,
+  getEventTemplatesByName,
+  updateEventTemplate,
+  saveEventTemplateUpdate
 } from './db';
 
 import {
@@ -58,22 +69,25 @@ import {
   resolveName,
   lookupAddress,
   checkAddress,
-  checkHasToken,
   getTokenImg,
-  getAllEventIds
+  getAllEventIds,
+  signMessage,
+  isEventEditable
 } from './eth/helpers';
 
 import {
-  Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole,
-  // qrRoll,
+  Omit, Claim, PoapEvent, PoapFullEvent, TransactionStatus, Address,
+  NotificationType, Notification, ClaimQR, UserRole, TokenInfo, FullEventTemplate
 } from './types';
+import { TypedValue } from 'eth-crypto';
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
-import { getAssets } from './plugins/opensea-utils';
+import { getEventTokenSupply } from './plugins/thegraph-utils';
+import { sendNewEventEmailToAdmins } from "./plugins/sendgrid-utils";
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -92,6 +106,10 @@ function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
       {
         trait_type: 'endDate',
         value: ev.end_date,
+      },
+      {
+        trait_type: 'virtualEvent',
+        value: ev.virtual_event,
       },
       {
         trait_type: 'city',
@@ -315,26 +333,17 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const address = req.params.address;
-      const assets = await getAssets(address);
       let tokens = await getAllTokens(address);
 
-      tokens = tokens.map(token => {
-        let token_asset = assets.find(asset => asset.token_id === token.tokenId)
+      return await Promise.all(tokens.map(async (token): Promise<TokenInfo> => {
         let supply = 1;
-        if (token_asset) {
-          let min_trait_count = token_asset.traits.reduce((min: number, trait: any) => {
-            if (trait.trait_count) {
-              return min ? Math.min(trait.trait_count, min) : trait.trait_count
-            }
-            return min
-          }, null);
-          supply = min_trait_count ? min_trait_count : supply;
+        try {
+          supply = await getEventTokenSupply(token.event.id)
+        } catch (e) {
+          console.log('The Graph Query error')
         }
         return { ...token, event: { ...token.event, supply: supply } }
-
-      })
-
-      return tokens
+      }));
     }
   );
 
@@ -483,6 +492,7 @@ export default async function routes(fastify: FastifyInstance) {
               tx_hash: { type: 'string' },
               event_id: { type: 'number' },
               beneficiary: { type: 'string' },
+              user_input: { type: 'string' },
               signer: { type: 'string' },
               claimed: { type: 'boolean' },
               claimed_date: { type: 'string' },
@@ -505,10 +515,37 @@ export default async function routes(fastify: FastifyInstance) {
                   year: { type: 'number' },
                   start_date: { type: 'string' },
                   end_date: { type: 'string' },
-                  created_date: { type: 'string' }
+                  created_date: { type: 'string' },
                 }
               },
-              tx_status: { type: 'string' }
+              event_template: {
+                type: 'object',
+                nullable: true,
+                properties: {
+                  id: { type: 'number' },
+                  name: { type: 'string' },
+                  title_image: { type: 'string' },
+                  title_link: { type: 'string' },
+                  header_link_text: { type: 'string' },
+                  header_link_url: { type: 'string' },
+                  header_color: { type: 'string' },
+                  header_link_color: { type: 'string' },
+                  main_color: { type: 'string' },
+                  footer_color: { type: 'string' },
+                  left_image_url: { type: 'string' },
+                  left_image_link: { type: 'string' },
+                  right_image_url: { type: 'string' },
+                  right_image_link: { type: 'string' },
+                  mobile_image_url: { type: 'string' },
+                  mobile_image_link: { type: 'string' },
+                  footer_icon: { type: 'string' },
+                  created_date: { type: 'string' },
+                  is_active: { type: 'boolean' },
+                }
+              },
+              tx_status: { type: 'string' },
+              delegated_mint: { type: 'boolean' },
+              delegated_signed_message: { type: 'string' }
             }
           }
         }
@@ -532,6 +569,10 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.InternalServerError('Qr Claim does not have any event');
       }
       qr_claim.event = event;
+      qr_claim.event_template = null;
+      if (event.event_template_id) {
+        qr_claim.event_template = await getEventTemplate(event.event_template_id);
+      }
 
       const env = getEnv();
       qr_claim.secret = crypto.createHmac('sha256', env.secretKey).update(qr_hash).digest('hex');
@@ -566,6 +607,7 @@ export default async function routes(fastify: FastifyInstance) {
             address: { type: 'string' },
             qr_hash: { type: 'string' },
             secret: { type: 'string' },
+            delegated: { type: 'boolean' }
           }
         },
         response: {
@@ -577,6 +619,7 @@ export default async function routes(fastify: FastifyInstance) {
               tx_hash: { type: 'string' },
               event_id: { type: 'number' },
               beneficiary: { type: 'string' },
+              user_input: { type: 'string' },
               signer: { type: 'string' },
               claimed: { type: 'boolean' },
               claimed_date: { type: 'string' },
@@ -601,7 +644,9 @@ export default async function routes(fastify: FastifyInstance) {
                   created_date: { type: 'string' }
                 }
               },
-              tx_status: { type: 'string' }
+              tx_status: { type: 'string' },
+              delegated_mint: { type: 'boolean' },
+              delegated_signed_message: { type: 'string' }
             }
           }
         }
@@ -645,33 +690,47 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address);
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address, qr_claim.delegated_mint);
       if (!dual_qr_claim) {
         await unclaimQrClaim(req.body.qr_hash);
         return new createError.BadRequest('Address already claimed a code for this event');
       }
 
-      const has_token = await checkHasToken(qr_claim.event.id, parsed_address);
-      if (has_token) {
-        await unclaimQrClaim(req.body.qr_hash);
-        return new createError.BadRequest('Address already has this POAP token');
+      // Check if the claim is delegated
+      if (qr_claim.delegated_mint || req.body.delegated) {
+        // get signed message
+        let params: TypedValue[] = [
+          {type: "uint256", value: event.id},
+          {type: "address", value: parsed_address.toLowerCase()}
+        ];
+        let message = signMessage(env.poapAdmin.privateKey, params);
+
+        // update database
+        await updateDelegatedQrClaim(req.body.qr_hash, parsed_address, req.body.address, message);
+
+        // update qr_claim to return
+        qr_claim.delegated_signed_message = message
+        qr_claim.delegated_mint = true
+
+      } else {
+        const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
+        if (!tx_mint || !tx_mint.hash) {
+          await unclaimQrClaim(req.body.qr_hash);
+          return new createError.InternalServerError('There was a problem in token mint');
+        }
+
+        let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, req.body.address, tx_mint);
+        if (!set_qr_claim_hash) {
+          return new createError.InternalServerError('There was a problem saving tx_hash');
+        }
+
+        qr_claim.tx_hash = tx_mint.hash
+        qr_claim.signer = tx_mint.from
       }
 
-      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
-      if (!tx_mint || !tx_mint.hash) {
-        await unclaimQrClaim(req.body.qr_hash);
-        return new createError.InternalServerError('There was a problem in token mint');
-      }
-
-      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
-      if (!set_qr_claim_hash) {
-        return new createError.InternalServerError('There was a problem saving tx_hash');
-      }
-
-      qr_claim.tx_hash = tx_mint.hash
       qr_claim.beneficiary = parsed_address
-      qr_claim.signer = tx_mint.from
       qr_claim.tx_status = null
+      qr_claim.user_input = req.body.address
 
       if (qr_claim.tx_hash) {
         const transaction_status = await getTransaction(qr_claim.tx_hash);
@@ -931,6 +990,8 @@ export default async function routes(fastify: FastifyInstance) {
                 end_date: { type: 'string' },
                 created_date: { type: 'string' },
                 from_admin: { type: 'boolean' },
+                virtual_event: { type: 'boolean' },
+                event_template_id: { type: 'number' },
               },
             }
           }
@@ -967,7 +1028,9 @@ export default async function routes(fastify: FastifyInstance) {
               start_date: { type: 'string' },
               end_date: { type: 'string' },
               created_date: { type: 'string' },
-              from_admin: { type: 'boolean' }
+              from_admin: { type: 'boolean' },
+              virtual_event: { type: 'boolean' },
+              event_template_id: { type: 'number' },
             },
           }
         }
@@ -975,6 +1038,55 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const event = await getEventByFancyId(req.params.fancyid);
+      if (!event) {
+        return new createError.NotFound('Invalid Event');
+      }
+      return event;
+    }
+  );
+
+  fastify.get(
+    '/events-admin/:fancyid',
+    {
+      preValidation: [fastify.authenticate, fastify.isAdmin],
+      schema: {
+        description: 'Endpoint to get an specific event for admins',
+        tags: ['Events',],
+        params: {
+          fancyid: { type: 'string' },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              fancy_id: { type: 'string' },
+              name: { type: 'string' },
+              event_url: { type: 'string' },
+              image_url: { type: 'string' },
+              country: { type: 'string' },
+              city: { type: 'string' },
+              description: { type: 'string' },
+              year: { type: 'number' },
+              start_date: { type: 'string' },
+              end_date: { type: 'string' },
+              created_date: { type: 'string' },
+              from_admin: { type: 'boolean' },
+              virtual_event: { type: 'boolean' },
+              secret_code: { type: 'number' },
+              event_template_id: { type: 'number' },
+            },
+          }
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req, res) => {
+      const event = await getFullEventByFancyId(req.params.fancyid);
       if (!event) {
         return new createError.NotFound('Invalid Event');
       }
@@ -1006,7 +1118,8 @@ export default async function routes(fastify: FastifyInstance) {
             'end_date',
             'year',
             'event_url',
-            'image'
+            'image',
+            'secret_code'
           ],
           properties: {
             name: { type: 'string' },
@@ -1017,7 +1130,10 @@ export default async function routes(fastify: FastifyInstance) {
             end_date: { type: 'string' },
             year: { type: 'integer' },
             event_url: { type: 'string' },
+            virtual_event: { type: 'boolean' },
             image: { type: 'string', format: 'binary' },
+            secret_code: { type: 'string' },
+            event_template_id: { type: 'integer' },
           },
         },
         response: {
@@ -1036,7 +1152,9 @@ export default async function routes(fastify: FastifyInstance) {
               event_url: { type: 'string' },
               image_url: { type: 'string' },
               event_host_id: { type: 'number' },
-              from_admin: { type: 'boolean' }
+              from_admin: { type: 'boolean' },
+              virtual_event: { type: 'string' },
+              event_template_id: { type: 'number' }
             },
           }
         },
@@ -1049,7 +1167,7 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req: any, res) => {
 
-      const unidecoded_slug = unidecode(req.body.name)
+      const slugCode = unidecode(req.body.name)
         .replace(/^\s+|\s+$/g, "") // trim
         .toLowerCase()
         .replace(/[^a-z0-9 -]/g, "") // remove invalid chars
@@ -1058,9 +1176,10 @@ export default async function routes(fastify: FastifyInstance) {
         .replace(/^-+/, "") // trim - from start of text
         .replace(/-+$/, "");
 
-      const parsed_fancy_id = unidecoded_slug + '-' + req.body.year;
+      const parsed_fancy_id = slugCode + '-' + req.body.year;
 
       let eventHost = null;
+      let eventTemplate = null;
       let is_admin: boolean = false;
 
       if (req.user && req.user.hasOwnProperty('sub')) {
@@ -1070,7 +1189,13 @@ export default async function routes(fastify: FastifyInstance) {
         if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
           is_admin = true
         }
+      }
 
+      if(req.body.event_template_id) {
+        eventTemplate = await getEventTemplate(req.body.event_template_id);
+        if (!eventTemplate) {
+          return new createError.InternalServerError('event_template_id does not exist in the database');
+        }
       }
 
       const image = req.body[Symbol.for('image')][0];
@@ -1093,7 +1218,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.InternalServerError('Error uploading image');
       }
 
-      let newEvent: Omit<PoapEvent, 'id'> = {
+      let newEvent: Omit<PoapFullEvent, 'id'> = {
         fancy_id: parsed_fancy_id,
         name: req.body.name,
         description: req.body.description,
@@ -1105,13 +1230,19 @@ export default async function routes(fastify: FastifyInstance) {
         event_url: req.body.event_url,
         image_url: google_image_url,
         event_host_id: eventHost ? eventHost.id : null,
-        from_admin: is_admin
+        from_admin: is_admin,
+        virtual_event: req.body.virtual_event,
+        secret_code: req.body.secret_code,
+        event_template_id: eventTemplate ? eventTemplate.id : null
       }
 
       const event = await createEvent(newEvent);
       if (event == null) {
         return new createError.BadRequest('Invalid event');
       }
+
+      sendNewEventEmailToAdmins(event);
+
       return event;
     }
   );
@@ -1119,7 +1250,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/events/:fancyid',
     {
-      preValidation: [fastify.authenticate, fastify.isAdmin, validate_file],
+      preValidation: [fastify.optionalAuthenticate, validate_file],
       schema: {
         description: 'Endpoint to modify several attributes of selected event',
         tags: ['Events',],
@@ -1128,7 +1259,18 @@ export default async function routes(fastify: FastifyInstance) {
         },
         body: {
           type: 'object',
-          required: ['event_url',],
+          required: [
+            'name',
+            'description',
+            'city',
+            'country',
+            'start_date',
+            'end_date',
+            'year',
+            'event_url',
+            'image',
+            'secret_code'
+          ],
           properties: {
             name: { type: 'string' },
             description: { type: 'string' },
@@ -1137,7 +1279,9 @@ export default async function routes(fastify: FastifyInstance) {
             start_date: { type: 'string' },
             end_date: { type: 'string' },
             event_url: { type: 'string' },
-            image: { type: 'string', format: 'binary' }
+            image: { type: 'string', format: 'binary' },
+            virtual_event: { type: 'boolean' },
+            event_template_id: { type: 'integer' }
           },
         },
         response: {
@@ -1151,24 +1295,37 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req: any, res) => {
-      const user_id = req.user.sub;
+      let isAdmin: boolean = false;
+      let eventTemplate = null;
+      let secretCode: number = parseInt(req.body.secret_code)
+
+      if (req.user && req.user.hasOwnProperty('sub')) {
+        if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
+          isAdmin = true
+        }
+      }
 
       // Check if event exists
-      const event = await getEventByFancyId(req.params.fancyid);
+      const event = await getFullEventByFancyId(req.params.fancyid);
       if (!event) {
         return new createError.NotFound('Invalid Event');
       }
 
-      // Check if user is host
-      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
-        const eventHost = await getEventHost(user_id);
-        if (!eventHost) {
-          return new createError.NotFound('You are not registered as an event host');
+      if (!isAdmin) {
+        if (event.secret_code !== secretCode) {
+          await sleep(3000)
+          return new createError.InternalServerError('Incorrect Edit Code');
         }
+        if (!isEventEditable(event.start_date)) {
+          await sleep(3000)
+          return new createError.InternalServerError('Event is not editable');
+        }
+      }
 
-        // Check if user is editing owned event
-        if (event.event_host_id !== eventHost.id) {
-          return new createError.BadRequest('You can not edit an event that was created by another user');
+      if(req.body.event_template_id) {
+        eventTemplate = await getEventTemplate(req.body.event_template_id);
+        if (!eventTemplate) {
+          return new createError.InternalServerError('event_template_id does not exist in the database');
         }
       }
 
@@ -1186,18 +1343,34 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       const isOk = await updateEvent(req.params.fancyid, {
-        name: req.body.name ? req.body.name : event.name,
-        description: req.body.description ? req.body.description : event.description,
-        city: req.body.city ? req.body.city : event.city,
-        country: req.body.country ? req.body.country : event.country,
-        start_date: req.body.start_date ? req.body.start_date : event.start_date,
-        end_date: req.body.end_date ? req.body.end_date : event.end_date,
+        name: req.body.name,
+        description: req.body.description,
+        city: req.body.city,
+        country: req.body.country,
+        start_date: req.body.start_date,
+        end_date: req.body.end_date,
         event_url: req.body.event_url,
-        image_url: ((google_image_url === null) ? event.image_url : google_image_url)
+        virtual_event: req.body.virtual_event,
+        image_url: ((google_image_url === null) ? event.image_url : google_image_url),
+        secret_code: secretCode,
+        event_template_id: eventTemplate ? eventTemplate.id : null
       });
       if (!isOk) {
         return new createError.NotFound('Invalid event');
       }
+
+      const updatedEvent = await getFullEventByFancyId(req.params.fancyid);
+      if (updatedEvent) {
+        let initialEvent = JSON.parse(JSON.stringify(event))
+        let editedEvent = JSON.parse(JSON.stringify(updatedEvent))
+        let keys = Object.keys(initialEvent)
+        for (const key of keys) {
+          if (initialEvent[key] !== editedEvent[key]) {
+            await saveEventUpdate(event.id, key, editedEvent[key], initialEvent[key], isAdmin)
+          }
+        }
+      }
+
       res.status(204);
       return;
     }
@@ -1924,6 +2097,7 @@ export default async function routes(fastify: FastifyInstance) {
             qr_list: { type: 'array', items: { type: 'string' } },
             numeric_list: { type: 'array', items: { type: 'number' } },
             event_id: { type: 'number' },
+            delegated_mint: { type: 'boolean' },
           },
         },
         response: {
@@ -1940,6 +2114,7 @@ export default async function routes(fastify: FastifyInstance) {
       const qrCodeHashes: string[] = req.body.qr_list;
       const numericList: number[] = req.body.numeric_list;
       let eventId = req.body.event_id || null;
+      let delegated_mint = req.body.delegated_mint;
       let hashesToAdd: any[] = [];
       let existingClaimedQrs: string[] = [];
       let existingNumericIds: number[] = [];
@@ -1992,7 +2167,8 @@ export default async function routes(fastify: FastifyInstance) {
           {
             event_id: eventId,
             qr_hash: qr_hash,
-            numeric_id: numeric_id
+            numeric_id: numeric_id,
+            delegated_mint
           }
         )
       }
@@ -2099,6 +2275,554 @@ export default async function routes(fastify: FastifyInstance) {
       res.status(204);
       return;
     }
+  );
+
+  //********************************************************************
+  // EVENT TEMPLATES
+  //********************************************************************
+
+  fastify.get(
+    '/event-templates',
+    {
+      schema: {
+        description: 'List paginated event templates, you can filter by name',
+        tags: ['Event Templates',],
+        querystring: {
+          limit: { type: 'number' },
+          offset: { type: 'number' },
+          name: { type: 'string' },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              limit: { type: 'number' },
+              offset: { type: 'number' },
+              total: { type: 'number' },
+              event_templates: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    name: { type: 'string' },
+                    title_image: { type: 'string' },
+                    title_link: { type: 'string' },
+                    header_link_text: { type: 'string' },
+                    header_link_url: { type: 'string' },
+                    header_color: { type: 'string' },
+                    header_link_color: { type: 'string' },
+                    main_color: { type: 'string' },
+                    footer_color: { type: 'string' },
+                    left_image_url: { type: 'string' },
+                    left_image_link: { type: 'string' },
+                    right_image_url: { type: 'string' },
+                    right_image_link: { type: 'string' },
+                    mobile_image_url: { type: 'string' },
+                    mobile_image_link: { type: 'string' },
+                    footer_icon: { type: 'string' },
+                    created_date: { type: 'string' },
+                    is_active: { type: 'boolean' },
+                  },
+                }
+              },
+            }
+          }
+        },
+      },
+    },
+    async (req: any, res) => {
+      const limit = req.query.limit || 10;
+      const offset = req.query.offset || 0;
+      const name = req.query.name || null;
+
+      let eventTemplates = await getPaginatedEventTemplates(limit, offset, name);
+      const totalEventTemplates = await getTotalEventTemplates(name) || 0;
+
+      return {
+        limit: limit,
+        offset: offset,
+        total: totalEventTemplates,
+        event_templates: eventTemplates,
+      };
+    }
+  );
+
+  fastify.get(
+      '/event-templates/:id',
+      {
+        schema: {
+          description: 'Endpoint to get an specific event template',
+          tags: ['Event Templates',],
+          params: {
+            id: { type: 'string' },
+          },
+          response: {
+            200: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                name: { type: 'string' },
+                title_image: { type: 'string' },
+                title_link: { type: 'string' },
+                header_link_text: { type: 'string' },
+                header_link_url: { type: 'string' },
+                header_color: { type: 'string' },
+                header_link_color: { type: 'string' },
+                main_color: { type: 'string' },
+                footer_color: { type: 'string' },
+                left_image_url: { type: 'string' },
+                left_image_link: { type: 'string' },
+                right_image_url: { type: 'string' },
+                right_image_link: { type: 'string' },
+                mobile_image_url: { type: 'string' },
+                mobile_image_link: { type: 'string' },
+                footer_icon: { type: 'string' },
+                created_date: { type: 'string' },
+                is_active: { type: 'boolean' },
+              },
+            }
+          },
+        },
+      },
+      async (req, res) => {
+        const event_template = await getEventTemplate(req.params.id);
+        if (!event_template) {
+          return new createError.NotFound('Invalid Event Template');
+        }
+        return event_template;
+      }
+  );
+
+  fastify.get(
+      '/event-templates-admin/:id',
+      {
+        preValidation: [fastify.authenticate, fastify.isAdmin],
+        schema: {
+          description: 'Endpoint for admins to get an specific event template',
+          tags: ['Event Templates',],
+          params: {
+            id: { type: 'string' },
+          },
+          response: {
+            200: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                name: { type: 'string' },
+                title_image: { type: 'string' },
+                title_link: { type: 'string' },
+                header_link_text: { type: 'string' },
+                header_link_url: { type: 'string' },
+                header_color: { type: 'string' },
+                header_link_color: { type: 'string' },
+                main_color: { type: 'string' },
+                footer_color: { type: 'string' },
+                left_image_url: { type: 'string' },
+                left_image_link: { type: 'string' },
+                right_image_url: { type: 'string' },
+                right_image_link: { type: 'string' },
+                mobile_image_url: { type: 'string' },
+                mobile_image_link: { type: 'string' },
+                footer_icon: { type: 'string' },
+                created_date: { type: 'string' },
+                is_active: { type: 'boolean' },
+                secret_code: { type: 'number' },
+              },
+            }
+          },
+          security: [
+            {
+              "authorization": []
+            }
+          ]
+        },
+      },
+      async (req, res) => {
+        const event_template = await getFullEventTemplateById(req.params.id);
+        if (!event_template) {
+          return new createError.NotFound('Invalid Event Template');
+        }
+        return event_template;
+      }
+  );
+
+  async function validate_template_images(req: any) {
+    const title_image = { ...req.body.title_image };
+    req.body.title_image = '@title_image';
+    req.body[Symbol.for('title_image')] = title_image;
+
+    const right_image_url = { ...req.body.right_image_url };
+    req.body.right_image_url = '@right_image_url';
+    req.body[Symbol.for('right_image_url')] = right_image_url;
+
+    const left_image_url = { ...req.body.left_image_url };
+    req.body.left_image_url = '@left_image_url';
+    req.body[Symbol.for('left_image_url')] = left_image_url;
+
+    const mobile_image_url = { ...req.body.mobile_image_url };
+    req.body.mobile_image_url = '@mobile_image_url';
+    req.body[Symbol.for('mobile_image_url')] = mobile_image_url;
+
+    const footer_icon = { ...req.body.footer_icon };
+    req.body.footer_icon = '@footer_icon';
+    req.body[Symbol.for('footer_icon')] = footer_icon;
+  }
+
+  fastify.post(
+      '/event-templates',
+      {
+        preValidation: [fastify.optionalAuthenticate, validate_template_images,],
+        schema: {
+          description: 'Endpoint to create new event templates',
+          tags: ['Event Templates',],
+          body: {
+            type: 'object',
+            required: [
+              'name',
+              'title_image',
+              'title_link',
+              'header_color',
+              'header_link_color',
+              'main_color',
+              'footer_icon',
+              'secret_code'
+            ],
+            properties: {
+              name: { type: 'string' },
+              title_image: { type: 'string', format: 'binary' },
+              title_link: { type: 'string' },
+              header_link_text: { type: 'string' },
+              header_link_url: { type: 'string' },
+              header_color: { type: 'string' },
+              header_link_color: { type: 'string' },
+              main_color: { type: 'string' },
+              footer_color: { type: 'string' },
+              left_image_url: { type: 'string', format: 'binary' },
+              left_image_link: { type: 'string' },
+              right_image_url: { type: 'string', format: 'binary' },
+              right_image_link: { type: 'string' },
+              mobile_image_url: { type: 'string', format: 'binary' },
+              mobile_image_link: { type: 'string' },
+              footer_icon: { type: 'string', format: 'binary' },
+              secret_code: { type: 'number' },
+            },
+          },
+          response: {
+            200: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                name: { type: 'string' },
+                title_image: { type: 'string' },
+                title_link: { type: 'string' },
+                header_link_text: { type: 'string' },
+                header_link_url: { type: 'string' },
+                header_color: { type: 'string' },
+                header_link_color: { type: 'string' },
+                main_color: { type: 'string' },
+                footer_color: { type: 'string' },
+                left_image_url: { type: 'string' },
+                left_image_link: { type: 'string' },
+                right_image_url: { type: 'string' },
+                right_image_link: { type: 'string' },
+                mobile_image_url: { type: 'string' },
+                mobile_image_link: { type: 'string' },
+                footer_icon: { type: 'string' },
+                secret_code: { type: 'number' },
+                created_date: { type: 'string' },
+                is_active: { type: 'boolean' },
+              },
+            }
+          },
+          security: [
+            {
+              "authorization": []
+            }
+          ]
+        },
+      },
+      async (req: any, res) => {
+        const title_image = req.body[Symbol.for('title_image')][0];
+        if (!title_image) {
+          return new createError.BadRequest('An image is required for field title_image');
+        }
+        if (title_image.mimetype != 'image/png') {
+          return new createError.BadRequest('title_image must be png');
+        }
+        const filename = 'templates/title-image-' + (new Date().getTime()) + '.png'
+        const title_image_url = await uploadFile(filename, title_image.mimetype, title_image.data);
+        if (!title_image_url) {
+          return new createError.InternalServerError('Error uploading title_image');
+        }
+
+        const footer_icon = req.body[Symbol.for('footer_icon')][0];
+        if (!footer_icon) {
+          return new createError.BadRequest('An image is required for field footer_icon');
+        }
+        if (footer_icon.mimetype != 'image/png') {
+          return new createError.BadRequest('footer_icon must be png');
+        }
+        const footer_icon_filename = 'templates/footer-icon-' + (new Date().getTime()) + '.png'
+        const footer_icon_url = await uploadFile(footer_icon_filename, footer_icon.mimetype, footer_icon.data);
+        if (!footer_icon_url) {
+          return new createError.InternalServerError('Error uploading footer_icon');
+        }
+
+        let right_image_url: string | null = null;
+        const right_image = req.body[Symbol.for('right_image_url')][0];
+        if (right_image) {
+          if (right_image.mimetype != 'image/png') {
+            return new createError.BadRequest('right_image must be png');
+          }
+          const right_image_filename = 'templates/right-image-' + (new Date().getTime()) + '.png'
+          right_image_url = await uploadFile(right_image_filename, right_image.mimetype, right_image.data);
+          if (!right_image_url) {
+            return new createError.InternalServerError('Error uploading right_image_url');
+          }
+        }
+
+        let left_image_url: string | null = null;
+        const left_image = req.body[Symbol.for('left_image_url')][0];
+        if (left_image) {
+          if (left_image.mimetype != 'image/png') {
+            return new createError.BadRequest('left_image_url must be png');
+          }
+          const left_image_filename = 'templates/left-image-' + (new Date().getTime()) + '.png'
+          left_image_url = await uploadFile(left_image_filename, left_image.mimetype, left_image.data);
+          if (!left_image_url) {
+            return new createError.InternalServerError('Error uploading left_image_url');
+          }
+        }
+
+        let mobile_image_url: string | null = null;
+        const mobile_image = req.body[Symbol.for('mobile_image_url')][0];
+        if (mobile_image) {
+          if (mobile_image.mimetype != 'image/png') {
+            return new createError.BadRequest('mobile_image_url must be png');
+          }
+          const mobile_image_filename = 'templates/mobile-image-' + (new Date().getTime()) + '.png'
+          mobile_image_url = await uploadFile(mobile_image_filename, mobile_image.mimetype, mobile_image.data);
+          if (!mobile_image_url) {
+            return new createError.InternalServerError('Error uploading mobile_image_url');
+          }
+        }
+
+        const _other_templates = await getEventTemplatesByName(req.body.name);
+        if (_other_templates.length > 0) {
+          return new createError.BadRequest('Template with this name already exists, please try another one');
+        }
+
+        // image_url: google_image_url,
+        let newEventTemplate: Omit<FullEventTemplate, 'id'> = {
+          name: req.body.name,
+          title_link: req.body.title_link,
+          header_link_text: req.body.header_link_text,
+          header_link_url: req.body.header_link_url,
+          header_color: req.body.header_color,
+          header_link_color: req.body.header_link_color,
+          main_color: req.body.main_color,
+          footer_color: req.body.footer_color,
+          left_image_link: req.body.left_image_link,
+          right_image_link: req.body.right_image_link,
+          mobile_image_link: req.body.mobile_image_link,
+          secret_code: req.body.secret_code,
+          title_image: title_image_url,
+          right_image_url: right_image_url,
+          left_image_url: left_image_url,
+          mobile_image_url: mobile_image_url,
+          footer_icon: footer_icon_url,
+        }
+
+        const event_template = await createEventTemplate(newEventTemplate);
+        if (event_template == null) {
+          return new createError.BadRequest('Invalid event template');
+        }
+        return event_template;
+      }
+  );
+
+  fastify.put(
+      '/event-templates/:id',
+      {
+        preValidation: [fastify.optionalAuthenticate, validate_template_images],
+        schema: {
+          description: 'Endpoint to modify several attributes of selected event template',
+          tags: ['Event Templates',],
+          params: {
+            id: { type: 'string' },
+          },
+          body: {
+            type: 'object',
+            required: [
+              'name',
+              'title_link',
+              'header_color',
+              'header_link_color',
+              'main_color',
+              'secret_code'
+            ],
+            properties: {
+              name: { type: 'string' },
+              title_image: { type: 'string', format: 'binary' },
+              title_link: { type: 'string' },
+              header_link_text: { type: 'string' },
+              header_link_url: { type: 'string' },
+              header_color: { type: 'string' },
+              header_link_color: { type: 'string' },
+              main_color: { type: 'string' },
+              footer_color: { type: 'string' },
+              left_image_url: { type: 'string', format: 'binary' },
+              left_image_link: { type: 'string' },
+              right_image_url: { type: 'string', format: 'binary' },
+              right_image_link: { type: 'string' },
+              mobile_image_url: { type: 'string', format: 'binary' },
+              mobile_image_link: { type: 'string' },
+              secret_code: { type: 'number' },
+              footer_icon: { type: 'string', format: 'binary' },
+            },
+          },
+          response: {
+            204: { type: 'string' },
+          },
+          security: [
+            {
+              "authorization": []
+            }
+          ]
+        },
+      },
+      async (req: any, res) => {
+        let isAdmin: boolean = false;
+        let secretCode: number = parseInt(req.body.secret_code)
+
+        if (req.user && req.user.hasOwnProperty('sub')) {
+          if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
+            isAdmin = true
+          }
+        }
+
+        // Check if event exists
+        const event_template = await getFullEventTemplateById(req.params.id);
+        if (!event_template) {
+          return new createError.NotFound('Invalid Event Template');
+        }
+
+        if (!isAdmin) {
+          if (event_template.secret_code !== secretCode) {
+            await sleep(3000)
+            return new createError.InternalServerError('Incorrect Edit Code');
+          }
+        }
+
+        let title_image_url: string | null = null;
+        const title_image = req.body[Symbol.for('title_image')][0];
+        if (title_image) {
+          if (title_image.mimetype != 'image/png') {
+            return new createError.BadRequest('title_image must be png');
+          }
+          const filename = 'templates/title-image-' + (new Date().getTime()) + '.png'
+          title_image_url = await uploadFile(filename, title_image.mimetype, title_image.data);
+          if (!title_image_url) {
+            return new createError.InternalServerError('Error uploading title_image');
+          }
+        }
+
+        let footer_icon_url: string | null = null;
+        const footer_icon = req.body[Symbol.for('footer_icon')][0];
+        if (footer_icon) {
+          if (footer_icon.mimetype != 'image/png') {
+            return new createError.BadRequest('footer_icon must be png');
+          }
+          const footer_icon_filename = 'templates/footer-icon-' + (new Date().getTime()) + '.png'
+          footer_icon_url = await uploadFile(footer_icon_filename, footer_icon.mimetype, footer_icon.data);
+          if (!footer_icon_url) {
+            return new createError.InternalServerError('Error uploading footer_icon');
+          }
+        }
+
+        let right_image_url: string | null = null;
+        const right_image = req.body[Symbol.for('right_image_url')][0];
+        if (right_image) {
+          if (right_image.mimetype != 'image/png') {
+            return new createError.BadRequest('right_image must be png');
+          }
+          const right_image_filename = 'templates/right-image-' + (new Date().getTime()) + '.png'
+          right_image_url = await uploadFile(right_image_filename, right_image.mimetype, right_image.data);
+          if (!right_image_url) {
+            return new createError.InternalServerError('Error uploading right_image_url');
+          }
+        }
+
+        let left_image_url: string | null = null;
+        const left_image = req.body[Symbol.for('left_image_url')][0];
+        if (left_image) {
+          if (left_image.mimetype != 'image/png') {
+            return new createError.BadRequest('left_image_url must be png');
+          }
+          const left_image_filename = 'templates/left-image-' + (new Date().getTime()) + '.png'
+          left_image_url = await uploadFile(left_image_filename, left_image.mimetype, left_image.data);
+          if (!left_image_url) {
+            return new createError.InternalServerError('Error uploading left_image_url');
+          }
+        }
+
+        let mobile_image_url: string | null = null;
+        const mobile_image = req.body[Symbol.for('mobile_image_url')][0];
+        if (mobile_image) {
+          if (mobile_image.mimetype != 'image/png') {
+            return new createError.BadRequest('mobile_image_url must be png');
+          }
+          const mobile_image_filename = 'templates/mobile-image-' + (new Date().getTime()) + '.png'
+          mobile_image_url = await uploadFile(mobile_image_filename, mobile_image.mimetype, mobile_image.data);
+          if (!mobile_image_url) {
+            return new createError.InternalServerError('Error uploading mobile_image_url');
+          }
+        }
+
+        const _other_templates = await getEventTemplatesByName(req.body.name);
+        if (_other_templates.filter((template) => template.id !== event_template.id).length > 0) {
+          return new createError.BadRequest('Template with this name already exists, please try another one');
+        }
+
+        const isOk = await updateEventTemplate(req.params.id, {
+          name: req.body.name,
+          title_link: req.body.title_link,
+          header_link_text: req.body.header_link_text,
+          header_link_url: req.body.header_link_url,
+          header_color: req.body.header_color,
+          header_link_color: req.body.header_link_color,
+          main_color: req.body.main_color,
+          footer_color: req.body.footer_color,
+          left_image_link: req.body.left_image_link,
+          right_image_link: req.body.right_image_link,
+          mobile_image_link: req.body.mobile_image_link,
+          title_image: ((title_image_url === null) ? event_template.title_image : title_image_url),
+          right_image_url: ((right_image_url === null) ? event_template.right_image_url : right_image_url),
+          left_image_url: ((left_image_url === null) ? event_template.left_image_url : left_image_url),
+          mobile_image_url: ((mobile_image_url === null) ? event_template.mobile_image_url : mobile_image_url),
+          footer_icon: ((footer_icon_url === null) ? event_template.footer_icon : footer_icon_url),
+          secret_code: secretCode,
+        });
+        if (!isOk) {
+          return new createError.NotFound('Invalid event template');
+        }
+
+        const updatedEventTemplate = await getFullEventTemplateById(req.params.id);
+        if (updatedEventTemplate) {
+          let initialEventTemplate = JSON.parse(JSON.stringify(event_template))
+          let editedEventTemplate = JSON.parse(JSON.stringify(updatedEventTemplate))
+          let keys = Object.keys(initialEventTemplate)
+          for (const key of keys) {
+            if (initialEventTemplate[key] !== editedEventTemplate[key]) {
+              await saveEventTemplateUpdate(event_template.id, key, editedEventTemplate[key], initialEventTemplate[key], isAdmin)
+            }
+          }
+        }
+
+        res.status(204);
+        return;
+      }
   );
 
   //********************************************************************
