@@ -52,9 +52,7 @@ const QRHashForm: React.FC<{
                     );
                   }}
                 />
-                {error && (
-                  <p className={'bk-msg-error'}>We couldn't find the code, please try again.</p>
-                )}
+                {error && <p className={'bk-msg-error'}>We couldn't find the code, please try again.</p>}
                 <SubmitButton text="Continue" isSubmitting={loading} canSubmit={isValid && dirty} />
               </Form>
             );

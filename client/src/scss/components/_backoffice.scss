@@ -2,12 +2,6 @@
   &.backoffice {
     padding-bottom: 200px;
 
-    /* Tooltips */
-    .backoffice-tooltip {
-      text-align: center;
-      padding: 0 5px;
-    }
-
     .event-table-tooltip {
       text-align: center;
       padding: 0 5px;
@@ -124,8 +118,8 @@
 }
 
 .btn.loading {
-  background: url('../images/loading.svg') no-repeat center center #ccc4f7;
-  background-size: 30px;
+  background: url('../images/loading.svg') no-repeat center center #ccc4f7 !important;
+  background-size: 30px !important;
 }
 
 .bk-msg-error {
@@ -668,7 +662,7 @@
 }
 
 .ReactModal__Overlay--after-open {
-  z-index: 2;
+  z-index: 110;
   background-color: rgba(0, 0, 0, 0.5) !important;
 }
 
@@ -851,6 +845,7 @@
 .backoffice-tooltip {
   text-align: center;
   padding: 0 5px;
+  min-width: 350px;
 }
 
 .color-picker-container {
@@ -1006,5 +1001,22 @@
   z-index: 1;
   .bk-group {
     min-height: inherit;
+  }
+}
+
+.email-checkbox {
+  position: relative;
+  top: -20px;
+  .bk-form-row {
+    margin: 0 !important;
+  }
+  .box-label {
+    cursor: pointer;
+    user-select: none;
+    padding-bottom: 10px;
+    svg {
+      position: relative;
+      top: 3px;
+    }
   }
 }

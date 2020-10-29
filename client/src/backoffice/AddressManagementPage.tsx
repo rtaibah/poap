@@ -47,10 +47,7 @@ const AddressManagementPage: FC = () => {
       .finally(() => setIsFetchingAddresses(false));
   };
 
-  const handleFormSubmit = async (
-    values: GasPriceFormValues,
-    actions: FormikActions<GasPriceFormValues>
-  ) => {
+  const handleFormSubmit = async (values: GasPriceFormValues, actions: FormikActions<GasPriceFormValues>) => {
     if (!selectedAddress) return;
     try {
       actions.setStatus(null);
@@ -119,12 +116,7 @@ const AddressManagementPage: FC = () => {
                 <div className={'col-md-2 center'}>
                   <span className={'visible-sm'}>Gas Price (GWei): </span>
                   {convertToGWEI(address.gas_price)}
-                  <img
-                    src={edit}
-                    alt={'Edit'}
-                    className={'edit-icon'}
-                    onClick={() => openEditModal(address)}
-                  />
+                  <img src={edit} alt={'Edit'} className={'edit-icon'} onClick={() => openEditModal(address)} />
                 </div>
               </div>
             );
@@ -158,14 +150,8 @@ const AddressManagementPage: FC = () => {
                       }}
                     />
                     <ErrorMessage name="gasPrice" component="p" className="bk-error" />
-                    {status && (
-                      <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>
-                    )}
-                    <SubmitButton
-                      text="Modify gas price"
-                      isSubmitting={isSubmitting}
-                      canSubmit={isValid && dirty}
-                    />
+                    {status && <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>}
+                    <SubmitButton text="Modify gas price" isSubmitting={isSubmitting} canSubmit={isValid && dirty} />
                     <div onClick={closeEditModal} className={'close-modal'}>
                       Cancel
                     </div>

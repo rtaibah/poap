@@ -282,8 +282,8 @@ input[type='submit'] {
   }
 
   &.loading {
-    background: url('../images/loading.svg') no-repeat center center #ccc4f7;
-    background-size: 30px;
+    background: url('../images/loading.svg') no-repeat center center #ccc4f7 !important;
+    background-size: 30px !important;
   }
 }
 

@@ -1,9 +1,38 @@
 import * as yup from 'yup';
+import emailRegex from 'email-regex';
 
+import { isValidAddressOrENS } from '../lib/helpers';
 import { IMAGE_SUPPORTED_FORMATS } from './constants';
 
 const AddressSchema = yup.object().shape({
   address: yup.string().required(),
+});
+
+const RedeemSchema = yup.object().shape({
+  address: yup
+    .mixed()
+    .test({
+      test: async (value) => {
+        let validAddressOrENS = await isValidAddressOrENS(value);
+        return validAddressOrENS;
+      },
+    })
+    .required(),
+});
+
+const AddressOrEmailSchema = yup.object().shape({
+  address: yup
+    .mixed()
+    .test({
+      test: async (value) => {
+        let validAddressOrENS = await isValidAddressOrENS(value);
+        if (emailRegex({ exact: true }).test(value) || validAddressOrENS) {
+          return true;
+        }
+        return false;
+      },
+    })
+    .required(),
 });
 
 const GasPriceSchema = yup.object().shape({
@@ -17,7 +46,7 @@ const BurnFormSchema = yup.object().shape({
 const fileSchema = yup
   .mixed()
   .test('fileFormat', 'Unsupported format, please upload a png file', (value) =>
-    IMAGE_SUPPORTED_FORMATS.includes(value.type)
+    IMAGE_SUPPORTED_FORMATS.includes(value.type),
   );
 
 export const templateFormSchema = yup.object().shape({
@@ -90,6 +119,7 @@ export const templateFormSchema = yup.object().shape({
     .string()
     .required('The secret code is required')
     .matches(/^[0-9]{6}$/, 'Must be exactly 6 digits'),
+  email: yup.string().email('An email is required'),
 });
 
 const PoapEventSchema = yup.object().shape({
@@ -115,6 +145,7 @@ const PoapEventSchema = yup.object().shape({
     .string()
     .required('The secret code is required')
     .matches(/^[0-9]{6}$/, 'Must be exactly 6 digits'),
+  email: yup.string().email('An email is required'),
 });
 
 const IssueForEventFormValueSchema = yup.object().shape({
@@ -168,6 +199,8 @@ export {
   BurnFormSchema,
   PoapEventSchema,
   ClaimHashSchema,
+  RedeemSchema,
+  AddressOrEmailSchema,
   IssueForEventFormValueSchema,
   IssueForUserFormValueSchema,
   InboxFormSchema,

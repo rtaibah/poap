@@ -4,6 +4,7 @@ import { Formik, Form, FormikActions } from 'formik';
 import ReactModal from 'react-modal';
 import { useHistory } from 'react-router-dom';
 import { useToasts } from 'react-toast-notifications';
+import { FiCheckSquare, FiSquare } from 'react-icons/fi';
 
 // lib
 import { generateSecretCode } from 'lib/helpers';
@@ -19,16 +20,10 @@ import infoButton from 'images/info-button.svg';
 import { ReactComponent as CloseIcon } from 'images/x.svg';
 
 // api
-import {
-  Template,
-  TemplatePageFormValues,
-  createTemplate,
-  updateTemplate,
-  getTemplateById,
-} from 'api';
+import { Template, TemplatePageFormValues, createTemplate, updateTemplate, getTemplateById } from 'api';
 
 // helpers
-import { ROUTES } from 'lib/constants';
+import { COLORS, ROUTES } from 'lib/constants';
 import { templateFormSchema } from 'lib/schemas';
 import { TemplatePreview } from 'CodeClaimPage/templateClaim/TemplatePreview';
 
@@ -42,6 +37,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
   const [templateId, setTemplateId] = useState<number | undefined>(id);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [template, setTemplate] = useState<Template | null>(null);
+  const [includeEmail, setIncludeEmail] = useState<boolean>(true);
 
   // libs
   const history = useHistory();
@@ -55,18 +51,13 @@ export const TemplateForm: FC<Props> = ({ id }) => {
   }, [templateId, template]);
 
   // handlers
-  const onSubmit = (
-    values: TemplatePageFormValues,
-    formikActions: FormikActions<TemplatePageFormValues>
-  ) => {
+  const onSubmit = (values: TemplatePageFormValues, formikActions: FormikActions<TemplatePageFormValues>) => {
     const formData = new FormData();
 
     Object.entries(values).forEach(([key, value]: [string, string | Blob]) => {
       if (templateId) {
         if (
-          (key.includes('image_url') ||
-            key.includes('footer_icon') ||
-            key.includes('title_image')) &&
+          (key.includes('image_url') || key.includes('footer_icon') || key.includes('title_image')) &&
           typeof value === 'string'
         ) {
           return;
@@ -76,6 +67,14 @@ export const TemplateForm: FC<Props> = ({ id }) => {
         formData.append(key, typeof value === 'number' ? String(value) : value);
       }
     });
+
+    if (!templateId) {
+      if (includeEmail && !values['email']) {
+        formikActions.setErrors({ email: 'An email is required' });
+        formikActions.setSubmitting(false);
+        return;
+      }
+    }
 
     templateId
       ? updateTemplate(formData, templateId)
@@ -118,12 +117,15 @@ export const TemplateForm: FC<Props> = ({ id }) => {
   const handleClosePreviewClick = () => setIsPreviewModalOpen(false);
   const handleGoBack = () => history.push(ROUTES.template.path);
 
+  const toggleCheckbox = () => setIncludeEmail(!includeEmail);
+
   // constants
   const initialValues = useMemo(() => {
     if (template) {
       const values = {
         ...template,
         secret_code: template.secret_code ? template.secret_code.toString().padStart(6, '0') : '',
+        email: '',
       };
 
       return values;
@@ -146,11 +148,13 @@ export const TemplateForm: FC<Props> = ({ id }) => {
         mobile_image_link: '',
         footer_icon: '',
         secret_code: generateSecretCode(),
+        email: '',
       };
 
       return values;
     }
   }, [template]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  const CheckboxIcon = includeEmail ? FiCheckSquare : FiSquare;
 
   const warning = (
     <div className={'backoffice-tooltip'}>
@@ -250,7 +254,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
           const handleFileChange = (
             event: React.ChangeEvent<HTMLInputElement>,
             setFieldValue: SetFieldValue,
-            name: string
+            name: string,
           ) => {
             event.preventDefault();
             const { files } = event.target;
@@ -266,12 +270,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
               <h2>{`${templateId ? 'Update' : 'Create'}`} Template</h2>
               <EventField title="Name of the template" name="name" />
               <div className="bk-group">
-                <ColorPicker
-                  title="Header's color"
-                  name="header_color"
-                  setFieldValue={setFieldValue}
-                  values={values}
-                />
+                <ColorPicker title="Header's color" name="header_color" setFieldValue={setFieldValue} values={values} />
                 <ColorPicker
                   title={
                     <>
@@ -284,26 +283,12 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                 />
               </div>
               <div className="bk-group">
-                <ColorPicker
-                  title="Main color"
-                  name="main_color"
-                  setFieldValue={setFieldValue}
-                  values={values}
-                />
-                <ColorPicker
-                  title="Footer's color"
-                  name="footer_color"
-                  setFieldValue={setFieldValue}
-                  values={values}
-                />
+                <ColorPicker title="Main color" name="main_color" setFieldValue={setFieldValue} values={values} />
+                <ColorPicker title="Footer's color" name="footer_color" setFieldValue={setFieldValue} values={values} />
               </div>
               <div className="bk-group">
                 <div
-                  className={
-                    values?.title_image && typeof values?.title_image === 'string'
-                      ? 'input-with-image'
-                      : ''
-                  }
+                  className={values?.title_image && typeof values?.title_image === 'string' ? 'input-with-image' : ''}
                 >
                   <ImageContainer
                     name="title_image"
@@ -345,9 +330,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
               <div className="bk-group">
                 <div
                   className={
-                    values?.left_image_url && typeof values?.left_image_url === 'string'
-                      ? 'input-with-image'
-                      : ''
+                    values?.left_image_url && typeof values?.left_image_url === 'string' ? 'input-with-image' : ''
                   }
                 >
                   <ImageContainer
@@ -387,9 +370,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
               <div className="bk-group">
                 <div
                   className={
-                    values?.right_image_url && typeof values?.right_image_url === 'string'
-                      ? 'input-with-image'
-                      : ''
+                    values?.right_image_url && typeof values?.right_image_url === 'string' ? 'input-with-image' : ''
                   }
                 >
                   <ImageContainer
@@ -429,9 +410,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
               <div className="bk-group">
                 <div
                   className={
-                    values?.mobile_image_url && typeof values?.mobile_image_url === 'string'
-                      ? 'input-with-image'
-                      : ''
+                    values?.mobile_image_url && typeof values?.mobile_image_url === 'string' ? 'input-with-image' : ''
                   }
                 >
                   <ImageContainer
@@ -470,11 +449,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
               </div>
               <div className="bk-group">
                 <div
-                  className={
-                    values?.footer_icon && typeof values?.footer_icon === 'string'
-                      ? 'input-with-image'
-                      : ''
-                  }
+                  className={values?.footer_icon && typeof values?.footer_icon === 'string' ? 'input-with-image' : ''}
                 >
                   <ImageContainer
                     text="Footer's logo"
@@ -488,19 +463,26 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                   {values?.footer_icon && typeof values?.footer_icon === 'string' && (
                     <div className={'template-image-preview'}>
                       <div>
-                        <img
-                          alt={values.footer_icon}
-                          src={values.footer_icon}
-                          className={'template-image-preview'}
-                        />
+                        <img alt={values.footer_icon} src={values.footer_icon} className={'template-image-preview'} />
                       </div>
                     </div>
                   )}
                 </div>
-                <EventField
-                  title={editLabel({ label: 'Edit Code', tooltipText: warning, bold: true })}
-                  name="secret_code"
-                />
+                <div>
+                  <EventField
+                    title={editLabel({ label: 'Edit Code', tooltipText: warning, bold: true })}
+                    name="secret_code"
+                  />
+
+                  {!templateId && (
+                    <div className={'email-checkbox'}>
+                      <div onClick={toggleCheckbox} className={'box-label'}>
+                        <CheckboxIcon color={COLORS.primaryColor} /> Receive a backup of the template Edit Code
+                      </div>
+                      {includeEmail && <EventField disabled={false} title={'Email'} name="email" />}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="template-buttons-container">
                 <div>

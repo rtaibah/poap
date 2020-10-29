@@ -35,11 +35,15 @@
     width: 200px;
     height: 200px;
     border-radius: 50%;
-    background-color: $color-primary;
+    background-color: white;
     margin: 0 auto;
     -webkit-box-shadow: 0px 10px 30px -5px rgba($color-primary, 0.5);
     -moz-box-shadow: 0px 10px 30px -5px rgba($color-primary, 0.5);
     box-shadow: 0px 10px 30px -5px rgba($color-primary, 0.5);
+
+    &.token-page {
+      overflow: hidden;
+    }
   }
 
   &.wallet {
@@ -575,6 +579,15 @@
           color: inherit;
         }
       }
+
+      .layer-checkbox {
+        cursor: pointer;
+        user-select: none;
+        svg {
+          position: relative;
+          top: 2px;
+        }
+      }
     }
 
     .claim-info {
@@ -598,47 +611,6 @@
         line-height: 30px;
         max-width: 300px;
         margin: 30px auto;
-      }
-
-      .info-tx {
-        display: inline;
-        border-radius: 4px;
-        padding: 10px 10px 10px 35px;
-        font-size: 16px;
-        line-height: 20px;
-        position: relative;
-
-        img {
-          width: 25px;
-          position: absolute;
-          left: 5px;
-          top: 15px;
-        }
-
-        &.info-pending {
-          background: $color-light-grey;
-          color: $color-medium-violet;
-        }
-
-        &.info-error {
-          background: $tx-error-background;
-          color: $tx-error-color;
-          img {
-            width: 12px;
-            left: 13px;
-            top: 13px;
-          }
-        }
-
-        &.info-success {
-          background: $tx-success-background;
-          color: $tx-success-color;
-          img {
-            width: 12px;
-            left: 13px;
-            top: 13px;
-          }
-        }
       }
 
       .text-info {
@@ -677,7 +649,7 @@
 
   footer {
     background: #fff;
-    padding: 0 0 300px;
+    //padding: 0 0 300px;
   }
 }
 
@@ -721,6 +693,47 @@
           width: 12px;
         }
       }
+    }
+  }
+}
+
+.info-tx {
+  display: inline;
+  border-radius: 4px;
+  padding: 10px 10px 10px 35px;
+  font-size: 16px;
+  line-height: 20px;
+  position: relative;
+
+  img {
+    width: 25px;
+    position: absolute;
+    left: 5px;
+    top: 15px;
+  }
+
+  &.info-pending {
+    background: $color-light-grey;
+    color: $color-medium-violet;
+  }
+
+  &.info-error {
+    background: $tx-error-background;
+    color: $tx-error-color;
+    img {
+      width: 12px;
+      left: 13px;
+      top: 13px;
+    }
+  }
+
+  &.info-success {
+    background: $tx-success-background;
+    color: $tx-success-color;
+    img {
+      width: 12px;
+      left: 13px;
+      top: 13px;
     }
   }
 }
@@ -831,3 +844,36 @@
     }
   }
 }
+
+
+/* ******************************************************
+  Token Page
+  ****************************************************** */
+.migration-section {
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  margin: 50px auto 0;
+  padding-top: 50px;
+  div.divider {
+    margin-bottom: 25px;
+    width: 100%;
+    border-top: 1px solid $color-grey;
+  }
+  p{
+    text-align: center;
+
+    &.success {
+      color: $color-primary;
+      font-size: 24px;
+    }
+  }
+
+  .tx-detail {
+    width: 100%;
+    .tx-detail-box {
+      background: white;
+    }
+  }
+}
+

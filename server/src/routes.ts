@@ -2,92 +2,114 @@ import { FastifyInstance } from 'fastify';
 import unidecode from 'unidecode';
 import createError from 'http-errors';
 import {
-  getEvent,
-  getEventByFancyId,
-  getFullEventByFancyId,
-  getEvents,
-  updateEvent,
-  createEvent,
-  saveEventUpdate,
-  getPoapSettingByName,
-  getPoapSettings,
-  updatePoapSettingByName,
-  getTransactions,
-  getTotalTransactions,
-  getSigners,
-  updateSignerGasPrice,
-  getQrClaim,
-  getTransaction,
-  claimQrClaim,
-  updateQrClaim,
   checkDualQrClaim,
-  getPendingTxsAmount,
-  unclaimQrClaim,
-  createTask,
-  getTaskCreator,
-  getNotifications,
-  getTotalNotifications,
-  createNotification,
-  getEventHost,
-  getRangeClaimedQr,
-  updateEventOnQrRange,
-  getEventHostQrRolls,
-  getRangeNotOwnedQr,
-  getTotalQrClaims,
-  getPaginatedQrClaims,
-  getClaimedQrsList,
-  getNotOwnedQrList,
-  updateQrClaims,
-  updateQrScanned,
-  getClaimedQrsHashList,
-  updateQrClaimsHashes,
-  getEventHostByPassphrase,
-  createQrClaims,
+  checkDualEmailQrClaim,
   checkNumericIdExists,
   checkQrHashExists,
-  updateDelegatedQrClaim,
-  getEventTemplate,
-  getPaginatedEventTemplates,
-  getTotalEventTemplates,
+  claimQrClaim,
+  createEvent,
   createEventTemplate,
-  getFullEventTemplateById,
+  createNotification,
+  createQrClaims,
+  createTask,
+  deleteEmailClaim,
+  getActiveEmailClaims,
+  getClaimedQrsHashList,
+  getClaimedQrsList,
+  getEvent,
+  getEventByFancyId,
+  getEventHost,
+  getEventHostByPassphrase,
+  getEventHostQrRolls,
+  getEvents,
+  getEventTemplate,
   getEventTemplatesByName,
+  getFullEventByFancyId,
+  getFullEventTemplateById,
+  getNotifications,
+  getNotOwnedQrList,
+  getPaginatedEventTemplates,
+  getPaginatedQrClaims,
+  getPendingTxsAmount,
+  getPoapSettingByName,
+  getPoapSettings,
+  getQrByUserInput,
+  getQrClaim,
+  getRangeClaimedQr,
+  getRangeNotOwnedQr,
+  getSigners,
+  getTaskCreator,
+  getTotalEventTemplates,
+  getTotalNotifications,
+  getTotalQrClaims,
+  getTotalTransactions,
+  getTransaction,
+  getTransactions,
+  saveEmailClaim,
+  saveEventTemplateUpdate,
+  saveEventUpdate,
+  unclaimQrClaim,
+  updateEmailQrClaims,
+  updateEvent,
+  updateEventOnQrRange,
   updateEventTemplate,
-  saveEventTemplateUpdate
+  updatePoapSettingByName,
+  updateProcessedEmailClaim,
+  updateQrClaim,
+  updateQrClaims,
+  updateQrClaimsHashes,
+  updateQrInput,
+  updateQrScanned,
+  updateSignerGasPrice,
 } from './db';
 
 import {
-  getAllTokens,
-  getTokenInfo,
-  mintToken,
-  mintEventToManyUsers,
-  verifyClaim,
-  mintUserToManyEvents,
-  burnToken,
   bumpTransaction,
-  getAddressBalance,
-  resolveName,
-  lookupAddress,
+  burnToken,
   checkAddress,
-  getTokenImg,
+  getAddressBalance,
   getAllEventIds,
-  signMessage,
-  isEventEditable
+  getAllTokens,
+  getEmailTokens,
+  getTokenImg,
+  getTokenInfo,
+  isEventEditable,
+  lookupAddress,
+  migrateToken,
+  mintDeliveryToken,
+  mintEventToManyUsers,
+  mintToken,
+  mintUserToManyEvents,
+  resolveName,
+  validEmail,
+  verifyClaim,
 } from './eth/helpers';
 
+import poapGraph from './plugins/thegraph-utils';
+
 import {
-  Omit, Claim, PoapEvent, PoapFullEvent, TransactionStatus, Address,
-  NotificationType, Notification, ClaimQR, UserRole, TokenInfo, FullEventTemplate
+  Address,
+  Claim,
+  ClaimQR,
+  FullEventTemplate,
+  Layer,
+  Notification,
+  NotificationType,
+  Omit,
+  PoapEvent,
+  PoapFullEvent,
+  TokenInfo,
+  Transaction,
+  TransactionStatus,
+  UserRole,
 } from './types';
-import { TypedValue } from 'eth-crypto';
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
-import { getEventTokenSupply } from './plugins/thegraph-utils';
-import { sendNewEventEmailToAdmins } from "./plugins/sendgrid-utils";
+import { sendNewEventEmail, sendNewEventTemplateEmail, sendRedeemTokensEmail } from './plugins/sendgrid-utils';
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -95,6 +117,7 @@ function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
     external_url: tokenUrl,
     home_url: homeUrl,
     image_url: ev.image_url,
+    image: ev.image_url,
     name: ev.name,
     year: ev.year,
     tags: ['poap', 'event'],
@@ -296,7 +319,7 @@ export default async function routes(fastify: FastifyInstance) {
         description: 'get all address tokens',
         tags: ['Actions',],
         params: {
-          address: 'address#',
+          address: { type:'string' },
         },
         response: {
           200: {
@@ -333,17 +356,21 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const address = req.params.address;
-      let tokens = await getAllTokens(address);
-
-      return await Promise.all(tokens.map(async (token): Promise<TokenInfo> => {
-        let supply = 1;
-        try {
-          supply = await getEventTokenSupply(token.event.id)
-        } catch (e) {
-          console.log('The Graph Query error')
-        }
-        return { ...token, event: { ...token.event, supply: supply } }
-      }));
+      // First check if it's an email address
+      if (validEmail(address)) {
+        return await getEmailTokens(address);
+      }
+      // Check if it's a valid ethereum address
+      if (!await checkAddress(address)) {
+        return new createError.BadRequest('Address is not valid');
+      }
+      try {
+        return await poapGraph.getAllTokens(address);
+      } catch(e) {
+        console.log('The Graph Query error');
+        console.log(e)
+      }
+      return await getAllTokens(address);
     }
   );
 
@@ -388,7 +415,8 @@ export default async function routes(fastify: FastifyInstance) {
 
       await mintEventToManyUsers(req.body.eventId, parsed_addresses, false, {
         'signer': req.body.signer_address,
-        'estimate_mint_gas': parsed_addresses.length
+        'estimate_mint_gas': parsed_addresses.length,
+        'layer': Layer.layer2
       });
       res.status(204);
       return;
@@ -431,7 +459,8 @@ export default async function routes(fastify: FastifyInstance) {
 
       await mintUserToManyEvents(req.body.eventIds, parsed_address, false, {
         'signer': req.body.signer_address,
-        'estimate_mint_gas': req.body.eventIds.length
+        'estimate_mint_gas': req.body.eventIds.length,
+        'layer': Layer.layer2
       });
       res.status(204);
       return;
@@ -545,7 +574,14 @@ export default async function routes(fastify: FastifyInstance) {
               },
               tx_status: { type: 'string' },
               delegated_mint: { type: 'boolean' },
-              delegated_signed_message: { type: 'string' }
+              delegated_signed_message: { type: 'string' },
+              result: {
+                type: 'object',
+                nullable: true,
+                properties: {
+                  token: { type: 'number' },
+                }
+              }
             }
           }
         }
@@ -580,8 +616,10 @@ export default async function routes(fastify: FastifyInstance) {
       qr_claim.tx_status = null;
       if (qr_claim.tx_hash) {
         const transaction_status = await getTransaction(qr_claim.tx_hash);
+        console.log(transaction_status);
         if (transaction_status) {
           qr_claim.tx_status = transaction_status.status;
+          qr_claim.result = transaction_status.result;
         }
       }
 
@@ -606,8 +644,7 @@ export default async function routes(fastify: FastifyInstance) {
           properties: {
             address: { type: 'string' },
             qr_hash: { type: 'string' },
-            secret: { type: 'string' },
-            delegated: { type: 'boolean' }
+            secret: { type: 'string' }
           }
         },
         response: {
@@ -684,49 +721,44 @@ export default async function routes(fastify: FastifyInstance) {
       }
       qr_claim.event = event
 
+      // First check if it's an email address
+      if (validEmail(req.body.address)) {
+        const email = req.body.address.toLowerCase();
+        const dual_qr_claim = await checkDualEmailQrClaim(qr_claim.event.id, email);
+        if (!dual_qr_claim) {
+          await unclaimQrClaim(req.body.qr_hash);
+          return new createError.BadRequest('Email already claimed a code for this event');
+        }
+        await updateQrInput(req.body.qr_hash, email);
+        qr_claim.user_input = req.body.address;
+        return qr_claim
+      }
+
       const parsed_address = await checkAddress(req.body.address);
       if (!parsed_address) {
         await unclaimQrClaim(req.body.qr_hash);
         return new createError.BadRequest('Address is not valid');
       }
 
-      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address, qr_claim.delegated_mint);
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address);
       if (!dual_qr_claim) {
         await unclaimQrClaim(req.body.qr_hash);
         return new createError.BadRequest('Address already claimed a code for this event');
       }
 
-      // Check if the claim is delegated
-      if (qr_claim.delegated_mint || req.body.delegated) {
-        // get signed message
-        let params: TypedValue[] = [
-          {type: "uint256", value: event.id},
-          {type: "address", value: parsed_address.toLowerCase()}
-        ];
-        let message = signMessage(env.poapAdmin.privateKey, params);
-
-        // update database
-        await updateDelegatedQrClaim(req.body.qr_hash, parsed_address, req.body.address, message);
-
-        // update qr_claim to return
-        qr_claim.delegated_signed_message = message
-        qr_claim.delegated_mint = true
-
-      } else {
-        const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
-        if (!tx_mint || !tx_mint.hash) {
-          await unclaimQrClaim(req.body.qr_hash);
-          return new createError.InternalServerError('There was a problem in token mint');
-        }
-
-        let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, req.body.address, tx_mint);
-        if (!set_qr_claim_hash) {
-          return new createError.InternalServerError('There was a problem saving tx_hash');
-        }
-
-        qr_claim.tx_hash = tx_mint.hash
-        qr_claim.signer = tx_mint.from
+      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false, {layer: Layer.layer2});
+      if (!tx_mint || !tx_mint.hash) {
+        await unclaimQrClaim(req.body.qr_hash);
+        return new createError.InternalServerError('There was a problem in token mint');
       }
+
+      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, req.body.address, tx_mint);
+      if (!set_qr_claim_hash) {
+        return new createError.InternalServerError('There was a problem saving tx_hash');
+      }
+
+      qr_claim.tx_hash = tx_mint.hash
+      qr_claim.signer = tx_mint.from
 
       qr_claim.beneficiary = parsed_address
       qr_claim.tx_status = null
@@ -741,6 +773,235 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       return qr_claim
+    }
+  );
+
+  fastify.get(
+    '/actions/claim-email',
+    {
+      schema: {
+        description: 'Get the email claim information',
+        tags: ['Actions',],
+        querystring: {
+          token: { type: 'string' },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              token: { type: 'string' },
+              end_date: { type: 'string' },
+              email: { type: 'string' },
+              processed: { type: 'boolean' },
+            }
+          }
+        }
+      }
+    },
+    async (req, res) => {
+      // Get the email claim
+      const emailClaims = await getActiveEmailClaims(undefined ,req.query.token);
+      // If it isn't valid: throw error
+      if(emailClaims.length == 0) {
+        return new createError.BadRequest('Invalid token');
+      }
+      // Return the first valid email claim
+      return emailClaims[0];
+    }
+  );
+
+  fastify.post(
+    '/actions/claim-email',
+    {
+      schema: {
+        description: 'Send email to redeem tokens',
+        tags: ['Actions',],
+        body: {
+          type: 'object',
+          required: ['email'],
+          properties: {
+            email: { type: 'string' }
+          }
+        },
+        response: {
+          200: {
+            type: 'boolean',
+          }
+        }
+      },
+    },
+    async (req, res) => {
+      const email = req.body.email;
+
+      // If it's an invalid email: throw error
+      if(!validEmail(email)){
+        return new createError.BadRequest('Invalid email');
+      }
+
+      // If there is an email claim in progress: throw error
+      const activeEmailClaims = await getActiveEmailClaims(email);
+      if(activeEmailClaims.length > 0){
+        return new createError.BadRequest('You already have an active claim. Please check your email');
+      }
+
+      // Set the expiration time to an hour from now
+      const now = new Date();
+      now.setHours( now.getHours() + 1 );
+
+      // If there isn't any unclaimed QR: Just return
+      if((await getQrByUserInput(email, false)).length === 0) {
+        await sleep(1000);
+        return true;
+      }
+
+      // Create an email claim
+      const claim = await saveEmailClaim(email, now);
+      // Send mail
+      const response = await sendRedeemTokensEmail(email, claim.token);
+      // If the email failed: Remove email claim
+      if(!response) {
+        await deleteEmailClaim(email, now);
+      }
+      return response;
+    }
+  );
+
+  fastify.post(
+    '/actions/redeem-email-tokens',
+    {
+      schema: {
+        description: 'Redeem tokens saved with an email',
+        tags: ['Actions',],
+        body: {
+          type: 'object',
+          required: ['email', 'address', 'token'],
+          properties: {
+            email: { type: 'string' },
+            token: { type: 'string' },
+            address: { type: 'string' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              tx_hash: { type: 'string' }
+            }
+          }
+        }
+      },
+    },
+    async (req, res) => {
+      const email = req.body.email;
+      const address = req.body.address;
+      const token = req.body.token;
+
+      // If it's an invalid email: throw error
+      if(!validEmail(email)){
+        return new createError.BadRequest('Invalid email');
+      }
+
+      const parsed_address = await checkAddress(address);
+      if (!parsed_address) {
+        return new createError.BadRequest('Address is not valid');
+      }
+
+      // If there isn't a valid email claim: throw error
+      const activeEmailClaims = await getActiveEmailClaims(email, token);
+      if(activeEmailClaims.length === 0){
+        return new createError.BadRequest('Email claim not found');
+      }
+
+      // Get all the qr claims that do not have a transaction
+      const activeQrs = await getQrByUserInput(email, false);
+
+      // Get all the different events id
+      const event_ids = activeQrs.map(qr => qr.event_id);
+
+      // Mint all the tokens
+      const tx = await mintUserToManyEvents(event_ids, parsed_address, false, {
+        'estimate_mint_gas': event_ids.length,
+        'layer': Layer.layer2
+      });
+
+      if(!tx) {
+        return new createError.InternalServerError('There was a problem in token mint');
+      }
+
+      // Update the Qr claims with the transaction and the address
+      await updateEmailQrClaims(email, parsed_address, tx);
+
+      // Processed the email claim
+      await updateProcessedEmailClaim(email, token);
+
+      res.status(200);
+      return {tx_hash: tx.hash};
+    }
+  );
+
+  fastify.post(
+    '/actions/claim-delivery',
+    {
+      schema: {
+        description: 'Mint tokens that were registered in a poap delivery contract',
+        tags: ['Actions',],
+        body: {
+          type: 'object',
+          required: ['contract', 'index', 'recipient', 'events', 'proofs'],
+          properties: {
+            contract: { type: 'string' },
+            index: { type: 'number' },
+            recipient: { type: 'string' },
+            events: { type: 'array' },
+            proofs: { type: 'array' },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              tx_hash: { type: 'string' },
+              beneficiary: { type: 'string' },
+              signer: { type: 'string' },
+              created_date: { type: 'string' },
+              tx_status: { type: 'string' },
+              layer: { type: 'string' },
+            }
+          }
+        },
+      },
+    },
+    async (req, res) => {
+      const { contract, index, recipient, events, proofs} = req.body;
+      let tx: Transaction | null = null;
+
+      const parsed_address = await checkAddress(recipient);
+
+      if (!parsed_address) {
+        return new createError.BadRequest('Address is not valid');
+      }
+
+      const tx_mint = await mintDeliveryToken(contract, index, parsed_address, events, proofs, false, {
+          layer: Layer.layer2
+        });
+
+      if (tx_mint && tx_mint.hash) {
+        tx = await getTransaction(tx_mint.hash);
+      }
+
+      if(!tx) {
+        return new createError.InternalServerError('There was a problem in token mint');
+      }
+
+      res.status(200);
+      return {
+        tx_hash: tx.tx_hash,
+        beneficiary: parsed_address,
+        signer: tx.signer,
+        created_date: tx.created_date,
+        tx_status: tx.status,
+        layer: tx.layer,
+      };
     }
   );
 
@@ -779,6 +1040,45 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  fastify.post(
+    '/actions/migrate',
+    {
+      schema: {
+        description: 'Endpoint to migrate a token from L2 to L1',
+        tags: ['Actions',],
+        body: {
+          type: 'object',
+          required: ['tokenId'],
+          properties: {
+            tokenId: { type: 'string' },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              signature: { type: 'string' }
+            }
+          }
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req, res) => {
+      const message = await migrateToken(req.body.tokenId);
+
+      if (!message) {
+        throw new createError.BadRequest(`Couldn't create a message for the token ${req.body.tokenId}`);
+      }
+      res.status(200);
+      return { signature: message };
+    }
+  );
+
   fastify.get(
     '/token/:tokenId',
     {
@@ -812,7 +1112,8 @@ export default async function routes(fastify: FastifyInstance) {
                 }
               },
               tokenId: { type: 'string' },
-              owner: { type: 'string' }
+              owner: { type: 'string' },
+              layer: { type: 'string' }
             }
           }
         }
@@ -820,8 +1121,12 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const tokenId = req.params.tokenId;
-      const tokenInfo = await getTokenInfo(tokenId);
-      return tokenInfo;
+      // try {
+      //   return await poapGraph.getTokenInfo(tokenId);
+      // } catch(e) {
+      //   console.log('The Graph Query error');
+      // }
+      return  await getTokenInfo(tokenId) ;
     }
   );
 
@@ -846,10 +1151,18 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const isOk = await burnToken(req.params.tokenId, false);
-      if (!isOk) {
+      let token: TokenInfo;
+      const tokenId: number = req.params.tokenId
+      try {
+        token = await poapGraph.getTokenInfo(req.params.tokenId);
+      } catch(e) {
+        token = await getTokenInfo(tokenId) ;
+      }
+      const tx = await burnToken(req.params.tokenId, false, {layer: token.layer});
+      if (!tx) {
         return new createError.NotFound('Invalid token or action');
       }
+
       res.status(204);
       return;
     }
@@ -1134,6 +1447,7 @@ export default async function routes(fastify: FastifyInstance) {
             image: { type: 'string', format: 'binary' },
             secret_code: { type: 'string' },
             event_template_id: { type: 'integer' },
+            email: { type: 'string' },
           },
         },
         response: {
@@ -1240,8 +1554,21 @@ export default async function routes(fastify: FastifyInstance) {
       if (event == null) {
         return new createError.BadRequest('Invalid event');
       }
+      const recipients = [];
 
-      sendNewEventEmailToAdmins(event);
+      if(!event.from_admin){
+        const env = getEnv();
+        recipients.push(...env.adminEmails);
+      }
+
+      const email = req.body.email
+      if(email){
+        recipients.push(email);
+      }
+
+      if(recipients.length > 0){
+        sendNewEventEmail(event, recipients);
+      }
 
       return event;
     }
@@ -1413,6 +1740,7 @@ export default async function routes(fastify: FastifyInstance) {
                     arguments: { type: 'string' },
                     status: { type: 'string' },
                     gas_price: { type: 'string' },
+                    layer: { type: 'string' },
                     created_date: { type: 'string' }
                   }
                 }
@@ -1494,13 +1822,13 @@ export default async function routes(fastify: FastifyInstance) {
     }
   },
     async (req, res) => {
-      let signers = await getSigners();
+      let signers = await getSigners(Layer.layer2);
 
       if (!signers) {
         return new createError.NotFound('Signers not found');
       }
-      signers = await Promise.all(signers.map(signer => getPendingTxsAmount(signer)));
-      signers = await Promise.all(signers.map(signer => getAddressBalance(signer)));
+      signers = await Promise.all(signers.map(signer => getPendingTxsAmount(signer, Layer.layer2)));
+      signers = await Promise.all(signers.map(signer => getAddressBalance(signer, {layer: Layer.layer2})));
 
       return signers
     });
@@ -1612,7 +1940,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.NotFound('Invalid or expired token');
       }
 
-      const task = await createTask(req.body, taskCreator.task_name);
+      const task = await createTask(taskCreator.task_name, req.body);
       if (!task) {
         return new createError.BadRequest('Couldn\'t create the task');
       }
@@ -2506,6 +2834,7 @@ export default async function routes(fastify: FastifyInstance) {
               mobile_image_link: { type: 'string' },
               footer_icon: { type: 'string', format: 'binary' },
               secret_code: { type: 'number' },
+              email: { type: 'string' },
             },
           },
           response: {
@@ -2638,6 +2967,30 @@ export default async function routes(fastify: FastifyInstance) {
         if (event_template == null) {
           return new createError.BadRequest('Invalid event template');
         }
+
+        const recipients = [];
+
+        let is_admin: boolean = false;
+
+        if (req.user && req.user.hasOwnProperty('sub')) {
+          if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
+            is_admin = true
+          }
+        }
+
+        if(!is_admin){
+          const env = getEnv();
+          recipients.push(...env.adminEmails);
+        }
+
+        if(req.body.email){
+          recipients.push(req.body.email);
+        }
+
+        if(recipients.length > 0){
+          sendNewEventTemplateEmail(event_template, recipients);
+        }
+
         return event_template;
       }
   );

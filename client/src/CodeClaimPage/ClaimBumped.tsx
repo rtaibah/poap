@@ -20,14 +20,13 @@ const ClaimBumped: React.FC<{ claim: HashClaim }> = ({ claim }) => {
     <div className={'claim-info'} data-aos="fade-up" data-aos-delay="300">
       <div className={'info-title'}>The POAP token is on its way to your wallet</div>
       <div className={'text-info'}>
-        Your transaction was replaced for a new one with more gas price so you can get your POAP faster. You can check the the <a href={etherscanLink} target={"_blank"}>transaction on Etherscan</a>
+        Your transaction was replaced for a new one with more gas price so you can get your POAP faster. You can check
+        the{' '}
+        <a href={etherscanLink} target={'_blank'}>
+          transaction on Etherscan
+        </a>
       </div>
-      <LinkButton
-        text={'Check my badges'}
-        link={appLink}
-        extraClass={'link-btn'}
-        target={''}
-      />
+      <LinkButton text={'Check my badges'} link={appLink} extraClass={'link-btn'} target={''} />
       <ClaimFooterMessage />
     </div>
   );

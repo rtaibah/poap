@@ -4,7 +4,7 @@ import React, { FC } from 'react';
 import { useImageSrc } from 'lib/hooks/useImageSrc';
 
 /* Types */
-import { TemplatePageFormValues, HashClaim } from 'api';
+import { Template, TemplatePageFormValues, HashClaim } from 'api';
 
 /* Assets */
 import PoapBadge from 'images/POAP.svg';
@@ -13,7 +13,7 @@ import Telegram from 'images/logo-telegram.svg';
 import Github from 'images/logo-git.svg';
 
 type Props = {
-  template?: TemplatePageFormValues;
+  template?: TemplatePageFormValues | Template;
   claim?: HashClaim;
 };
 

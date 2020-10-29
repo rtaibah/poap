@@ -39,6 +39,7 @@ const ROUTES = {
   home: '/',
   scan: '/scan/:account',
   scanHome: '/scan',
+  redeem: '/redeem/:uid',
   token: '/token/:tokenId',
   callback: '/callback',
   signerClaimPage: '/signer/claim/:event',
@@ -136,11 +137,33 @@ const TX_STATUS = {
   bumped: 'bumped',
 };
 
-const prefix =
-  process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`;
-const etherscanLinks = {
-  tx: (hash: string): string => `https://${prefix}etherscan.io/tx/${hash}`,
-  address: (address: string): string => `https://${prefix}etherscan.io/address/${address}`,
+const LAYERS = {
+  layer1: 'Layer1',
+  layer2: 'Layer2',
 };
 
-export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS, COLORS, STYLES };
+const layerOneNetwork = process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`;
+const layerTwoNetwork = process.env.REACT_APP_L2_ETH_NETWORK;
+
+const etherscanLinks = {
+  tx: (hash: string): string => `https://${layerOneNetwork}etherscan.io/tx/${hash}`,
+  address: (address: string): string => `https://${layerOneNetwork}etherscan.io/address/${address}`,
+};
+
+const blockscoutLinks = {
+  tx: (hash: string): string => `https://blockscout.com/poa/${layerTwoNetwork}/tx/${hash}`,
+  address: (address: string): string => `https://blockscout.com/poa/${layerTwoNetwork}/address/${address}`,
+};
+
+export {
+  ROLES,
+  ROUTES,
+  TX_STATUS,
+  LAYERS,
+  etherscanLinks,
+  blockscoutLinks,
+  LABELS,
+  IMAGE_SUPPORTED_FORMATS,
+  COLORS,
+  STYLES,
+};

@@ -17,11 +17,11 @@ async function main() {
     <ToastProvider>
       <App auth={authClient} />
     </ToastProvider>,
-    document.getElementById('root')
+    document.getElementById('root'),
   );
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error('Error starting app');
   console.error(err);
 });

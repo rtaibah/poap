@@ -4,6 +4,7 @@ export type Address = string;
 
 export enum OperationType {
   mintToken = 'mintToken',
+  mintDeliveryToken = 'mintDeliveryToken',
   mintEventToManyUsers = 'mintEventToManyUsers',
   mintUserToManyEvents = 'mintUserToManyEvents',
   burnToken = 'burnToken',
@@ -34,8 +35,10 @@ export enum UserRole {
 
 export interface TokenInfo {
   tokenId: string;
-  owner: Address;
+  // It can be an ethereum address or an email
+  owner: string;
   event: PoapEvent;
+  layer?: Layer;
 }
 
 export interface EventTemplate {
@@ -112,6 +115,8 @@ export interface Transaction {
   status: TransactionStatus;
   gas_price: string;
   created_date: Date;
+  result: any;
+  layer: Layer;
 }
 
 export interface ClaimQR {
@@ -133,6 +138,7 @@ export interface ClaimQR {
   delegated_mint: boolean;
   delegated_signed_message: string;
   event_template?: null | EventTemplate;
+  result?: any;
 }
 
 export interface Claim extends ClaimProof {
@@ -212,6 +218,31 @@ export interface UnlockTask extends Task{
   }
 }
 
+export interface MigrateTask extends Task{
+  task_data: {
+    tokenId: string,
+    eventId: string,
+    owner: Address,
+    signature: string,
+    signer: Address,
+    tx_hash?: Address,
+  }
+}
+
 export enum Services {
   unlockProtocol = 'unlock-protocol',
+  migrationService = 'migrate',
+}
+
+export enum Layer {
+  layer1 = 'Layer1',
+  layer2 = 'Layer2',
+}
+
+export interface EmailClaim {
+  id: number;
+  email: string;
+  token: object;
+  end_date: Date;
+  processed: boolean;
 }

@@ -1,6 +1,12 @@
 import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
-import { IncomingMessage, ServerResponse, Server } from 'http';
+import { IncomingMessage, Server, ServerResponse } from 'http';
+import cron from 'node-cron';
+
+import { getPendingTasks } from '../db';
+import { processUnlockTask } from '../services/unlock-protocol';
+import { processMigrationTask } from '../services/migration-service';
+import { MigrateTask, Services, UnlockTask } from '../types';
 
 declare module 'fastify' {
   export interface FastifyInstance<
@@ -12,12 +18,6 @@ declare module 'fastify' {
     updateTasks: () => void;
   }
 }
-
-import cron from 'node-cron';
-
-import { getPendingTasks } from '../db';
-import { processUnlockTask } from '../services/unlock-protocol';
-import { UnlockTask, Services } from '../types';
 
 export default fp(function taskMonitorCron(
   fastify: FastifyInstance<Server, IncomingMessage, ServerResponse>,
@@ -33,6 +33,10 @@ export default fp(function taskMonitorCron(
       switch(task.name){
         case Services.unlockProtocol:
           processUnlockTask(task as UnlockTask);
+          break;
+        case Services.migrationService:
+          await processMigrationTask(task as MigrateTask);
+          break;
       }
     }
 
@@ -40,7 +44,7 @@ export default fp(function taskMonitorCron(
 
   fastify.decorate('updateTasks', async () => {
     // Run the task every minute
-    cron.schedule('*/3 * * * *', monitor);
+    cron.schedule('*/10 * * * *', monitor);
   });
   fastify.updateTasks();
 

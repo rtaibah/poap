@@ -108,6 +108,16 @@ From root folder:
 
 ## Deployment
 
+### Deploy to sokol (first time only)
+
+    cd eth/
+    Update zos.json contracts from Poap to XPoap
+    npx zos session --network xdai --from 0xe583f95bF95d0883F94EfE844442C8bfc9dd7A7F --expires 3600
+    npx zos push
+    npx zos create XPoap --init initialize --args '"POAP","The Proof of Attendance Protocol","https://api.poap.xyz/metadata/",[]'
+
+This was already done. The XPOAP Address is: `0x22C1f6050E56d2876009903609a2cC3fEf83B415`
+
 ### Deploy to ropsten (first time only)
 
     cd eth/
@@ -197,4 +207,3 @@ Steps:
         }```
 
  create user roles in auth0 using the role 'UserRole' in /server/src/types.ts
- 
