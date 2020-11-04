@@ -84,6 +84,9 @@ import {
   validEmail,
   verifyClaim,
 } from './eth/helpers';
+// @ts-ignore
+import AsyncLock from 'async-lock';
+const lock = new AsyncLock();
 
 import poapGraph from './plugins/thegraph-utils';
 
@@ -495,7 +498,7 @@ export default async function routes(fastify: FastifyInstance) {
       const claim: Claim = req.body;
       const isValid = await verifyClaim(claim);
       if (isValid) {
-        await mintToken(claim.eventId, claim.claimer, false);
+        await lock.acquire('mint', () => mintToken(claim.eventId, claim.claimer, false, {layer: Layer.layer2}));
         res.status(204);
       } else {
         throw new createError.BadRequest('Invalid Claim');
@@ -745,8 +748,7 @@ export default async function routes(fastify: FastifyInstance) {
         await unclaimQrClaim(req.body.qr_hash);
         return new createError.BadRequest('Address already claimed a code for this event');
       }
-
-      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false, {layer: Layer.layer2});
+      const tx_mint = await lock.acquire('mint', () => mintToken(qr_claim.event.id, parsed_address, false, {layer: Layer.layer2}));
       if (!tx_mint || !tx_mint.hash) {
         await unclaimQrClaim(req.body.qr_hash);
         return new createError.InternalServerError('There was a problem in token mint');
