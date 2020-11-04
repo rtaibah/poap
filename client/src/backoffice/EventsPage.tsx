@@ -164,7 +164,7 @@ type TemplateOptionType = {
 const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ create, event }) => {
   const [virtualEvent, setVirtualEvent] = useState<boolean>(event ? event.virtual_event : false);
   const [templateOptions, setTemplateOptions] = useState<Template[] | null>(null);
-  const [includeEmail, setIncludeEmail] = useState<boolean>(true);
+  const [includeEmail, setIncludeEmail] = useState<boolean>(!!create);
 
   const [multiDay, setMultiDay] = useState<boolean>(event ? event.start_date !== event.end_date : false);
   const history = useHistory();
