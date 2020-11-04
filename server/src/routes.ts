@@ -109,7 +109,7 @@ import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
-import { sendNewEventEmail, sendNewEventTemplateEmail, sendRedeemTokensEmail } from './plugins/sendgrid-utils';
+import { sendNewEventEmail, sendNewEventTemplateEmail, sendRedeemTokensEmail } from './plugins/email-utils';
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -857,7 +857,7 @@ export default async function routes(fastify: FastifyInstance) {
       // Create an email claim
       const claim = await saveEmailClaim(email, now);
       // Send mail
-      const response = await sendRedeemTokensEmail(email, claim.token);
+      const response = await sendRedeemTokensEmail(claim.token, email);
       // If the email failed: Remove email claim
       if(!response) {
         await deleteEmailClaim(email, now);

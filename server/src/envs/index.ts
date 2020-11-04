@@ -19,12 +19,14 @@ export interface EnvVariables {
   auth0Kid: string;
   auth0Audience: string;
   googleStorageBucket: string;
-  sendgridApiKey: string;
-  sendgridNewEventTemplate: string;
-  sendgridNewEventTemplateTemplate: string;
-  sendgridRedeemTokensTemplate: string;
-  sendgridSenderEmail: string;
+  newEventEmailTemplate: string;
+  newEventTemplateEmailTemplate: string;
+  redeemTokensEmailTemplate: string;
+  senderEmail: string;
   adminEmails: string[];
+  awsRegion: string;
+  awsAccessKey: string;
+  awsSecretAccessKey: string;
   l1_subgraph_url: string;
   l2_subgraph_url: string;
 }
@@ -132,12 +134,14 @@ export default function getEnv(extraParams?: any): EnvVariables {
     auth0Kid: ensureEnvVariable('AUTH0_KID'),
     auth0Audience: ensureEnvVariable('AUTH0_AUDIENCE'),
     googleStorageBucket: ensureEnvVariable('GOOGLE_STORAGE_BUCKET'),
-    sendgridApiKey: ensureEnvVariable('SENDGRID_API_KEY'),
-    sendgridNewEventTemplate: ensureEnvVariable('SENDGRID_NEW_EVENT_TEMPLATE'),
-    sendgridNewEventTemplateTemplate: ensureEnvVariable('SENDGRID_NEW_EVENT_TEMPLATE_TEMPLATE'),
-    sendgridRedeemTokensTemplate: ensureEnvVariable('SENDGRID_REDEEM_TOKENS_TEMPLATE'),
-    sendgridSenderEmail: ensureEnvVariable('SENDGRID_SENDER_EMAIL'),
+    newEventEmailTemplate: ensureEnvVariable('NEW_EVENT_EMAIL_TEMPLATE'),
+    newEventTemplateEmailTemplate: ensureEnvVariable('NEW_EVENT_TEMPLATE_EMAIL_TEMPLATE'),
+    redeemTokensEmailTemplate: ensureEnvVariable('REDEEM_TOKENS_EMAIL_TEMPLATE'),
+    senderEmail: ensureEnvVariable('SENDER_EMAIL'),
     adminEmails: getAdminEmails(),
+    awsRegion: ensureEnvVariable('AWS_REGION'),
+    awsSecretAccessKey: ensureEnvVariable('AWS_SECRET_ACCESS_KEY'),
+    awsAccessKey: ensureEnvVariable('AWS_ACCESS_KEY'),
     l1_subgraph_url: ensureEnvVariable('L1_POAP_SUBGRAPH_URL'),
     l2_subgraph_url: ensureEnvVariable('L2_POAP_SUBGRAPH_URL'),
   };
