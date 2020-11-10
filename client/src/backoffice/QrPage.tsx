@@ -149,12 +149,7 @@ const QrPage: FC = () => {
       fetchQrCodes();
       setCheckedAllQrs(false);
     }
-  }, [
-    selectedEvent,
-    claimStatus,
-    claimScanned,
-    limit,
-  ]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [selectedEvent, claimStatus, claimScanned, limit]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const cleanQrSelection = () => setSelectedQrs([]);
 
@@ -756,11 +751,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
       assignHashList();
     }
     setIsSendingHashList(false);
-  }, [
-    hasIncorrectHashes,
-    isSendingHashList,
-    selectedEvent,
-  ]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [hasIncorrectHashes, isSendingHashList, selectedEvent]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (isListActive) setIsSendingHashList(true);

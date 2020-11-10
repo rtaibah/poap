@@ -7,7 +7,7 @@ export type Params = {
   [key: string]: string | number | boolean | undefined;
 };
 export type TxHashResposne = {
-  tx_hash: string
+  tx_hash: string;
 };
 export interface TemplatesResponse<Result> {
   total: number;
@@ -345,41 +345,6 @@ export async function getTokenInfoWithENS(tokenId: string): Promise<TokenInfo> {
   } catch (error) {
     return token;
   }
-}
-
-export async function claimToken(claim: Claim): Promise<void> {
-  const res = await fetch(`${API_BASE}/actions/claim`, {
-    method: 'POST',
-    body: JSON.stringify(claim),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  if (!res.ok) {
-    console.error(res);
-    throw new Error(`Error with request statusCode: ${res.status}`);
-  }
-}
-
-export async function checkSigner(signerIp: string, eventId: number): Promise<boolean> {
-  try {
-    const res = await fetch(`${signerIp}/check`);
-    if (!res.ok) {
-      return false;
-    }
-    const body = await res.json();
-    return body.eventId === eventId;
-  } catch (err) {
-    return false;
-  }
-}
-
-export async function requestProof(signerIp: string, eventId: number, claimer: string): Promise<ClaimProof> {
-  return fetchJson(`${signerIp}/api/proof`, {
-    method: 'POST',
-    body: JSON.stringify({ eventId, claimer }),
-    headers: { 'Content-Type': 'application/json' },
-  });
 }
 
 export function setSetting(settingName: string, settingValue: string): Promise<any> {

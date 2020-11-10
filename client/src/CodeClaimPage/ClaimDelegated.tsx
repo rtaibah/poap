@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import Web3 from 'web3';
-import Web3Modal from 'web3modal';
-// @ts-ignore
-import WalletConnectProvider from '@walletconnect/web3-provider';
-import Portis from '@portis/web3';
 // @ts-ignore
 import { TransactionReceipt } from 'web3-core';
 import ReactModal from 'react-modal';
 import { useToasts } from 'react-toast-notifications';
 
 /* Helpers */
+import { connectWallet, NETWORK } from '../poap-eth';
 import { HashClaim } from '../api';
 import { reduceAddress } from '../lib/helpers';
 
@@ -27,7 +24,6 @@ const PAGE_STATUS = {
   DISCONNECTED: 'disconected',
 };
 
-const NETWORK = process.env.REACT_APP_ETH_NETWORK;
 const CONTRACT_ADDRESS = process.env.REACT_APP_MINT_DELEGATE_CONTRACT;
 const TX_RETRY_LIMIT = 100; // ~5m
 
@@ -42,7 +38,6 @@ const ClaimDelegated: React.FC<{
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [disclaimerShowed, setDisclaimerShowed] = useState<boolean>(false);
   const [web3, setWeb3] = useState<any>(null);
-  const [network, setNetwork] = useState<string | null>(null);
   const [connectStatus, setConnectStatus] = useState<string>(
     !initialStep ? PAGE_STATUS.LOADING : PAGE_STATUS.DISCONNECTED,
   );
@@ -60,7 +55,7 @@ const ClaimDelegated: React.FC<{
         if (claim.qr_hash in claims) {
           setTxHash(claims[claim.qr_hash]);
         }
-        const _web3 = new Web3(Web3.givenProvider || process.env.REACT_APP_INFURA_PROVIDER);
+        const _web3 = new Web3(process.env.REACT_APP_INFURA_PROVIDER || '');
         setWeb3(_web3);
       }
     } else {
@@ -78,44 +73,6 @@ const ClaimDelegated: React.FC<{
     }
   }, [txHash, web3, txReceipt, txRetry]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
-  const connectWallet = async () => {
-    const providerOptions = {
-      walletconnect: {
-        package: WalletConnectProvider,
-        options: {
-          infuraId: process.env.REACT_APP_INFURA_ID,
-        },
-      },
-      portis: {
-        package: Portis,
-        options: {
-          id: process.env.REACT_APP_PORTIS_APP_ID,
-        },
-      },
-    };
-
-    const web3Modal = new Web3Modal({
-      network: NETWORK,
-      cacheProvider: false,
-      providerOptions,
-    });
-
-    try {
-      const provider = await web3Modal.connect();
-      const _web3: any = new Web3(provider);
-
-      const _network = await _web3.eth.net.getNetworkType();
-      setNetwork(_network);
-
-      setConnectStatus(PAGE_STATUS.CONNECTED);
-
-      return _web3;
-    } catch (e) {
-      setConnectStatus(PAGE_STATUS.DISCONNECTED);
-      return null;
-    }
-  };
-
   const claimPoap = async () => {
     if (!disclaimerShowed) {
       setIsModalOpen(true);
@@ -125,25 +82,23 @@ const ClaimDelegated: React.FC<{
 
     let _web3 = web3;
     if (!_web3) {
-      _web3 = await connectWallet();
-      if (!_web3) return null;
-
-      setWeb3(_web3);
+      let response = await connectWallet();
+      if (!response.web3) return null;
+      _web3 = response.web3;
+      if (response.networkError) {
+        let message = `Wrong network, please connect to ${NETWORK}.`;
+        addToast(message, {
+          appearance: 'error',
+          autoDismiss: false,
+        });
+        return null;
+      }
+      setWeb3(response.web3);
     }
 
     const accounts = await _web3.eth.getAccounts();
     if (accounts.length === 0) return null;
-
     const account = accounts[0];
-
-    if (NETWORK && network && NETWORK.indexOf(network) === -1) {
-      let message = `Wrong network, please connect to ${NETWORK}.\nCurrently on ${network}`;
-      addToast(message, {
-        appearance: 'error',
-        autoDismiss: false,
-      });
-      return null;
-    }
 
     setConnectStatus(PAGE_STATUS.LOADING);
 

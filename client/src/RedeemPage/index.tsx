@@ -59,7 +59,7 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
       }, 3000);
       return () => clearInterval(interval);
     }
-  }, [txHash, web3]);
+  }, [txHash, web3]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   // methods
   const getClaim = async () => {
@@ -192,11 +192,11 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
         <div className="redeem-poaps-container events-logos">
           {tokens.length > 0 ? (
             tokens.map((token: TokenInfo, index) => (
-              <a key={index} href={'#'} className="event-circle" data-aos="fade-up">
+              <div key={index} className="event-circle" data-aos="fade-up">
                 {typeof token.event.image_url === 'string' && (
                   <img src={token.event.image_url} alt={token.event.name} />
                 )}
-              </a>
+              </div>
             ))
           ) : (
             <span>Loading Tokens</span>

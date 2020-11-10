@@ -50,10 +50,7 @@ export const InboxPage: React.FC = () => {
     selectedEvent: null,
   };
 
-  const handleSubmit = async (
-    values: IInboxFormValues,
-    actions: FormikActions<IInboxFormValues>
-  ) => {
+  const handleSubmit = async (values: IInboxFormValues, actions: FormikActions<IInboxFormValues>) => {
     const { title, description, notificationType } = values;
     try {
       await sendNotification(title, description, notificationType, selectedEvent);
@@ -81,10 +78,7 @@ export const InboxPage: React.FC = () => {
     setFieldValue('selectedEvent', Number(e.target.value));
   };
 
-  const handleNotificationTypeSelect = (
-    e: React.ChangeEvent<HTMLSelectElement>,
-    setFieldValue: any
-  ) => {
+  const handleNotificationTypeSelect = (e: React.ChangeEvent<HTMLSelectElement>, setFieldValue: any) => {
     const { value } = e.target;
     if (value === '' || value === 'inbox' || value === 'push') {
       handleRadio('notificationType', value);
@@ -147,12 +141,13 @@ export const InboxPage: React.FC = () => {
 
               <div className="row">
                 <div className="col-md-3">
-                  <FilterSelect handleChange={e => handleNotificationTypeSelect(e, setFieldValue)}>
+                  <FilterSelect handleChange={(e) => handleNotificationTypeSelect(e, setFieldValue)}>
                     <option value="">Select a type</option>
                     <option value="inbox">Inbox</option>
                     <option value="push">Push</option>
                   </FilterSelect>
                   <ErrorMessage name="notificationType" component="p" className="bk-error" />
+                  <div>Selected: {notificationType}</div>
                 </div>
 
                 <div className="col-md-3">
@@ -184,9 +179,7 @@ export const InboxPage: React.FC = () => {
 
               <SubmitButton text="Send" isSubmitting={false} canSubmit={true} />
 
-              {status && (
-                <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>
-              )}
+              {status && <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>}
             </Form>
           );
         }}

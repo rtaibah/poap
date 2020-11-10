@@ -2,21 +2,15 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
 import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'formik';
 import { FiCheckSquare, FiSquare, FiHelpCircle } from 'react-icons/fi';
-import Web3 from 'web3';
-import Web3Modal from 'web3modal';
-// @ts-ignore
-import WalletConnectProvider from '@walletconnect/web3-provider';
-import Portis from '@portis/web3';
 // @ts-ignore
 import { TransactionReceipt } from 'web3-core';
 import { useToasts } from 'react-toast-notifications';
 import { Tooltip } from 'react-lightweight-tooltip';
 
 /* Helpers */
-import { tryGetAccount } from 'poap-eth';
+import { connectWallet, NETWORK } from '../poap-eth';
 import { HashClaim, postClaimHash, getClaimHash, postTokenMigration, Template, TemplatePageFormValues } from 'api';
 import { AddressSchema } from 'lib/schemas';
-import { hasWeb3 } from 'poap-eth';
 
 /* Components */
 import { TxDetail } from '../components/TxDetail';
@@ -34,7 +28,6 @@ type QRFormValues = {
   address: string;
 };
 
-const NETWORK = process.env.REACT_APP_ETH_NETWORK;
 const CONTRACT_ADDRESS = process.env.REACT_APP_MINT_DELEGATE_CONTRACT;
 
 const ClaimForm: React.FC<{
@@ -43,13 +36,11 @@ const ClaimForm: React.FC<{
   onSubmit: (claim: HashClaim) => void;
 }> = ({ claim, onSubmit, template }) => {
   const [claimed, setClaimed] = useState<boolean>(false);
-  const [enabledWeb3, setEnabledWeb3] = useState<boolean | null>(null);
   const [account, setAccount] = useState<string>('');
   const [migrateInProcess, setMigrateInProcess] = useState<boolean>(false);
   const [migrate, setMigrate] = useState<boolean>(false);
   const [token, setToken] = useState<number | null>(null);
   const [web3, setWeb3] = useState<any>(null);
-  const [network, setNetwork] = useState<string | null>(null);
   const [completeClaim, setCompleteClaim] = useState<HashClaim | null>(null);
   const [txHash, setTxHash] = useState<string>('');
   const [txReceipt, setTxReceipt] = useState<null | TransactionReceipt>(null);
@@ -61,10 +52,6 @@ const ClaimForm: React.FC<{
   const mobileImageUrl = useImageSrc(mobileImageUrlRaw);
 
   const { addToast } = useToasts();
-
-  useEffect(() => {
-    hasWeb3().then(setEnabledWeb3);
-  }, []);
 
   useEffect(() => {
     if (migrateInProcess && !token) {
@@ -86,49 +73,13 @@ const ClaimForm: React.FC<{
     }
   }, [txHash, txReceipt]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
-  const getAddress = () => {
-    tryGetAccount()
-      .then((address) => {
-        if (address) setAccount(address);
-      })
-      .catch((e) => {
-        console.log('Error while fetching account: ', e);
-      });
-  };
-
-  const connectWallet = async () => {
-    const providerOptions = {
-      walletconnect: {
-        package: WalletConnectProvider,
-        options: {
-          infuraId: process.env.REACT_APP_INFURA_ID,
-        },
-      },
-      portis: {
-        package: Portis,
-        options: {
-          id: process.env.REACT_APP_PORTIS_APP_ID,
-        },
-      },
-    };
-
-    const web3Modal = new Web3Modal({
-      network: NETWORK,
-      cacheProvider: false,
-      providerOptions,
-    });
-
-    try {
-      const provider = await web3Modal.connect();
-      const _web3: any = new Web3(provider);
-
-      const _network = await _web3.eth.net.getNetworkType();
-      setNetwork(_network);
-
-      return _web3;
-    } catch (e) {
-      return null;
-    }
+  const getAddress = async () => {
+    let response = await connectWallet();
+    if (!response.web3) return null;
+    const accounts = await response.web3.eth.getAccounts();
+    if (accounts.length === 0) return null;
+    const account = accounts[0];
+    setAccount(account);
   };
 
   const startMigration = () => {
@@ -146,9 +97,17 @@ const ClaimForm: React.FC<{
   const migrateToken = async (signature: string) => {
     let _web3 = web3;
     if (!_web3) {
-      _web3 = await connectWallet();
-      if (!_web3) return null;
-
+      let response = await connectWallet();
+      if (!response.web3) return null;
+      _web3 = response.web3;
+      if (response.networkError) {
+        let message = `Wrong network, please connect to ${NETWORK}.`;
+        addToast(message, {
+          appearance: 'error',
+          autoDismiss: false,
+        });
+        return null;
+      }
       setWeb3(_web3);
     }
 
@@ -156,15 +115,6 @@ const ClaimForm: React.FC<{
     if (accounts.length === 0) return null;
 
     const account = accounts[0];
-
-    if (NETWORK && network && NETWORK.indexOf(network) === -1) {
-      let message = `Wrong network, please connect to ${NETWORK}.\nCurrently on ${network}`;
-      addToast(message, {
-        appearance: 'error',
-        autoDismiss: false,
-      });
-      return null;
-    }
 
     if (!completeClaim) return;
     const { event, beneficiary } = completeClaim;
@@ -313,11 +263,9 @@ const ClaimForm: React.FC<{
                 {!txHash && (
                   <>
                     <div className={'web3-browser'}>
-                      {enabledWeb3 && (
-                        <div>
-                          Web3 browser? <span onClick={getAddress}>Get my address</span>
-                        </div>
-                      )}
+                      <div>
+                        <span onClick={getAddress}>Get my address</span>
+                      </div>
                     </div>
                     <SubmitButton
                       text="Claim POAP token"

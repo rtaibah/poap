@@ -11,6 +11,7 @@ import classNames from 'classnames';
 import delve from 'dlv';
 
 /* Helpers */
+import { shortAddress } from '../poap-eth';
 import { TokenInfo, getTokensFor, resolveENS, getENSFromAddress, requestEmailRedeem } from '../api';
 import { isValidAddress, isValidEmail } from '../lib/helpers';
 
@@ -163,7 +164,7 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
                   if (t.tokenId) {
                     return (
                       <Link
-                        key={t.tokenId}
+                        key={index}
                         to={{
                           pathname: `/token/${t.tokenId}`,
                           state: t,
@@ -171,14 +172,14 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
                         className="event-circle"
                         data-aos="fade-up"
                       >
-                        {typeof t.event.image_url === 'string' && <img src={t.event.image_url} alt={t.event.name} />}
+                        <img src={t.event.image_url} alt={t.event.name} />
                       </Link>
                     );
                   } else {
                     return (
-                      <a href={'#'} className="event-circle" data-aos="fade-up" key={index}>
-                        {typeof t.event.image_url === 'string' && <img src={t.event.image_url} alt={t.event.name} />}
-                      </a>
+                      <div className="event-circle" data-aos="fade-up" key={index}>
+                        <img src={t.event.image_url} alt={t.event.name} />
+                      </div>
                     );
                   }
                 })}
@@ -203,10 +204,15 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
             <h1>
               {ens ? (
                 <>
-                  Hey <span>{ens}!</span> ({address})
+                  Hey <span>{ens}!</span> ({address && shortAddress(address)})
                 </>
               ) : (
-                <>Hey {address}!</>
+                <>
+                  <div className={'greetings-desktop'}>Hey {address}!</div>
+                  <div className={'greetings-mobile'}>
+                    Hey {address && !isValidEmail(address) ? shortAddress(address) : address}!
+                  </div>
+                </>
               )}
             </h1>
           )}
@@ -248,7 +254,6 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
               </div>
             </div>
           )}
-
         </div>
       </div>
 

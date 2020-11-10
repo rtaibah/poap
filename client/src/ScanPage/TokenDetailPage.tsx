@@ -15,7 +15,8 @@ import {
   TwitterShareButton,
 } from 'react-share';
 
-// api
+// Helpers
+import { connectWallet, NETWORK } from '../poap-eth';
 import { getTokenInfo, postTokenMigration, TokenInfo } from '../api';
 
 // constants
@@ -29,15 +30,10 @@ import HeaderShadowDesktopImg from '../images/header-shadow-desktop.svg';
 // utils
 import { useBodyClassName } from '../react-helpers';
 import { SubmitButton } from '../components/SubmitButton';
-import WalletConnectProvider from '@walletconnect/web3-provider';
-import Portis from '@portis/web3';
-import Web3Modal from 'web3modal';
-import Web3 from 'web3';
 import abi from '../abis/PoapDelegatedMint.json';
 import { TransactionReceipt } from 'web3-core';
 import { TxDetail } from '../components/TxDetail';
 
-const NETWORK = process.env.REACT_APP_ETH_NETWORK;
 const CONTRACT_ADDRESS = process.env.REACT_APP_MINT_DELEGATE_CONTRACT;
 
 export const TokenDetailPage: React.FC<RouteComponentProps<{
@@ -45,7 +41,6 @@ export const TokenDetailPage: React.FC<RouteComponentProps<{
 }>> = ({ match }) => {
   const [token, setToken] = useState<null | TokenInfo>(null);
   const [web3, setWeb3] = useState<any>(null);
-  const [network, setNetwork] = useState<string | null>(null);
   const [migrateInProcess, setMigrateInProcess] = useState<boolean>(false);
   const [migrationFinished, setMigrationFinished] = useState<boolean>(false);
   const [txHash, setTxHash] = useState<string>('');
@@ -66,46 +61,20 @@ export const TokenDetailPage: React.FC<RouteComponentProps<{
       .catch(showErrorMessage);
   };
 
-  const connectWallet = async () => {
-    const providerOptions = {
-      walletconnect: {
-        package: WalletConnectProvider,
-        options: {
-          infuraId: process.env.REACT_APP_INFURA_ID,
-        },
-      },
-      portis: {
-        package: Portis,
-        options: {
-          id: process.env.REACT_APP_PORTIS_APP_ID,
-        },
-      },
-    };
-
-    const web3Modal = new Web3Modal({
-      network: NETWORK,
-      cacheProvider: false,
-      providerOptions,
-    });
-
-    try {
-      const provider = await web3Modal.connect();
-      const _web3: any = new Web3(provider);
-
-      const _network = await _web3.eth.net.getNetworkType();
-      setNetwork(_network);
-
-      return _web3;
-    } catch (e) {
-      return null;
-    }
-  };
-
   const migrateToken = async (signature: string) => {
     let _web3 = web3;
     if (!_web3) {
-      _web3 = await connectWallet();
-      if (!_web3) return null;
+      let response = await connectWallet();
+      if (!response.web3) return null;
+      _web3 = response.web3;
+      if (response.networkError) {
+        let message = `Wrong network, please connect to ${NETWORK}.`;
+        addToast(message, {
+          appearance: 'error',
+          autoDismiss: false,
+        });
+        return null;
+      }
 
       setWeb3(_web3);
     }
@@ -114,16 +83,6 @@ export const TokenDetailPage: React.FC<RouteComponentProps<{
     if (accounts.length === 0) return null;
 
     const account = accounts[0];
-
-    if (NETWORK && network && NETWORK.indexOf(network) === -1) {
-      let message = `Wrong network, please connect to ${NETWORK}.\nCurrently on ${network}`;
-      addToast(message, {
-        appearance: 'error',
-        autoDismiss: false,
-      });
-      return null;
-    }
-
     if (!token) return;
 
     try {

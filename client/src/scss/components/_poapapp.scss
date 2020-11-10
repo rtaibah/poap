@@ -245,6 +245,19 @@
         }
       }
     }
+
+    .greetings-desktop {
+      display: inline;
+      @media (max-width: $bp-m) {
+        display: none;
+      }
+    }
+    .greetings-mobile {
+      display: none;
+      @media (max-width: $bp-m) {
+        display: inline;
+      }
+    }
   }
 }
 
@@ -485,4 +498,12 @@
     border: 1px solid $color-error;
     background-color: $color-fourth-background;
   }
+}
+
+/* ******************************************************
+   Web3 Modal
+   ****************************************************** */
+
+.web3modal-modal-lightbox {
+  z-index: 150 !important;
 }
