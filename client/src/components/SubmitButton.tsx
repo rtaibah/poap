@@ -5,12 +5,15 @@ export const SubmitButton: React.FC<{
   isSubmitting: boolean;
   canSubmit: boolean;
   style?: CSSProperties;
-}> = ({ isSubmitting, canSubmit, text, style }) => (
+  className?: string;
+  onClick?: () => void;
+}> = ({ isSubmitting, canSubmit, text, style, className, onClick = () => null }) => (
   <button
-    className={classNames('btn', isSubmitting && 'loading')}
+    className={classNames('btn', isSubmitting && 'loading', className && `${className}`)}
     type="submit"
     style={style}
     disabled={isSubmitting || !canSubmit}
+    onClick={onClick}
   >
     {isSubmitting ? '' : text}
   </button>

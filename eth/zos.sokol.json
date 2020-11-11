@@ -1,11 +1,11 @@
 {
   "contracts": {
-    "Poap": {
-      "address": "0x96d0eC5Abb022ebF3a269344b2593eD909A77948",
-      "constructorCode": "608060405234801561001057600080fd5b50613dbc806100206000396000f3fe",
-      "bodyBytecodeHash": "e96c1ac7a3bca7151a41449e8da37de536ab0c79a643188dfa5fd86e1dbbb2a6",
-      "localBytecodeHash": "c418c9365bbeda954bc0e00bb6802a29146df97ea7d59920bec864df78689505",
-      "deployedBytecodeHash": "c418c9365bbeda954bc0e00bb6802a29146df97ea7d59920bec864df78689505",
+    "XPoap": {
+      "address": "0x0211621fB78c85EE44b12D2F04e2e2f16334a9fE",
+      "constructorCode": "608060405234801561001057600080fd5b50613d3e806100206000396000f3fe",
+      "bodyBytecodeHash": "bae200023435ebc0bcd267335a5b38dc5da1ccf952b5a5208096bd9ed4cbbb88",
+      "localBytecodeHash": "8cbe547cbd1f882103c9840f299ccb676ec95087643314427ef3b8a968447198",
+      "deployedBytecodeHash": "8cbe547cbd1f882103c9840f299ccb676ec95087643314427ef3b8a968447198",
       "types": {
         "t_bool": {
           "id": "t_bool",
@@ -48,7 +48,7 @@
           "members": [
             {
               "label": "_value",
-              "astId": 1943,
+              "astId": 1908,
               "type": "t_uint256",
               "src": "1021:14:5"
             }
@@ -86,7 +86,7 @@
           "members": [
             {
               "label": "bearer",
-              "astId": 1847,
+              "astId": 1812,
               "type": "t_mapping<t_bool>",
               "src": "150:32:4"
             }
@@ -109,7 +109,7 @@
           "contract": "Initializable",
           "path": "zos-lib/contracts/Initializable.sol",
           "label": "initialized",
-          "astId": 3312,
+          "astId": 3277,
           "type": "t_bool",
           "src": "757:24:16"
         },
@@ -117,7 +117,7 @@
           "contract": "Initializable",
           "path": "zos-lib/contracts/Initializable.sol",
           "label": "initializing",
-          "astId": 3314,
+          "astId": 3279,
           "type": "t_bool",
           "src": "876:25:16"
         },
@@ -125,7 +125,7 @@
           "contract": "Initializable",
           "path": "zos-lib/contracts/Initializable.sol",
           "label": "______gap",
-          "astId": 3370,
+          "astId": 3335,
           "type": "t_array:50<t_uint256>",
           "src": "1951:29:16"
         },
@@ -133,7 +133,7 @@
           "contract": "ERC165",
           "path": "openzeppelin-eth/contracts/introspection/ERC165.sol",
           "label": "_supportedInterfaces",
-          "astId": 1999,
+          "astId": 1964,
           "type": "t_mapping<t_bool>",
           "src": "496:52:6"
         },
@@ -141,7 +141,7 @@
           "contract": "ERC165",
           "path": "openzeppelin-eth/contracts/introspection/ERC165.sol",
           "label": "______gap",
-          "astId": 2043,
+          "astId": 2008,
           "type": "t_array:50<t_uint256>",
           "src": "1229:29:6"
         },
@@ -149,7 +149,7 @@
           "contract": "ERC721",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
           "label": "_tokenOwner",
-          "astId": 2213,
+          "astId": 2178,
           "type": "t_mapping<t_address>",
           "src": "829:48:9"
         },
@@ -157,7 +157,7 @@
           "contract": "ERC721",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
           "label": "_tokenApprovals",
-          "astId": 2217,
+          "astId": 2182,
           "type": "t_mapping<t_address>",
           "src": "933:52:9"
         },
@@ -165,7 +165,7 @@
           "contract": "ERC721",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
           "label": "_ownedTokensCount",
-          "astId": 2221,
+          "astId": 2186,
           "type": "t_mapping<t_struct<Counters.Counter>>",
           "src": "1043:63:9"
         },
@@ -173,7 +173,7 @@
           "contract": "ERC721",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
           "label": "_operatorApprovals",
-          "astId": 2227,
+          "astId": 2192,
           "type": "t_mapping<t_bool>",
           "src": "1161:73:9"
         },
@@ -181,7 +181,7 @@
           "contract": "ERC721",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
           "label": "______gap",
-          "astId": 2750,
+          "astId": 2715,
           "type": "t_array:50<t_uint256>",
           "src": "11658:29:9"
         },
@@ -189,7 +189,7 @@
           "contract": "ERC721Enumerable",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721Enumerable.sol",
           "label": "_ownedTokens",
-          "astId": 2770,
+          "astId": 2735,
           "type": "t_mapping<t_array:dyn<t_uint256>>",
           "src": "445:50:10"
         },
@@ -197,7 +197,7 @@
           "contract": "ERC721Enumerable",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721Enumerable.sol",
           "label": "_ownedTokensIndex",
-          "astId": 2774,
+          "astId": 2739,
           "type": "t_mapping<t_uint256>",
           "src": "565:53:10"
         },
@@ -205,7 +205,7 @@
           "contract": "ERC721Enumerable",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721Enumerable.sol",
           "label": "_allTokens",
-          "astId": 2777,
+          "astId": 2742,
           "type": "t_array:dyn<t_uint256>",
           "src": "679:28:10"
         },
@@ -213,7 +213,7 @@
           "contract": "ERC721Enumerable",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721Enumerable.sol",
           "label": "_allTokensIndex",
-          "astId": 2781,
+          "astId": 2746,
           "type": "t_mapping<t_uint256>",
           "src": "778:51:10"
         },
@@ -221,7 +221,7 @@
           "contract": "ERC721Enumerable",
           "path": "openzeppelin-eth/contracts/token/ERC721/ERC721Enumerable.sol",
           "label": "______gap",
-          "astId": 3110,
+          "astId": 3075,
           "type": "t_array:50<t_uint256>",
           "src": "8801:29:10"
         },
@@ -229,7 +229,7 @@
           "contract": "PoapRoles",
           "path": "contracts/PoapRoles.sol",
           "label": "_admins",
-          "astId": 878,
+          "astId": 843,
           "type": "t_struct<Roles.Role>",
           "src": "456:26:2"
         },
@@ -237,7 +237,7 @@
           "contract": "PoapRoles",
           "path": "contracts/PoapRoles.sol",
           "label": "_minters",
-          "astId": 882,
+          "astId": 847,
           "type": "t_mapping<t_struct<Roles.Role>>",
           "src": "488:47:2"
         },
@@ -245,7 +245,7 @@
           "contract": "PoapRoles",
           "path": "contracts/PoapRoles.sol",
           "label": "______gap",
-          "astId": 1099,
+          "astId": 1064,
           "type": "t_array:50<t_uint256>",
           "src": "2363:29:2"
         },
@@ -253,7 +253,7 @@
           "contract": "PoapPausable",
           "path": "contracts/PoapPausable.sol",
           "label": "_paused",
-          "astId": 773,
+          "astId": 738,
           "type": "t_bool",
           "src": "340:20:1"
         },
@@ -261,49 +261,49 @@
           "contract": "PoapPausable",
           "path": "contracts/PoapPausable.sol",
           "label": "______gap",
-          "astId": 846,
+          "astId": 811,
           "type": "t_array:50<t_uint256>",
           "src": "1390:29:1"
         },
         {
-          "contract": "Poap",
-          "path": "contracts/Poap.sol",
+          "contract": "XPoap",
+          "path": "contracts/XPoap.sol",
           "label": "_name",
-          "astId": 25,
+          "astId": 1091,
           "type": "t_string",
-          "src": "751:20:0"
+          "src": "752:20:3"
         },
         {
-          "contract": "Poap",
-          "path": "contracts/Poap.sol",
+          "contract": "XPoap",
+          "path": "contracts/XPoap.sol",
           "label": "_symbol",
-          "astId": 27,
+          "astId": 1093,
           "type": "t_string",
-          "src": "798:22:0"
+          "src": "799:22:3"
         },
         {
-          "contract": "Poap",
-          "path": "contracts/Poap.sol",
+          "contract": "XPoap",
+          "path": "contracts/XPoap.sol",
           "label": "_baseURI",
-          "astId": 29,
+          "astId": 1095,
           "type": "t_string",
-          "src": "849:23:0"
+          "src": "850:23:3"
         },
         {
-          "contract": "Poap",
-          "path": "contracts/Poap.sol",
+          "contract": "XPoap",
+          "path": "contracts/XPoap.sol",
           "label": "lastId",
-          "astId": 31,
+          "astId": 1097,
           "type": "t_uint256",
-          "src": "926:22:0"
+          "src": "927:21:3"
         },
         {
-          "contract": "Poap",
-          "path": "contracts/Poap.sol",
+          "contract": "XPoap",
+          "path": "contracts/XPoap.sol",
           "label": "_tokenEvent",
-          "astId": 35,
+          "astId": 1101,
           "type": "t_mapping<t_uint256>",
-          "src": "985:47:0"
+          "src": "985:47:3"
         }
       ],
       "warnings": {
@@ -311,44 +311,19 @@
         "hasSelfDestruct": false,
         "hasDelegateCall": false,
         "hasInitialValuesInDeclarations": false,
-        "uninitializedBaseContracts": [],
-        "storageUncheckedVars": [
-          {
-            "contract": "ERC721",
-            "path": "openzeppelin-eth/contracts/token/ERC721/ERC721.sol",
-            "label": "_ownedTokensCount",
-            "astId": 2221,
-            "type": "t_mapping<t_struct<Counters.Counter>>",
-            "src": "1043:63:9"
-          },
-          {
-            "contract": "PoapRoles",
-            "path": "contracts/PoapRoles.sol",
-            "label": "_admins",
-            "astId": 878,
-            "type": "t_struct<Roles.Role>",
-            "src": "456:26:2"
-          },
-          {
-            "contract": "PoapRoles",
-            "path": "contracts/PoapRoles.sol",
-            "label": "_minters",
-            "astId": 882,
-            "type": "t_mapping<t_struct<Roles.Role>>",
-            "src": "488:47:2"
-          }
-        ],
-        "storageDiff": []
+        "uninitializedBaseContracts": []
       }
     }
   },
   "solidityLibs": {},
   "proxies": {
-    "poap/Poap": [
+    "xpoap/XPoap": [
       {
         "address": "0x22C1f6050E56d2876009903609a2cC3fEf83B415",
         "version": "0.1.0",
-        "implementation": "0x96d0eC5Abb022ebF3a269344b2593eD909A77948"
+        "implementation": "0x0211621fB78c85EE44b12D2F04e2e2f16334a9fE",
+        "admin": "0xDD3C426fA842F890BCb793DA6ccD749Edb09c44B",
+        "kind": "Upgradeable"
       }
     ]
   },

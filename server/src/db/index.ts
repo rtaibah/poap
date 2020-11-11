@@ -1,24 +1,28 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
 import {
+  Address,
+  ClaimQR,
+  EmailClaim,
+  eventHost,
+  EventTemplate,
+  FullEventTemplate,
+  Layer,
+  MigrateTask,
+  Notification,
+  NotificationType,
+  Omit,
   PoapEvent,
   PoapFullEvent,
   PoapSetting,
-  Omit,
+  qrRoll,
+  Services,
   Signer,
-  Address,
+  Task,
+  TaskCreator,
   Transaction,
   TransactionStatus,
-  ClaimQR,
-  Task,
   UnlockTask,
-  TaskCreator,
-  Services,
-  Notification,
-  NotificationType,
-  eventHost,
-  qrRoll,
-  EventTemplate, FullEventTemplate
 } from '../types';
 import { ContractTransaction } from 'ethers';
 
@@ -36,7 +40,7 @@ const publicTemplateColumns = 'id, name, title_image, title_link, header_link_te
   'header_link_color, main_color, footer_color, left_image_url, left_image_link, right_image_url, right_image_link, ' +
   'mobile_image_url, mobile_image_link, footer_icon';
 
-function formatDate(dbDate: string): string {
+export function formatDate(dbDate: string): string {
   return format(new Date(dbDate), 'DD-MMM-YYYY');
 }
 
@@ -74,8 +78,11 @@ export async function getTotalTransactions(statusList: string[], signer: string 
   return res.rows[0].count;
 }
 
-export async function getSigners(): Promise<Signer[]> {
-  const res = await db.manyOrNone<Signer>('SELECT * FROM signers ORDER BY id ASC');
+export async function getSigners(layer: Layer = Layer.layer1): Promise<Signer[]> {
+  const res = await db.manyOrNone<Signer>(
+    'SELECT * FROM signers WHERE layer = ${layer} ORDER BY id ASC',
+    { layer }
+  );
   return res;
 }
 
@@ -96,26 +103,26 @@ export async function updatePoapSettingByName(name: string, type: string, value:
   return res.rowCount === 1;
 }
 
-export async function getSigner(address: string): Promise<null | Signer> {
-  const res = await db.oneOrNone<Signer>('SELECT * FROM signers WHERE signer ILIKE $1', [address]);
+export async function getSigner(address: string, layer: Layer = Layer.layer1): Promise<null | Signer> {
+  const res = await db.oneOrNone<Signer>('SELECT * FROM signers WHERE signer ILIKE $1 AND layer = $2', [address, layer]);
   return res;
 }
 
-export async function getAvailableHelperSigners(): Promise<null | Signer[]> {
+export async function getAvailableHelperSigners(layer: Layer = Layer.layer1): Promise<null | Signer[]> {
   const res = await db.manyOrNone(`
     SELECT s.id, s.signer, SUM(case when st.status = 'pending' then 1 else 0 end) as pending_tx
     FROM signers s LEFT JOIN server_transactions st on LOWER(s.signer) = LOWER(st.signer)
-    WHERE s.role != 'administrator'
+    WHERE s.role != 'administrator' AND s.layer = $1
     GROUP BY s.id, s.signer
     ORDER BY pending_tx, s.id ASC
-  `);
+  `, [layer]);
   return res;
 }
 
-export async function getLastSignerTransaction(signer: string): Promise<null | Transaction> {
+export async function getLastSignerTransaction(signer: string, layer: Layer = Layer.layer1): Promise<null | Transaction> {
   const res = await db.oneOrNone<Transaction>(`
   SELECT * FROM server_transactions
-  WHERE signer ILIKE $1 ORDER BY nonce DESC LIMIT 1`, [signer]);
+  WHERE signer ILIKE $1 AND layer = $2 ORDER BY nonce DESC LIMIT 1`, [signer, layer]);
   return res
 }
 
@@ -129,12 +136,14 @@ export async function getPendingTxs(): Promise<Transaction[]> {
   return res;
 }
 
-export async function getPendingTxsAmount(signer: Signer): Promise<Signer> {
+export async function getPendingTxsAmount(signer: Signer, layer: Layer = Layer.layer1): Promise<Signer> {
   const signer_address = signer.signer
   const status = TransactionStatus.pending;
-  const res = await db.result('SELECT COUNT(*) FROM server_transactions WHERE status = ${status} AND signer ILIKE ${signer_address}',
+  const res = await db.result(
+    'SELECT COUNT(*) FROM server_transactions WHERE status = ${status} AND layer = ${layer} AND signer ILIKE ${signer_address}',
     {
       status,
+      layer,
       signer_address
     });
   signer.pending_tx = res.rows[0].count;
@@ -227,7 +236,7 @@ export async function updateSignerGasPrice(
   return res.rowCount === 1;
 }
 
-export async function createEvent(event: Omit<PoapFullEvent, 'id'>): Promise<PoapEvent> {
+export async function createEvent(event: Omit<PoapFullEvent, 'id'>): Promise<PoapFullEvent> {
   const data = await db.one(
     'INSERT INTO events(${this:name}) VALUES(${this:csv}) RETURNING id',
     event
@@ -239,9 +248,9 @@ export async function createEvent(event: Omit<PoapFullEvent, 'id'>): Promise<Poa
   };
 }
 
-export async function saveTransaction(hash: string, nonce: number, operation: string, params: string, signer: Address, status: string, gas_price: string): Promise<boolean> {
-  let query = "INSERT INTO server_transactions(tx_hash, nonce, operation, arguments, signer, status, gas_price) VALUES (${hash}, ${nonce}, ${operation}, ${params}, ${signer}, ${status}, ${gas_price})";
-  let values = { hash, nonce, operation, params: params.substr(0, 1950), signer, status, gas_price };
+export async function saveTransaction(hash: string, nonce: number, operation: string, params: string, signer: Address, status: string, gas_price: string, layer: Layer = Layer.layer1): Promise<boolean> {
+  let query = "INSERT INTO server_transactions(tx_hash, nonce, operation, arguments, signer, status, gas_price, layer) VALUES (${hash}, ${nonce}, ${operation}, ${params}, ${signer}, ${status}, ${gas_price}, ${layer})";
+  let values = { hash, nonce, operation, params: params.substr(0, 1950), signer, status, gas_price, layer };
   try {
     const res = await db.result(query, values);
     return res.rowCount === 1;
@@ -253,11 +262,12 @@ export async function saveTransaction(hash: string, nonce: number, operation: st
   return false;
 }
 
-export async function updateTransactionStatus(hash: string, status: TransactionStatus) {
+export async function updateTransactionStatus(hash: string, status: TransactionStatus, result?: any) {
   const res = await db.result(
-    'update server_transactions set status=${status} where tx_hash = ${hash}',
+    'update server_transactions set status=${status}, result=${result} where tx_hash = ${hash}',
     {
       status,
+      result,
       hash,
     }
   );
@@ -274,12 +284,16 @@ export async function updateQrScanned(qrHash: string) {
   return res.rowCount === 1;
 }
 
-export async function checkDualQrClaim(eventId: number, address: string, delegated: boolean): Promise<boolean> {
+export async function checkDualQrClaim(eventId: number, address: string): Promise<boolean> {
   let query = 'SELECT COUNT(*) FROM qr_claims WHERE event_id = ${eventId} AND beneficiary = ${address} AND is_active = true';
-  if (delegated) {
-    query = query + ' AND delegated_mint = false'
-  }
   const res = await db.result(query, {eventId, address});
+  let count = res.rows[0].count;
+  return count === '0';
+}
+
+export async function checkDualEmailQrClaim(eventId: number, email: string): Promise<boolean> {
+  let query = 'SELECT COUNT(*) FROM qr_claims WHERE event_id = ${eventId} AND user_input = ${email} AND is_active = true';
+  const res = await db.result(query, {eventId, email});
   let count = res.rows[0].count;
   return count === '0';
 }
@@ -323,6 +337,30 @@ export async function updateQrClaim(qrHash: string, beneficiary: string, user_in
   return res.rowCount === 1;
 }
 
+export async function updateEmailQrClaims(user_input: string, beneficiary: string, tx: ContractTransaction) {
+  const tx_hash = tx.hash
+  const signer = tx.from
+
+  const res = await db.result('UPDATE qr_claims SET tx_hash=${tx_hash}, beneficiary=${beneficiary}, signer=${signer} WHERE user_input=${user_input} AND tx_hash IS NULL',
+    {
+      tx_hash,
+      signer,
+      beneficiary,
+      user_input,
+    });
+  return res.rowCount === 1;
+}
+
+export async function updateQrInput(qrHash: string, user_input: string) {
+
+  const res = await db.result('UPDATE qr_claims SET user_input=${user_input} WHERE qr_hash = ${qrHash}',
+    {
+      user_input,
+      qrHash
+    });
+  return res.rowCount === 1;
+}
+
 export async function updateDelegatedQrClaim(qrHash: string, beneficiary: string, user_input: string, message: string) {
   const res = await db.result('UPDATE qr_claims SET delegated_mint=TRUE, delegated_signed_message=${message}, beneficiary=${beneficiary}, user_input=${user_input} WHERE qr_hash = ${qrHash}',
     {
@@ -348,7 +386,7 @@ export async function getTaskCreator(apiKey: string): Promise<null | TaskCreator
   return res;
 }
 
-export async function createTask(data: any, taskName: string): Promise<null | Task> {
+export async function createTask(taskName: string, data: any): Promise<null | Task> {
   const task = await db.one(
     'INSERT INTO tasks(name, task_data) VALUES(${taskName}, ${data}) RETURNING id, name, task_data, status, return_data',
     { taskName, data }
@@ -370,6 +408,18 @@ export async function hasToken(unlockTask: UnlockTask): Promise<boolean> {
     'SELECT * FROM tasks WHERE status<>\'FINISH_WITH_ERROR\' AND id < ${taskId} AND name=${unlockProtocol} AND task_data ->> \'accountAddress\' = ${address}',
     { taskId, address, unlockProtocol })
   return res.rowCount > 0;
+}
+
+export async function getMigrationTask(tokenId: number | string): Promise<null | MigrateTask> {
+  return db.oneOrNone(
+    'SELECT * FROM tasks WHERE status<>\'FINISH_WITH_ERROR\' AND name=${migrationService} AND task_data ->> \'tokenId\' = ${tokenId}',
+    { tokenId, migrationService: Services.migrationService });
+}
+
+export async function updateTaskData(taskId: number, task_data: any) {
+  await db.result(
+    'UPDATE tasks SET task_data = ${task_data} WHERE name=${migrationService} AND id=${taskId}',
+    { taskId, migrationService: Services.migrationService, task_data });
 }
 
 export async function finishTaskWithErrors(errors: string, taskId: number) {
@@ -568,6 +618,28 @@ export async function getQrRolls(): Promise<null | qrRoll[]> {
   return res;
 }
 
+export async function getQrByUserInput(user_input: string, minted?: boolean): Promise<ClaimQR[]> {
+  let query = 'SELECT * FROM qr_claims WHERE user_input = ${user_input}';
+  if(minted !== undefined) {
+    if(minted) {
+      query = query + " AND tx_hash IS NOT NULL ''"
+    } else {
+      query = query + " AND tx_hash IS NULL"
+    }
+  }
+  const res = await db.manyOrNone<ClaimQR>(query, {
+    user_input
+  });
+  return res;
+}
+
+export async function getNonMintedQrByUserInput(user_input: string): Promise<ClaimQR[]> {
+  const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE user_input = ${user_input} AND tx_hash', {
+    user_input
+  });
+  return res;
+}
+
 export async function getQrRoll(qrRollId: string): Promise<null | eventHost> {
   const res = await db.oneOrNone<eventHost>('SELECT * FROM qr_roll WHERE id=${qrRollId} AND is_active = true', { qrRollId });
   return res;
@@ -659,7 +731,7 @@ export async function getTotalEventTemplates(name: string): Promise<number> {
   return res.rowCount;
 }
 
-export async function createEventTemplate(event_template: Omit<FullEventTemplate, 'id'>): Promise<EventTemplate> {
+export async function createEventTemplate(event_template: Omit<FullEventTemplate, 'id'>): Promise<FullEventTemplate> {
   const data = await db.one(
       'INSERT INTO event_templates(${this:name}) VALUES(${this:csv}) RETURNING id',
       event_template
@@ -715,4 +787,37 @@ export async function saveEventTemplateUpdate(eventTemplateId: number, field: st
 
   await db.one(query, {eventTemplateId, field, oldValue, newValue, isAdmin})
   return true
+}
+
+export async function getActiveEmailClaims(email?: string, token?: string): Promise<EmailClaim[]> {
+  const now = new Date();
+  let query = 'SELECT * FROM email_claims WHERE processed = false AND end_date >= ${now}'
+  if(email) {
+    query = query + ' AND email = ${email}'
+  }
+  if(token) {
+    query = query + ' AND token = ${token}'
+  }
+
+  return db.manyOrNone<EmailClaim>(
+    query,
+    { email, token, now }
+  );
+}
+
+export async function saveEmailClaim(email: string, end_date: Date): Promise<{token: string}> {
+  let query = 'INSERT INTO email_claims (email, end_date) VALUES (${email}, ${end_date}) RETURNING token'
+  return db.one(query, { email, end_date });
+}
+
+export async function deleteEmailClaim(email: string, end_date: Date) {
+  let query = 'DELETE FROM email_claims WHERE email = ${email} AND end_date = ${end_date}'
+  await db.result(query, { email, end_date });
+}
+
+export async function updateProcessedEmailClaim(email: string, token: string): Promise<boolean> {
+  let query = 'UPDATE email_claims SET processed = true WHERE email = ${email} AND token = ${token} AND processed = false'
+  const res = await db.result(query, { email, token });
+  return res.rowCount === 1;
+
 }

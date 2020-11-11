@@ -1,3 +1,5 @@
+import * as yup from 'yup';
+import { getDefaultProvider } from 'ethers';
 import { getAddress, formatUnits } from 'ethers/utils';
 
 function isValidAddress(str: string): boolean {
@@ -8,6 +10,30 @@ function isValidAddress(str: string): boolean {
     return false;
   }
 }
+
+async function isValidAddressOrENS(str: string): Promise<boolean> {
+  if (isValidAddress(str)) {
+    return true;
+  } else {
+    try {
+      let response = await resolveName(str);
+      if (response) return true;
+    } catch (error) {
+      return false;
+    }
+  }
+  return false;
+}
+
+async function resolveName(name: string): Promise<string> {
+  const mainnetProvider = getDefaultProvider('homestead');
+  const resolvedAddress = await mainnetProvider.resolveName(name);
+  return resolvedAddress;
+};
+
+const isValidEmail = (email: string) => {
+  return yup.string().email().isValidSync(email);
+};
 
 const convertToGWEI = (numberInWEI: string) => {
   return Number(formatUnits(numberInWEI, 'gwei')).toString();
@@ -47,9 +73,11 @@ const getBase64 = (img: File | Blob, callback: (outputFile: string | undefined) 
 export {
   getBase64,
   isValidAddress,
+  isValidAddressOrENS,
   convertToGWEI,
   convertFromGWEI,
   convertToETH,
   reduceAddress,
   generateSecretCode,
+  isValidEmail,
 };

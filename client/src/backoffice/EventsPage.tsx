@@ -1,29 +1,13 @@
-import React, {
-  useCallback,
-  useState,
-  ReactElement,
-  useEffect,
-  useMemo,
-  ChangeEvent,
-  ReactNode,
-} from 'react';
+import React, { useCallback, useState, ReactElement, useEffect, useMemo, ChangeEvent, ReactNode } from 'react';
 import { Link, Route, RouteComponentProps, Switch } from 'react-router-dom';
 import classNames from 'classnames';
-import {
-  Formik,
-  Form,
-  Field,
-  ErrorMessage,
-  FieldProps,
-  FormikActions,
-  FormikHandlers,
-  FormikValues,
-} from 'formik';
+import { Formik, Form, Field, ErrorMessage, FieldProps, FormikActions, FormikHandlers, FormikValues } from 'formik';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import 'react-day-picker/lib/style.css';
 import { format } from 'date-fns';
 import { useToasts } from 'react-toast-notifications';
 import { useHistory } from 'react-router-dom';
+import { FiCheckSquare, FiSquare } from 'react-icons/fi';
 
 import { authClient } from 'auth';
 
@@ -38,7 +22,7 @@ import FilterButton from '../components/FilterButton';
 import FilterSelect from '../components/FilterSelect';
 
 // constants
-import { ROUTES } from 'lib/constants';
+import { COLORS, ROUTES } from 'lib/constants';
 
 // assets
 import { ReactComponent as EditIcon } from 'images/edit.svg';
@@ -76,6 +60,7 @@ type EventEditValues = {
   image?: Blob;
   isFile: boolean;
   secret_code: string;
+  email: string;
 };
 
 type DatePickerDay = 'start_date' | 'end_date';
@@ -179,10 +164,9 @@ type TemplateOptionType = {
 const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ create, event }) => {
   const [virtualEvent, setVirtualEvent] = useState<boolean>(event ? event.virtual_event : false);
   const [templateOptions, setTemplateOptions] = useState<Template[] | null>(null);
+  const [includeEmail, setIncludeEmail] = useState<boolean>(!!create);
 
-  const [multiDay, setMultiDay] = useState<boolean>(
-    event ? event.start_date !== event.end_date : false
-  );
+  const [multiDay, setMultiDay] = useState<boolean>(event ? event.start_date !== event.end_date : false);
   const history = useHistory();
   const veryOldDate = new Date('1900-01-01');
   const veryFutureDate = new Date('2200-01-01');
@@ -212,6 +196,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         end_date: end_date.replace(dateRegex, '-'),
         isFile: false,
         secret_code: secret_code ? secret_code.toString().padStart(6, '0') : '',
+        email: '',
       };
     } else {
       const now = new Date();
@@ -230,16 +215,13 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         image: new Blob(),
         isFile: true,
         secret_code: generateSecretCode(),
+        email: '',
       };
       return values;
     }
   }, [event]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
-  const handleFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    setFieldValue: SetFieldValue,
-    name: string
-  ) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, setFieldValue: SetFieldValue, name: string) => {
     event.preventDefault();
     const { files } = event.target;
 
@@ -297,7 +279,11 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
     return [{ value: 0, label: 'Standard template' }, ...options];
   };
 
+  const toggleCheckbox = () => setIncludeEmail(!includeEmail);
+
   const templateSelectOptions = templateOptions ? parseTemplateToOptions(templateOptions) : [];
+
+  let CheckboxIcon = includeEmail ? FiCheckSquare : FiSquare;
 
   return (
     <div className={'bk-container'}>
@@ -307,10 +293,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         validateOnBlur={false}
         validateOnChange={false}
         validationSchema={PoapEventSchema}
-        onSubmit={async (
-          submittedValues: EventEditValues,
-          actions: FormikActions<EventEditValues>
-        ) => {
+        onSubmit={async (submittedValues: EventEditValues, actions: FormikActions<EventEditValues>) => {
           try {
             actions.setSubmitting(true);
             const formData = new FormData();
@@ -318,6 +301,14 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
 
             if (create && !isFile) {
               actions.setErrors({ isFile: 'An image is required' });
+              actions.setSubmitting(false);
+              return;
+            }
+
+            if (includeEmail && !submittedValues['email']) {
+              actions.setErrors({ email: 'An email is required' });
+              actions.setSubmitting(false);
+              return;
             }
 
             Object.entries(othersKeys).forEach(([key, value]) => {
@@ -401,11 +392,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                   handleDayClick={handleDayClick}
                   setFieldValue={setFieldValue}
                   placeholder={values.start_date}
-                  value={
-                    values.start_date !== ''
-                      ? new Date(dateFormatterString(values.start_date).getTime())
-                      : ''
-                  }
+                  value={values.start_date !== '' ? new Date(dateFormatterString(values.start_date).getTime()) : ''}
                   disabled={false}
                   disabledDays={
                     values.end_date !== ''
@@ -422,11 +409,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                   handleDayClick={handleDayClick}
                   setFieldValue={setFieldValue}
                   placeholder={values.end_date}
-                  value={
-                    values.end_date !== ''
-                      ? new Date(dateFormatterString(values.end_date).getTime())
-                      : ''
-                  }
+                  value={values.end_date !== '' ? new Date(dateFormatterString(values.end_date).getTime()) : ''}
                   disabled={!multiDay}
                   disabledDays={
                     values.start_date !== ''
@@ -447,9 +430,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                   onChange={handleTemplateSelectChange('event_template_id')}
                   options={templateSelectOptions}
                   disabled={fetchingTemplates}
-                  value={templateSelectOptions?.find(
-                    (option) => option.value === values['event_template_id']
-                  )}
+                  value={templateSelectOptions?.find((option) => option.value === values['event_template_id'])}
                 />
               </div>
               <div className="bk-group">
@@ -462,6 +443,14 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                 />
                 <div>
                   <EventField disabled={false} title={editLabel} name="secret_code" />
+                  {create && (
+                    <div className={'email-checkbox'}>
+                      <div onClick={toggleCheckbox} className={'box-label'}>
+                        <CheckboxIcon color={COLORS.primaryColor} /> Receive a backup of the event Edit Code
+                      </div>
+                      {includeEmail && <EventField disabled={false} title={'Email'} name="email" />}
+                    </div>
+                  )}
                 </div>
               </div>
               {event && event.image_url && (
@@ -540,13 +529,7 @@ export const ImageContainer = ({
   </div>
 );
 
-export const EventField: React.FC<EventFieldProps> = ({
-  title,
-  name,
-  disabled = false,
-  type,
-  placeholder,
-}) => {
+export const EventField: React.FC<EventFieldProps> = ({ title, name, disabled = false, type, placeholder }) => {
   return (
     <Field
       name={name}
@@ -644,14 +627,7 @@ export const EventList: React.FC = () => {
 
       {fetchEventsError && <div>There was a problem fetching events</div>}
 
-      {events && (
-        <EventTable
-          createdBy={createdBy}
-          criteria={criteria}
-          initialEvents={events}
-          limit={limit}
-        />
-      )}
+      {events && <EventTable createdBy={createdBy} criteria={criteria} initialEvents={events} limit={limit} />}
     </div>
   );
 };
@@ -665,7 +641,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
 
   useEffect(() => {
     const eventsByCreator = initialEvents.filter((event) =>
-      createdBy === 'admin' ? event.from_admin : !event.from_admin
+      createdBy === 'admin' ? event.from_admin : !event.from_admin,
     );
 
     setEvents(eventsByCreator);
@@ -706,8 +682,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
     return events.slice(page * limit, page * limit + limit);
   };
 
-  const handleCriteriaFilter = (event: PoapEvent): boolean =>
-    event.name.toLowerCase().includes(criteria);
+  const handleCriteriaFilter = (event: PoapEvent): boolean => event.name.toLowerCase().includes(criteria);
 
   const handleIdSort = () => {
     if (idSort === 0) {
@@ -732,16 +707,11 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
       <div className={'admin-table transactions'}>
         <div className={'row table-header visible-md'}>
           <div className={'col-md-1 center pointer'} onClick={handleIdSort}>
-            #
-            {idSort !== 0 && (
-              <img className={'img-sort'} src={idSort > 0 ? sortUp : sortDown} alt={'sort'} />
-            )}
+            #{idSort !== 0 && <img className={'img-sort'} src={idSort > 0 ? sortUp : sortDown} alt={'sort'} />}
           </div>
           <div className={`col-md-6 pointer`} onClick={handleNameSort}>
             Name of the POAP
-            {nameSort !== 0 && (
-              <img className={'img-sort'} src={nameSort > 0 ? sortUp : sortDown} alt={'sort'} />
-            )}
+            {nameSort !== 0 && <img className={'img-sort'} src={nameSort > 0 ? sortUp : sortDown} alt={'sort'} />}
           </div>
           <div className={'col-md-2 center'}>Start Date</div>
           <div className={'col-md-2 center'}>Image</div>
@@ -758,12 +728,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
                 <span className={'visible-sm'}>
                   Name of the POAP: <br />
                 </span>
-                <a
-                  href={event.event_url}
-                  title={event.name}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href={event.event_url} title={event.name} target="_blank" rel="noopener noreferrer">
                   {event.name}
                 </a>
               </div>

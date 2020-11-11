@@ -1,7 +1,7 @@
 {
   "contracts": {
     "Poap": {
-      "address": "0x96d0eC5Abb022ebF3a269344b2593eD909A77948",
+      "address": "0x80621d2eE3ec4d736a7B8D1277842E9d64CCEbBA",
       "constructorCode": "608060405234801561001057600080fd5b50613dbc806100206000396000f3fe",
       "bodyBytecodeHash": "e96c1ac7a3bca7151a41449e8da37de536ab0c79a643188dfa5fd86e1dbbb2a6",
       "localBytecodeHash": "c418c9365bbeda954bc0e00bb6802a29146df97ea7d59920bec864df78689505",
@@ -346,15 +346,17 @@
   "proxies": {
     "poap/Poap": [
       {
-        "address": "0x22C1f6050E56d2876009903609a2cC3fEf83B415",
+        "address": "0xd237716b056d5BF44181c471A7c633583b552D78",
         "version": "0.1.0",
-        "implementation": "0x96d0eC5Abb022ebF3a269344b2593eD909A77948"
+        "implementation": "0x80621d2eE3ec4d736a7B8D1277842E9d64CCEbBA",
+        "admin": "0xacB20221Aef2d8825017F16c8D8f8467756ED675",
+        "kind": "Upgradeable"
       }
     ]
   },
   "zosversion": "2.2",
   "version": "0.1.0",
   "proxyAdmin": {
-    "address": "0xDD3C426fA842F890BCb793DA6ccD749Edb09c44B"
+    "address": "0xacB20221Aef2d8825017F16c8D8f8467756ED675"
   }
 }

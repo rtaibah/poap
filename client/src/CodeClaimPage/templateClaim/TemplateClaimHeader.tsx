@@ -9,7 +9,7 @@ import { COLORS, STYLES } from 'lib/constants';
 import { HashClaim } from 'api';
 
 // types
-import { TemplatePageFormValues } from 'api';
+import { TemplatePageFormValues, Template } from 'api';
 import { useImageSrc } from 'lib/hooks/useImageSrc';
 
 type Props = {
@@ -17,7 +17,7 @@ type Props = {
   image: string;
   claimed: boolean;
   claim?: HashClaim;
-  template?: TemplatePageFormValues;
+  template?: TemplatePageFormValues | Template;
 };
 
 export const TemplateClaimHeader: FC<Props> = ({ claim, title, image, claimed, template }) => {

@@ -8,7 +8,7 @@ import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'fo
 
 /* Helpers */
 import { GasPriceSchema } from '../lib/schemas';
-import { TX_STATUS, etherscanLinks } from '../lib/constants';
+import { TX_STATUS, LAYERS, etherscanLinks, blockscoutLinks } from '../lib/constants';
 import { Transaction, getTransactions, bumpTransaction, AdminAddress, getSigners } from '../api';
 import { convertFromGWEI, convertToGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
@@ -45,9 +45,9 @@ const TransactionsPage: FC = () => {
 
   useEffect(() => {
     if (signers.length === 0) {
-      getSigners().then(data => {
+      getSigners().then((data) => {
         setSigners(data);
-      })
+      });
     }
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
@@ -65,12 +65,12 @@ const TransactionsPage: FC = () => {
     setTransactions(null);
 
     getTransactions(limit, page * limit, statusList.join(','), signerFilter)
-      .then(response => {
+      .then((response) => {
         if (!response) return;
         setTransactions(response.transactions);
         setTotal(response.total);
       })
-      .catch(error => console.error(error))
+      .catch((error) => console.error(error))
       .finally(() => setIsFetchingTx(false));
   };
 
@@ -78,10 +78,7 @@ const TransactionsPage: FC = () => {
     setPage(obj.selected);
   };
 
-  const handleFormSubmit = async (
-    values: GasPriceFormValues,
-    actions: FormikActions<GasPriceFormValues>
-  ) => {
+  const handleFormSubmit = async (values: GasPriceFormValues, actions: FormikActions<GasPriceFormValues>) => {
     if (!selectedTx) return;
     try {
       actions.setStatus(null);
@@ -92,9 +89,15 @@ const TransactionsPage: FC = () => {
       fetchTransactions();
       closeEditModal();
     } catch (error) {
-      let message: any = `Gas price couldn't be changed`
+      let message: any = `Gas price couldn't be changed`;
       if (error.message) {
-        message = <span>{message}<br />{error.message}</span>
+        message = (
+          <span>
+            {message}
+            <br />
+            {error.message}
+          </span>
+        );
       }
       actions.setStatus({ ok: false, msg: message });
     } finally {
@@ -141,12 +144,10 @@ const TransactionsPage: FC = () => {
     const { value } = e.target;
     setSignerFilter(value);
   };
-  const handleLimitChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ): void => {
+  const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     const { value } = e.target;
     setLimit(parseInt(value, 10));
-  }
+  };
 
   return (
     <div className={'admin-table transactions'}>
@@ -156,19 +157,17 @@ const TransactionsPage: FC = () => {
           <div className={'left-content'}>
             <FilterChip text="Failed" isActive={isFailedSelected} handleOnClick={handleFailedClick} />
             <FilterChip text="Passed" isActive={isPassedSelected} handleOnClick={handlePassedClick} />
-            <FilterChip
-              text="Pending"
-              isActive={isPendingSelected}
-              handleOnClick={handlePendingClick}
-            />
+            <FilterChip text="Pending" isActive={isPendingSelected} handleOnClick={handlePendingClick} />
           </div>
           <div className={'right-content'}>
             <FilterSelect handleChange={handleCreatedByChange}>
               <option value="">All signers</option>
-              {signers.map(signer => {
+              {signers.map((signer) => {
                 return (
-                  <option key={signer.id} value={signer.signer}>{signer.id} - {signer.signer} ({signer.role})</option>
-                )
+                  <option key={signer.id} value={signer.signer}>
+                    {signer.id} - {signer.signer} ({signer.role})
+                  </option>
+                );
               })}
             </FilterSelect>
           </div>
@@ -195,6 +194,7 @@ const TransactionsPage: FC = () => {
 
         {transactions &&
           transactions.map((tx, i) => {
+            const blockExplorer = tx.layer === LAYERS.layer1 ? etherscanLinks : blockscoutLinks;
             return (
               <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={tx.id}>
                 <div className={'col-md-1 center'}>
@@ -203,16 +203,18 @@ const TransactionsPage: FC = () => {
                 </div>
                 <div className={'col-md-3'}>
                   <span className={'visible-sm'}>Tx: </span>
-                  <a href={etherscanLinks.tx(tx.tx_hash)} target={'_blank'}>
+                  <a href={blockExplorer.tx(tx.tx_hash)} target={'_blank'}>
                     {tx.tx_hash && reduceAddress(tx.tx_hash)}
                   </a>
                 </div>
                 <div className={'col-md-3'}>
                   <span className={'visible-sm'}>Signer: </span>
-                  <a href={etherscanLinks.address(tx.signer)} target={'_blank'}>
+                  <a href={blockExplorer.address(tx.signer)} target={'_blank'}>
                     {tx.signer && reduceAddress(tx.signer)}
                   </a>
-                  <span className={'nonce'} title={'Nonce'}>{tx.nonce}</span>
+                  <span className={'nonce'} title={'Nonce'}>
+                    {tx.nonce}
+                  </span>
                 </div>
                 <div className={'col-md-2 capitalize'}>
                   <span className={'visible-sm'}>Operation: </span>
@@ -225,12 +227,7 @@ const TransactionsPage: FC = () => {
                   <span className={'visible-sm'}>Gas Price (GWei): </span>
                   {tx.gas_price && convertToGWEI(tx.gas_price)}
                   {tx.status === TX_STATUS.pending && (
-                    <img
-                      src={gas}
-                      alt={'Edit'}
-                      className={'edit-icon'}
-                      onClick={() => openEditModal(tx)}
-                    />
+                    <img src={gas} alt={'Edit'} className={'edit-icon'} onClick={() => openEditModal(tx)} />
                   )}
                 </div>
               </div>
@@ -289,14 +286,8 @@ const TransactionsPage: FC = () => {
                         }}
                       />
                       <ErrorMessage name="gasPrice" component="p" className="bk-error" />
-                      {status && (
-                        <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>
-                      )}
-                      <SubmitButton
-                        text="Modify gas price"
-                        isSubmitting={isSubmitting}
-                        canSubmit={isValid && dirty}
-                      />
+                      {status && <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>}
+                      <SubmitButton text="Modify gas price" isSubmitting={isSubmitting} canSubmit={isValid && dirty} />
                       <div onClick={closeEditModal} className={'close-modal'}>
                         Cancel
                       </div>

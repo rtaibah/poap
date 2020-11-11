@@ -149,12 +149,7 @@ const QrPage: FC = () => {
       fetchQrCodes();
       setCheckedAllQrs(false);
     }
-  }, [
-    selectedEvent,
-    claimStatus,
-    claimScanned,
-    limit,
-  ]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [selectedEvent, claimStatus, claimScanned, limit]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const cleanQrSelection = () => setSelectedQrs([]);
 
@@ -231,8 +226,8 @@ const QrPage: FC = () => {
 
     return selectedQrs.includes(stringifiedId)
       ? setSelectedQrs((selectedQrs) =>
-          selectedQrs.filter((qrId: string) => qrId !== stringifiedId)
-        )
+        selectedQrs.filter((qrId: string) => qrId !== stringifiedId)
+      )
       : setSelectedQrs((selectedQrs) => [...selectedQrs, stringifiedId]);
   };
 
@@ -479,6 +474,7 @@ const QrPage: FC = () => {
                         {qr.user_input ? qr.user_input : qr.beneficiary}
                       </a>
                     )}
+                    {!qr.beneficiary && qr.user_input && <>{qr.user_input}</>}
                   </div>
                 </div>
               );
@@ -507,10 +503,10 @@ const QrPage: FC = () => {
 };
 
 const CreationModal: React.FC<CreationModalProps> = ({
-  handleCreationModalRequestClose,
-  refreshQrs,
-  events,
-}) => {
+                                                       handleCreationModalRequestClose,
+                                                       refreshQrs,
+                                                       events,
+                                                     }) => {
   const [incorrectQrHashes, setIncorrectQrHashes] = useState<string[]>([]);
   const [incorrectQrIds, setIncorrectQrIds] = useState<string[]>([]);
   const [qrIds, setQrsIds] = useState<string[]>([]);
@@ -685,9 +681,9 @@ const CreationModal: React.FC<CreationModalProps> = ({
 };
 
 const AuthenticationModal: React.FC<AuthenticationModalProps> = ({
-  setPassphrase,
-  passphraseError,
-}) => {
+                                                                   setPassphrase,
+                                                                   passphraseError,
+                                                                 }) => {
   const handleAuthenticationModalSubmit = (values: AuthenticationModalFormikValues, props: any) => {
     setPassphrase(values.passphrase);
     props.resetForm();
@@ -725,13 +721,13 @@ const AuthenticationModal: React.FC<AuthenticationModalProps> = ({
 };
 
 const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
-  events,
-  selectedQrs,
-  refreshQrs,
-  onSuccessAction,
-  handleUpdateModalClosing,
-  passphrase,
-}) => {
+                                                          events,
+                                                          selectedQrs,
+                                                          refreshQrs,
+                                                          onSuccessAction,
+                                                          handleUpdateModalClosing,
+                                                          passphrase,
+                                                        }) => {
   const [isSelectionActive, setIsSelectionActive] = useState<boolean>(false);
   const [isRangeActive, setIsRangeActive] = useState<boolean>(false);
   const [isListActive, setIsListActive] = useState<boolean>(false);
@@ -755,11 +751,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
       assignHashList();
     }
     setIsSendingHashList(false);
-  }, [
-    hasIncorrectHashes,
-    isSendingHashList,
-    selectedEvent,
-  ]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [hasIncorrectHashes, isSendingHashList, selectedEvent]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (isListActive) setIsSendingHashList(true);
@@ -910,10 +902,10 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   const eventOptions = isAdmin
     ? events
     : events.filter((event) => {
-        const todayDate = new Date();
-        const eventDate = new Date(event.start_date);
-        return isAfter(eventDate, todayDate);
-      });
+      const todayDate = new Date();
+      const eventDate = new Date(event.start_date);
+      return isAfter(eventDate, todayDate);
+    });
 
   return (
     <Formik

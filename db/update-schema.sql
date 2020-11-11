@@ -184,3 +184,24 @@ CREATE TABLE event_templates_history (
 ALTER TABLE events ADD COLUMN event_template_id INTEGER NULL REFERENCES event_templates (id);
 
 UPDATE event_templates SET secret_code = floor(100000 + random() * 899999);
+
+ALTER TABLE signers ADD COLUMN layer VARCHAR(50);
+ALTER TABLE signers ADD CONSTRAINT chk_layer CHECK (layer IN ('Layer1', 'Layer2'));
+UPDATE signers SET layer = 'Layer1' WHERE id IS NOT NULL;
+
+ALTER TABLE server_transactions ADD COLUMN layer VARCHAR(50);
+ALTER TABLE server_transactions ADD CONSTRAINT chk_layer CHECK (layer IN ('Layer1', 'Layer2'));
+UPDATE server_transactions SET layer = 'Layer1' WHERE id IS NOT NULL;
+ALTER TABLE signers DROP CONSTRAINT signers_signer_key;
+
+ALTER TABLE server_transactions ADD COLUMN result json;
+
+CREATE TABLE email_claims (
+    "id" SERIAL PRIMARY KEY,
+    "email" varchar(256),
+    "token" uuid default gen_random_uuid() not null unique,
+    "end_date" timestamp with time zone,
+    "processed" boolean default false
+);
+
+ALTER TABLE qr_claims DROP CONSTRAINT qr_claims_tx_hash_key;

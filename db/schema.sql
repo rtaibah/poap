@@ -68,7 +68,9 @@ CREATE TABLE signers (
     "signer" varchar(256) UNIQUE not null,
     "role" varchar(100) not null,
     "gas_price" varchar(1000) not null,
-    "created_date" timestamp with time zone not null default now()
+    "created_date" timestamp with time zone not null default now(),
+    "layer" varchar(50),
+    CONSTRAINT chk_layer CHECK (layer IN ('Layer1', 'Layer2'))
 );
 
 CREATE TABLE poap_settings (
@@ -88,14 +90,17 @@ CREATE TABLE server_transactions (
     "arguments" varchar(1000) not null,
     "status" varchar(100) not null default 'pending',
     "gas_price" varchar(1000) not null,
-    "created_date" timestamp with time zone not null default now()
+    "created_date" timestamp with time zone not null default now(),
+    "result" json,
+    "layer" varchar(50),
+    CONSTRAINT chk_layer CHECK (layer IN ('Layer1', 'Layer2'))
 );
 
 /* CREATE TABLE qr_claims */
 CREATE TABLE qr_claims (
     "id" SERIAL PRIMARY KEY,
     "qr_hash" varchar(256) UNIQUE not null,
-    "tx_hash" varchar(256) UNIQUE,
+    "tx_hash" varchar(256),
     "event_id" integer,
     "beneficiary" varchar(256),
     "user_input" varchar(256),
@@ -155,4 +160,12 @@ CREATE TABLE qr_roll (
     "id" SERIAL PRIMARY KEY,
     "event_host_id" integer,
     "is_active" boolean default true
+);
+
+CREATE TABLE email_claims (
+    "id" SERIAL PRIMARY KEY,
+    "email" varchar(256),
+    "token" uuid default gen_random_uuid() not null unique,
+    "end_date" timestamp with time zone,
+    "processed" boolean default false
 );
