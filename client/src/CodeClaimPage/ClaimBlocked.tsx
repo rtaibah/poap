@@ -16,7 +16,7 @@ const ClaimBlocked: React.FC<{ claim: HashClaim }> = ({ claim }) => {
       <form className={'claim-form'}>
         <input type={'text'} disabled={true} value={claim.beneficiary} />
         <div className={'web3-browser'}>
-          This POAP is reserved and will son be sent. <a href={'mailto:hello@poap.xyz'}>Need help?</a>
+          This POAP is reserved and will soon be sent. <a href={'mailto:hello@poap.xyz'}>Need help?</a>
         </div>
       </form>
       <ClaimFooterMessage />
